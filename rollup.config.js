@@ -6,7 +6,7 @@ export default [
     input: './src/index.ts',
     external: [
       ...NativeModule.builtinModules,
-      'source-map'
+      'bundle-runner'
     ],
     output: [
       { file: './dist/vue-bundle-renderer.cjs.js', format: 'cjs' },
