@@ -12,7 +12,7 @@
     "dev": "rollup -c --watch",
     "lint": "eslint --ext .ts src",
     "release": "yarn test && yarn build && standard-version && git push --follow-tags && npm publish",
-    "test": "yarn lint && yarn jest",
+    "test": "yarn lint",
     "types": "tsc --declarationDir types --declaration --emitDeclarationOnly"
   },
   "dependencies": {
