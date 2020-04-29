@@ -2,11 +2,9 @@ import { createBundle, Bundle } from 'bundle-runner'
 import { createRenderContext, renderResourceHints, renderStyles, renderScripts, RenderOptions, SSRContext } from './renderer'
 
 type BundleRenderOptions = {
-  runInNewContext: boolean | 'once',
-  basedir: string,
-  vueServerRenderer: {
-    renderToString: Function
-  }
+  runInNewContext?: boolean | 'once',
+  basedir?: string,
+  vueServerRenderer: typeof import('@vue/server-renderer')
 } & RenderOptions
 
 export function createBundleRenderer (_bundle: Bundle, renderOptions: BundleRenderOptions) {
