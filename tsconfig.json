@@ -6,8 +6,7 @@
     "strict": true,
     "esModuleInterop": true,
     "types": [
-      "node",
-      "jest"
+      "node"
     ],
   },
   "include": [

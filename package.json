@@ -1,12 +1,16 @@
 {
   "name": "vue-bundle-renderer",
   "version": "0.0.1",
-  "license": "MIT",
   "description": "Bundle Renderer for Vue 3.0",
   "repository": "nuxt/vue-bundle-renderer",
+  "license": "MIT",
   "main": "dist/vue-bundle-renderer.cjs.js",
   "module": "dist/vue-bundle-renderer.esm.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "types"
+  ],
   "scripts": {
     "build": "yarn clean && rollup -c && yarn types",
     "clean": "rm -rf ./dist ./types",
@@ -22,12 +26,8 @@
   "devDependencies": {
     "@nuxtjs/eslint-config-typescript": "latest",
     "@rollup/plugin-typescript": "latest",
-    "@types/jest": "latest",
-    "@types/serialize-javascript": "^1.5.0",
     "@vue/server-renderer": "^3.0.0-beta.4",
-    "babel-jest": "latest",
     "eslint": "latest",
-    "jest": "latest",
     "rollup": "latest",
     "rollup-plugin-babel": "latest",
     "rollup-plugin-node-resolve": "latest",
