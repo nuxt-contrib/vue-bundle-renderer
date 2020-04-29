@@ -3,8 +3,8 @@
 [![npm version][npm-version-src]][npm-version-href]
 [![npm downloads][npm-downloads-src]][npm-downloads-href]
 [![Github Actions][github-actions-src]][github-actions-href]
-<!-- [![Codecov][codecov-src]][codecov-href] -->
 [![Dependencies][david-dm-src]][david-dm-href]
+<!-- [![Codecov][codecov-src]][codecov-href] -->
 
 SSR Bundle Renderer for Vue 3 using [bundle-runner](https://github.com/nuxt-contrib/bundle-runner).
 
