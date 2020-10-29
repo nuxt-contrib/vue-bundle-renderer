@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.2.0](https://github.com/nuxt/vue-bundle-renderer/compare/v0.0.3...v0.2.0) (2020-10-29)
+
+
+### Features
+
+* `createRenderer` without Node dependency ([d41d6b0](https://github.com/nuxt/vue-bundle-renderer/commit/d41d6b0939e174e74b494eb9e17b19c291eb961b))
+
 ## [0.1.0](https://github.com/nuxt/vue-bundle-renderer/compare/v0.0.3...v0.1.0) (2020-10-29)
 
 
