@@ -3,7 +3,7 @@ import { RenderOptions, createRenderer } from './renderer'
 type BundleRenderOptions = {
   runInNewContext?: boolean | 'once',
   basedir?: string,
-  vueServerRenderer: typeof import('@vue/server-renderer'),
+  renderToString: typeof import('@vue/server-renderer').renderToString,
   bundleRunner: typeof import('bundle-runner')
 } & RenderOptions
 
