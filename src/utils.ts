@@ -1,5 +1,4 @@
-import path from 'path'
-import { Resource } from './index'
+import { Resource } from './renderer'
 
 export function isJS (file: string) {
   return /\.js(\?[^.]+)?$/.test(file)
@@ -11,7 +10,7 @@ export function isCSS (file: string) {
 
 export function normalizeFile (file: string): Resource {
   const withoutQuery = file.replace(/\?.*/, '')
-  const extension = path.extname(withoutQuery).slice(1)
+  const extension = withoutQuery.split('.').pop() || ''
   return {
     file,
     extension,

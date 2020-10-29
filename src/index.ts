@@ -1,1 +1,2 @@
-export { createBundleRenderer } from './create-bundle-renderer'
+export { createBundleRenderer } from './bundle-renderer'
+export { createRenderer } from './renderer'

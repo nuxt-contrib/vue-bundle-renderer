@@ -18,13 +18,21 @@ npm install vue-bundle-renderer
 
 ## Usage
 
+### `createRenderer`
+
 ```ts
-import { createBundleRenderer } from 'vue-bundle-renderer'
+import { createRenderer } from 'vue-bundle-renderer'
+
+declare function createRenderer(createApp:, renderOptions: RenderOptions)
 ```
 
-**`createBundleRenderer`**
+### `createBundleRenderer`
 
 ```ts
+import { createBundleRenderer } from 'vue-bundle-renderer'
+
+declare function createBundleRenderer(bundle, renderOptions: BundleRenderOptions)
+
 type BundleRenderOptions = {
   runInNewContext?: boolean | 'once';
   basedir?: string;
@@ -33,7 +41,6 @@ type BundleRenderOptions = {
   publicPath?: string;
 }
 ```
-
 
 ## Credits
 

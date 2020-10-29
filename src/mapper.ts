@@ -4,7 +4,7 @@
  * directly in the rendered HTML to avoid waterfall requests.
 */
 
-import { ClientManifest } from './index'
+import { ClientManifest } from './renderer'
 
 export type AsyncFileMapper = (files: Array<string>) => Array<string>
 

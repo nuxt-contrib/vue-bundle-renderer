@@ -41,18 +41,17 @@ export type RenderContext = {
   shouldPreload?: (file: string, type: string) => boolean,
   publicPath?: string,
   clientManifest?: ClientManifest,
-  mapFiles?: AsyncFileMapper
+  mapFiles?: AsyncFileMapper,
+  basedir?: string,
 }
 
-export type RenderOptions = {
-  clientManifest?: ClientManifest,
-  publicPath?: string
-}
+export type RenderOptions = Partial<RenderContext>
 
-export function createRenderContext ({ clientManifest, publicPath }: RenderOptions) {
+export function createRenderContext ({ clientManifest, publicPath, basedir }: RenderOptions) {
   const renderContext: RenderContext = {
     clientManifest,
-    publicPath
+    publicPath,
+    basedir
   }
 
   if (renderContext.clientManifest) {
@@ -75,15 +74,10 @@ export function renderStyles (ssrContext: SSRContext, renderContext: RenderConte
   const initial = renderContext.preloadFiles || []
   const async = getUsedAsyncFiles(ssrContext, renderContext) || []
   const cssFiles = initial.concat(async).filter(({ file }) => isCSS(file))
-  return (
-    // render links for css files
-    (cssFiles.length
-      ? cssFiles.map(({ file }) => `<link rel="stylesheet" href="${renderContext.publicPath}${file}">`).join('')
-      : '') +
-    // ssrContext.styles is a getter exposed by vue-style-loader which contains
-    // the inline component styles collected during SSR
-    (ssrContext.styles || '')
-  )
+
+  return cssFiles.map(({ file }) => {
+    return `<link rel="stylesheet" href="${renderContext.publicPath}${file}">`
+  }).join('')
 }
 
 export function renderResourceHints (ssrContext: SSRContext, renderContext: RenderContext): string {
@@ -169,4 +163,26 @@ export function getUsedAsyncFiles (ssrContext: SSRContext, renderContext: Render
     ssrContext._mappedFiles = renderContext.mapFiles(registered).map(normalizeFile)
   }
   return ssrContext._mappedFiles || []
+}
+
+export function createRenderer (createApp: any, renderOptions: RenderOptions & { vueServerRenderer: typeof import('@vue/server-renderer') }) {
+  const renderContext = createRenderContext(renderOptions)
+
+  return {
+    async renderToString (ssrContext: SSRContext) {
+      ssrContext._registeredComponents = []
+
+      const app = await createApp(ssrContext)
+      const html = await renderOptions.vueServerRenderer.renderToString(app, ssrContext)
+
+      const wrap = (fn: Function) => () => fn(ssrContext, renderContext)
+
+      return {
+        html,
+        renderResourceHints: wrap(renderResourceHints),
+        renderStyles: wrap(renderStyles),
+        renderScripts: wrap(renderScripts)
+      }
+    }
+  }
 }
