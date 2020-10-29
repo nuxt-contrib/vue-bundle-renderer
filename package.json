@@ -26,7 +26,7 @@
   "devDependencies": {
     "@nuxtjs/eslint-config-typescript": "latest",
     "@rollup/plugin-typescript": "latest",
-    "@vue/server-renderer": "^3.0.0-beta.4",
+    "@vue/server-renderer": "^3.0.2",
     "eslint": "latest",
     "rollup": "latest",
     "rollup-plugin-babel": "latest",
@@ -34,6 +34,6 @@
     "standard-version": "latest",
     "ts-jest": "latest",
     "typescript": "latest",
-    "vue": "^3.0.0-beta.4"
+    "vue": "^3.0.2"
   }
 }
