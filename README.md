@@ -36,7 +36,7 @@ declare function createBundleRenderer(bundle, renderOptions: BundleRenderOptions
 type BundleRenderOptions = {
   runInNewContext?: boolean | 'once';
   basedir?: string;
-  vueServerRenderer: typeof import('@vue/server-renderer');
+  renderToString: typeof import('@vue/server-renderer').renderToString;
   clientManifest?: ClientManifest;
   publicPath?: string;
 }
