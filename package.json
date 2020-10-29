@@ -8,17 +8,14 @@
   "module": "./dist/vue-bundle-renderer.esm.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist",
-    "types"
+    "dist"
   ],
   "scripts": {
-    "build": "yarn clean && rollup -c && yarn types",
-    "clean": "rm -rf ./dist ./types",
+    "build": "siroc build",
     "dev": "rollup -c --watch",
     "lint": "eslint --ext .ts src",
     "release": "yarn test && yarn build && standard-version && git push --follow-tags && npm publish",
-    "test": "yarn lint",
-    "types": "tsc --declarationDir types --declaration --emitDeclarationOnly"
+    "test": "yarn lint"
   },
   "dependencies": {
     "bundle-runner": "^0.0.1"
@@ -31,6 +28,7 @@
     "rollup": "latest",
     "rollup-plugin-babel": "latest",
     "rollup-plugin-node-resolve": "latest",
+    "siroc": "^0.4.0",
     "standard-version": "latest",
     "ts-jest": "latest",
     "typescript": "latest",

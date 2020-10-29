@@ -7,7 +7,7 @@
     "esModuleInterop": true,
     "types": [
       "node"
-    ],
+    ]
   },
   "include": [
     "src"
