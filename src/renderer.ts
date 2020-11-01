@@ -31,7 +31,7 @@ export type SSRContext = {
   head?: string,
   styles?: string,
   _mappedFiles?: Array<Resource>,
-  _registeredComponents?: Array<any>,
+  _registeredComponents?: Set<any>,
 }
 
 export type RenderContext = {
@@ -170,7 +170,7 @@ export function createRenderer (createApp: any, renderOptions: RenderOptions & {
 
   return {
     async renderToString (ssrContext: SSRContext) {
-      ssrContext._registeredComponents = []
+      ssrContext._registeredComponents = ssrContext._registeredComponents || new Set()
 
       const app = await createApp(ssrContext)
       const html = await renderOptions.renderToString(app, ssrContext)
