@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.2](https://github.com/nuxt/vue-bundle-renderer/compare/v0.2.1...v0.2.2) (2020-11-01)
+
+
+### Bug Fixes
+
+* _registeredComponents should be a set ([40a711c](https://github.com/nuxt/vue-bundle-renderer/commit/40a711c2d394b66c52164200215b105d2de0473b))
+
 ### [0.2.1](https://github.com/nuxt/vue-bundle-renderer/compare/v0.2.0...v0.2.1) (2020-10-29)
 
 ## [0.2.0](https://github.com/nuxt/vue-bundle-renderer/compare/v0.0.3...v0.2.0) (2020-10-29)
