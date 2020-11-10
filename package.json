@@ -17,9 +17,6 @@
     "release": "yarn test && yarn build && standard-version && git push --follow-tags && npm publish",
     "test": "yarn lint"
   },
-  "resolutions": {
-    "rollup-plugin-esbuild": "2.3.0"
-  },
   "dependencies": {
     "bundle-runner": "^0.0.1"
   },
