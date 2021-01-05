@@ -23,15 +23,15 @@
   "devDependencies": {
     "@nuxtjs/eslint-config-typescript": "latest",
     "@rollup/plugin-typescript": "latest",
-    "@vue/server-renderer": "^3.0.2",
+    "@vue/server-renderer": "^3.0.5",
     "eslint": "latest",
     "rollup": "latest",
     "rollup-plugin-babel": "latest",
     "rollup-plugin-node-resolve": "latest",
-    "siroc": "^0.4.0",
+    "siroc": "^0.4.3",
     "standard-version": "latest",
     "ts-jest": "latest",
     "typescript": "latest",
-    "vue": "^3.0.2"
+    "vue": "^3.0.5"
   }
 }
