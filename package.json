@@ -28,7 +28,7 @@
     "rollup": "latest",
     "rollup-plugin-babel": "latest",
     "rollup-plugin-node-resolve": "latest",
-    "siroc": "^0.4.3",
+    "siroc": "^0.6.0",
     "standard-version": "latest",
     "ts-jest": "latest",
     "typescript": "latest",
