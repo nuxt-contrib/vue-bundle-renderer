@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.3](https://github.com/nuxt/vue-bundle-renderer/compare/v0.2.2...v0.2.3) (2021-01-22)
+
+
+### Features
+
+* support createApp as promise for lazy loading ([d5b82e7](https://github.com/nuxt/vue-bundle-renderer/commit/d5b82e7ed62f25bb2ff6e3ba6a79469210882e93))
+
 ### [0.2.2](https://github.com/nuxt/vue-bundle-renderer/compare/v0.2.1...v0.2.2) (2020-11-01)
 
 
