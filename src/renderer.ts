@@ -165,14 +165,15 @@ export function getUsedAsyncFiles (ssrContext: SSRContext, renderContext: Render
   return ssrContext._mappedFiles || []
 }
 
-export function createRenderer (createApp: any, renderOptions: RenderOptions & { renderToString: typeof import('@vue/server-renderer').renderToString }) {
+export function createRenderer (createApp: any, renderOptions: RenderOptions & { renderToString: Function }) {
   const renderContext = createRenderContext(renderOptions)
 
   return {
     async renderToString (ssrContext: SSRContext) {
       ssrContext._registeredComponents = ssrContext._registeredComponents || new Set()
 
-      const app = await createApp(ssrContext)
+      const _createApp = await Promise.resolve(createApp).then(r => r.default || r)
+      const app = await _createApp(ssrContext)
       const html = await renderOptions.renderToString(app, ssrContext)
 
       const wrap = (fn: Function) => () => fn(ssrContext, renderContext)
