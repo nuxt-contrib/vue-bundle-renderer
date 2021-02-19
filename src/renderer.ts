@@ -31,7 +31,9 @@ export type SSRContext = {
   head?: string,
   styles?: string,
   _mappedFiles?: Array<Resource>,
+  _mappedStaticFiles?: Array<Resource>,
   _registeredComponents?: Set<any>,
+  _staticComponents?: Set<any>,
 }
 
 export type RenderContext = {
@@ -115,7 +117,18 @@ export function renderPreloadLinks (ssrContext: SSRContext, renderContext: Rende
 }
 
 export function renderPrefetchLinks (ssrContext: SSRContext, renderContext: RenderContext): string {
-  const shouldPrefetch = renderContext.shouldPrefetch
+  const shouldPrefetch = (fileWithoutQuery: string, asType: string) => {
+    const isStaticFile = Boolean(
+      ssrContext._mappedStaticFiles &&
+        ssrContext._mappedStaticFiles.find(f => f.fileWithoutQuery === fileWithoutQuery)
+    )
+    if (isStaticFile) {
+      return false
+    }
+
+    const contextShouldPrefetch = renderContext.shouldPrefetch || (() => true)
+    return contextShouldPrefetch(fileWithoutQuery, asType)
+  }
   if (renderContext.prefetchFiles) {
     const usedAsyncFiles = getUsedAsyncFiles(ssrContext, renderContext)
     const alreadyRendered = (file: string) => {
@@ -171,6 +184,7 @@ export function createRenderer (createApp: any, renderOptions: RenderOptions & {
   return {
     async renderToString (ssrContext: SSRContext) {
       ssrContext._registeredComponents = ssrContext._registeredComponents || new Set()
+      ssrContext._staticComponents = ssrContext._staticComponents || new Set()
 
       const _createApp = await Promise.resolve(createApp).then(r => r.default || r)
       const app = await _createApp(ssrContext)
