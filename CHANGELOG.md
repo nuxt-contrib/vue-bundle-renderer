@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.5](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.2.4...v0.2.5) (2021-07-12)
+
+
+### Bug Fixes
+
+* more mjs handling ([af2f761](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/af2f761595cef5b23e1288399a69ae20bcc3f12b))
+
 ### [0.2.4](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.2.3...v0.2.4) (2021-07-12)
 
 
