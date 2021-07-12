@@ -57,11 +57,11 @@ MIT
 [npm-downloads-src]: https://img.shields.io/npm/dm/vue-bundle-renderer?style=flat-square
 [npm-downloads-href]: https://npmjs.com/package/vue-bundle-renderer
 
-[github-actions-src]: https://img.shields.io/github/workflow/status/nuxt/vue-bundle-renderer/test/master?style=flat-square
-[github-actions-href]: https://github.com/nuxt/vue-bundle-renderer/actions?query=workflow%3Atest
+[github-actions-src]: https://img.shields.io/github/workflow/status/nuxt-contrib/vue-bundle-renderer/test/master?style=flat-square
+[github-actions-href]: https://github.com/nuxt-contrib/vue-bundle-renderer/actions?query=workflow%3Atest
 
-[codecov-src]: https://img.shields.io/codecov/c/gh/nuxt/vue-bundle-renderer/master?style=flat-square
-[codecov-href]: https://codecov.io/gh/nuxt/vue-bundle-renderer
+[codecov-src]: https://img.shields.io/codecov/c/gh/nuxt-contrib/vue-bundle-renderer/master?style=flat-square
+[codecov-href]: https://codecov.io/gh/nuxt-contrib/vue-bundle-renderer
 
-[david-dm-src]: https://img.shields.io/david/nuxt/vue-bundle-renderer?style=flat-square
-[david-dm-href]: https://david-dm.org/nuxt/vue-bundle-renderer
+[david-dm-src]: https://img.shields.io/david/nuxt-contrib/vue-bundle-renderer?style=flat-square
+[david-dm-href]: https://david-dm.org/nuxt-contrib/vue-bundle-renderer

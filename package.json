@@ -2,7 +2,7 @@
   "name": "vue-bundle-renderer",
   "version": "0.2.3",
   "description": "Bundle Renderer for Vue 3.0",
-  "repository": "nuxt/vue-bundle-renderer",
+  "repository": "nuxt-contrib/vue-bundle-renderer",
   "license": "MIT",
   "exports": {
     ".": {
