@@ -40,7 +40,7 @@ function mapIdToFile (id: string, clientManifest: ClientManifest) {
     fileIndices.forEach((index) => {
       const file = clientManifest.all[index]
       // only include async files or non-js, non-css assets
-      if (clientManifest.async.includes(file) || !(/\.(js|css)($|\?)/.test(file))) {
+      if (clientManifest.async.includes(file) || !(/\.(js|cjs|mjs|css)($|\?)/.test(file))) {
         files.push(file)
       }
     })

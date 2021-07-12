@@ -1,7 +1,7 @@
 import { Resource } from './renderer'
 
 export function isJS (file: string) {
-  return /\.[m?]js(\?[^.]+)?$/.test(file)
+  return /\.[cm]?js(\?[^.]+)?$/.test(file)
 }
 
 export function isCSS (file: string) {
@@ -27,7 +27,7 @@ export function ensureTrailingSlash (path: string) {
 }
 
 export function getPreloadType (ext: string): string {
-  if (ext === 'js') {
+  if (ext === 'js' || ext === 'cjs' || ext === 'mjs') {
     return 'script'
   } else if (ext === 'css') {
     return 'style'
