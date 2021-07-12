@@ -1,7 +1,7 @@
 import { Resource } from './renderer'
 
 export function isJS (file: string) {
-  return /\.js(\?[^.]+)?$/.test(file)
+  return /\.[m?]js(\?[^.]+)?$/.test(file)
 }
 
 export function isCSS (file: string) {
