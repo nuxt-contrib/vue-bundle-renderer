@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.4](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.2.3...v0.2.4) (2021-07-12)
+
+
+### Features
+
+* add exports map ([0f5e597](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/0f5e597bf745649e78104a67a6f6eb0501be957a))
+
+
+### Bug Fixes
+
+* support `.mjs` in isJS ([6347cfd](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/6347cfd2f05d8d7731683cbc21b92cc53d334ec9))
+
 ### [0.2.3](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.2.2...v0.2.3) (2021-01-22)
 
 
