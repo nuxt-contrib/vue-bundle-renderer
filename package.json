@@ -4,8 +4,14 @@
   "description": "Bundle Renderer for Vue 3.0",
   "repository": "nuxt/vue-bundle-renderer",
   "license": "MIT",
-  "main": "./dist/vue-bundle-renderer.cjs.js",
-  "module": "./dist/vue-bundle-renderer.esm.js",
+  "exports": {
+    ".": {
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "files": [
     "dist"
