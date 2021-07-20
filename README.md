@@ -37,6 +37,7 @@ type BundleRenderOptions = {
   runInNewContext?: boolean | 'once';
   basedir?: string;
   renderToString: typeof import('@vue/server-renderer').renderToString;
+  bundleRunner: typeof import('bundle-runner');
   clientManifest?: ClientManifest;
   publicPath?: string;
 }
