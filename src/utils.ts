@@ -1,11 +1,15 @@
 import { Resource } from './renderer'
 
+const IS_JS_RE = /\.[cm]?js(\?[^.]+)?$/
+const HAS_EXT_RE = /[^./]+\.[^./]+$/
+const IS_CSS_RE = /\.css(\?[^.]+)?$/
+
 export function isJS (file: string) {
-  return /\.[cm]?js(\?[^.]+)?$/.test(file)
+  return IS_JS_RE.test(file) || !HAS_EXT_RE.test(file)
 }
 
 export function isCSS (file: string) {
-  return /\.css(\?[^.]+)?$/.test(file)
+  return IS_CSS_RE.test(file)
 }
 
 export function normalizeFile (file: string): Resource {
