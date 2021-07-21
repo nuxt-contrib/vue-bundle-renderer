@@ -144,7 +144,7 @@ export function renderScripts (ssrContext: SSRContext, renderContext: RenderCont
     const async = (getUsedAsyncFiles(ssrContext, renderContext) || []).filter(({ file }) => isJS(file))
     const needed = [initial[0]].concat(async, initial.slice(1))
     return needed.map(({ file }) => {
-      return `<script${isModule(file) ? ' type="module" ' : ''}src="${renderContext.publicPath}${file}" defer></script>`
+      return `<script${isModule(file) ? ' type="module"' : ''} src="${renderContext.publicPath}${file}" defer></script>`
     }).join('')
   } else {
     return ''
