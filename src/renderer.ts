@@ -101,7 +101,7 @@ export function renderPreloadLinks (ssrContext: SSRContext, renderContext: Rende
       if (asType === 'font') {
         extra = ` type="font/${extension}" crossorigin`
       }
-      return `<link rel="preload" href="${
+      return `<link rel="${isModule(file) ? 'modulepreload' : 'preload'}" href="${
         renderContext.publicPath}${file
         }"${
         asType !== '' ? ` as="${asType}"` : ''
@@ -128,7 +128,7 @@ export function renderPrefetchLinks (ssrContext: SSRContext, renderContext: Rend
       if (alreadyRendered(file)) {
         return ''
       }
-      return `<link rel="prefetch" href="${renderContext.publicPath}${file}">`
+      return `<link${isModule(file) ? ' type="module" ' : ''}rel="prefetch" href="${renderContext.publicPath}${file}">`
     }).join('')
   } else {
     return ''
