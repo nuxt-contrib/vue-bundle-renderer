@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.8](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.2.7...v0.2.8) (2021-07-21)
+
+
+### Bug Fixes
+
+* use modulepreload for preloading modules ([4c3afa3](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/4c3afa35565b4c11008f58903ad55e3516649515))
+
 ### [0.2.7](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.2.6...v0.2.7) (2021-07-21)
 
 
