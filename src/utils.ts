@@ -1,11 +1,16 @@
 import { Resource } from './renderer'
 
 const IS_JS_RE = /\.[cm]?js(\?[^.]+)?$/
+const IS_MODULE_RE = /\.mjs(\?[^.]+)?$/
 const HAS_EXT_RE = /[^./]+\.[^./]+$/
 const IS_CSS_RE = /\.css(\?[^.]+)?$/
 
 export function isJS (file: string) {
   return IS_JS_RE.test(file) || !HAS_EXT_RE.test(file)
+}
+
+export function isModule (file: string) {
+  return IS_MODULE_RE.test(file) || !HAS_EXT_RE.test(file)
 }
 
 export function isCSS (file: string) {
