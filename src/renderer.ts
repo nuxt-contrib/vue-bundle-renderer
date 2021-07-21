@@ -138,6 +138,9 @@ export function renderPrefetchLinks (ssrContext: SSRContext, renderContext: Rend
 export function renderScripts (ssrContext: SSRContext, renderContext: RenderContext): string {
   if (renderContext.clientManifest && renderContext.preloadFiles) {
     const initial = renderContext.preloadFiles.filter(({ file }) => isJS(file))
+    if (!initial.length) {
+      return ''
+    }
     const async = (getUsedAsyncFiles(ssrContext, renderContext) || []).filter(({ file }) => isJS(file))
     const needed = [initial[0]].concat(async, initial.slice(1))
     return needed.map(({ file }) => {
