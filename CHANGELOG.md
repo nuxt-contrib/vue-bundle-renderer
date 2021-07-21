@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.6](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.2.5...v0.2.6) (2021-07-21)
+
+
+### Bug Fixes
+
+* assume resources without extension as js ([5ebe828](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/5ebe82807852623b1e5bfc77684b314524614ea7))
+* handle situation where there are no initial scripts ([3d55f4d](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/3d55f4d8cd859cf5d77ec40194c64510ac792096))
+
 ### [0.2.5](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.2.4...v0.2.5) (2021-07-12)
 
 
