@@ -128,7 +128,7 @@ export function renderPrefetchLinks (ssrContext: SSRContext, renderContext: Rend
       if (alreadyRendered(file)) {
         return ''
       }
-      return `<link${isModule(file) ? ' type="module" ' : ''}rel="prefetch" href="${renderContext.publicPath}${file}">`
+      return `<link ${isModule(file) ? 'type="module" ' : ''}rel="prefetch" href="${renderContext.publicPath}${file}">`
     }).join('')
   } else {
     return ''
