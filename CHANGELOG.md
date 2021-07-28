@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.10](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.2.9...v0.2.10) (2021-07-28)
+
+
+### Bug Fixes
+
+* restore space between `link` and `rel` ([#14](https://github.com/nuxt-contrib/vue-bundle-renderer/issues/14)) ([608c2e7](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/608c2e7673b1d11e6477c57e0f69311ab0610874))
+
 ### [0.2.9](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.2.8...v0.2.9) (2021-07-21)
 
 
