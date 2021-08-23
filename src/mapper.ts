@@ -4,11 +4,11 @@
  * directly in the rendered HTML to avoid waterfall requests.
 */
 
-import { ClientManifest } from './renderer'
+import { WebpackClientManifest } from './renderer'
 
 export type AsyncFileMapper = (files: Array<string>) => Array<string>
 
-export function createMapper (clientManifest: ClientManifest): AsyncFileMapper {
+export function createMapper (clientManifest: WebpackClientManifest): AsyncFileMapper {
   const map = createMap(clientManifest)
   // map server-side moduleIds to client-side files
   return function mapper (moduleIds: Array<string>): Array<string> {
@@ -25,7 +25,7 @@ export function createMapper (clientManifest: ClientManifest): AsyncFileMapper {
   }
 }
 
-function createMap (clientManifest: ClientManifest) {
+function createMap (clientManifest: WebpackClientManifest) {
   const map = new Map()
   Object.keys(clientManifest.modules).forEach((id) => {
     map.set(id, mapIdToFile(id, clientManifest))
@@ -33,7 +33,7 @@ function createMap (clientManifest: ClientManifest) {
   return map
 }
 
-function mapIdToFile (id: string, clientManifest: ClientManifest) {
+function mapIdToFile (id: string, clientManifest: WebpackClientManifest) {
   const files: Array<string> = []
   const fileIndices = clientManifest.modules[id]
   if (fileIndices) {

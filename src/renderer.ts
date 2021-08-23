@@ -2,7 +2,7 @@ import { createMapper, AsyncFileMapper } from './mapper'
 import { normalizeFile, isCSS, isJS, isModule, ensureTrailingSlash } from './utils'
 
 // Webpack client manifest format
-export type ClientManifest = {
+export type WebpackClientManifest = {
   publicPath: string;
   all: Array<string>;
   initial: Array<string>;
@@ -14,6 +14,9 @@ export type ClientManifest = {
     [file: string]: boolean;
   }
 }
+
+/** @deprecated Type has been renamed to WebpackClientManifest **/
+export type ClientManifest = WebpackClientManifest
 
 // Newer (Vite/vue3) client manifest format:
 type SourceFile = string
@@ -60,7 +63,7 @@ export type RenderContext = {
   shouldPrefetch?: (file: string, type: string) => boolean,
   shouldPreload?: (file: string, type: string) => boolean,
   publicPath?: string,
-  clientManifest?: ClientManifest,
+  clientManifest?: WebpackClientManifest,
   manifest?: Manifest,
   mapFiles?: AsyncFileMapper,
   basedir?: string,
