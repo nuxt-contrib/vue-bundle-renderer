@@ -58,8 +58,8 @@ export type SSRContext = {
 }
 
 export type RenderContext = {
-  preloadFiles?: Array<any>,
-  prefetchFiles?: Array<any>,
+  preloadFiles: Array<any>,
+  prefetchFiles: Array<any>,
   shouldPrefetch?: (file: string, type: string) => boolean,
   shouldPreload?: (file: string, type: string) => boolean,
   publicPath?: string,
@@ -71,35 +71,53 @@ export type RenderContext = {
 
 export type RenderOptions = Partial<RenderContext>
 
-export function createRenderContext ({ clientManifest, publicPath, basedir, manifest }: RenderOptions) {
-  const renderContext: RenderContext = {
-    publicPath,
-    basedir
+function isLegacyManifest (manifest: Manifest | WebpackClientManifest): manifest is WebpackClientManifest {
+  return !!manifest.publicPath
+}
+
+function normalizeManifest (manifest?: Manifest | WebpackClientManifest) {
+  if (!manifest) {
+    return {
+      preloadFiles: [],
+      prefetchFiles: []
+    }
   }
 
-  if (clientManifest && clientManifest.publicPath) {
+  if (isLegacyManifest(manifest)) {
     // Legacy format
-    renderContext.clientManifest = clientManifest
+    return {
+      clientManifest: manifest,
+      publicPath: manifest.publicPath,
 
-    renderContext.publicPath = renderContext.publicPath || renderContext.clientManifest.publicPath
+      // preload/prefetch directives
+      preloadFiles: (manifest.initial || []).map(normalizeFile),
+      prefetchFiles: (manifest.async || []).map(normalizeFile),
 
-    // preload/prefetch directives
-    renderContext.preloadFiles = (renderContext.clientManifest.initial || []).map(normalizeFile)
-    renderContext.prefetchFiles = (renderContext.clientManifest.async || []).map(normalizeFile)
+      // Initial async chunk mapping
+      mapFiles: createMapper(manifest)
+    }
+  }
 
-    // Initial async chunk mapping
-    renderContext.mapFiles = createMapper(renderContext.clientManifest)
-  } else if (manifest || clientManifest) {
-    // Explicit or detected modern manifest format
-    renderContext.manifest = manifest || (clientManifest as unknown as Manifest)
-    // Pre-compute entry files
-    const entryFiles = Array.from(Object.values(renderContext.manifest || {}))
-      .filter(i => i.isEntry)
-    renderContext.preloadFiles = entryFiles.map(i => normalizeFile(i.file))
-    renderContext.prefetchFiles = entryFiles.flatMap(e => [
+  // Explicit or detected modern manifest format
+  // Pre-compute entry files
+  const entryFiles = Array.from(Object.values(manifest))
+    .filter(i => i.isEntry)
+
+  return {
+    manifest,
+    preloadFiles: entryFiles.map(i => normalizeFile(i.file)),
+    prefetchFiles: entryFiles.flatMap(e => [
       ...e.dynamicImports || [],
       ...e.imports || []
-    ]).map(i => normalizeFile(renderContext.manifest![i].file))
+    ]).map(i => normalizeFile(manifest![i].file))
+  }
+}
+
+export function createRenderContext ({ clientManifest, publicPath, basedir, manifest }: RenderOptions) {
+  const renderContext: Partial<RenderContext> = {
+    ...normalizeManifest(manifest || clientManifest),
+    publicPath,
+    basedir
   }
 
   renderContext.publicPath = ensureTrailingSlash(renderContext.publicPath || '/')
@@ -108,7 +126,7 @@ export function createRenderContext ({ clientManifest, publicPath, basedir, mani
 }
 
 export function renderStyles (ssrContext: SSRContext, renderContext: RenderContext): string {
-  const initial = renderContext.preloadFiles || []
+  const initial = renderContext.preloadFiles
   const async = getUsedAsyncFiles(ssrContext, renderContext)
   const cssFiles = initial.concat(async).filter(({ file }) => isCSS(file))
 
@@ -191,7 +209,7 @@ export function renderScripts (ssrContext: SSRContext, renderContext: RenderCont
 export function getPreloadFiles (ssrContext: SSRContext, renderContext: RenderContext): Array<Resource> {
   const usedAsyncFiles = getUsedAsyncFiles(ssrContext, renderContext)
   if (renderContext.preloadFiles || usedAsyncFiles) {
-    return (renderContext.preloadFiles || []).concat(usedAsyncFiles)
+    return (renderContext.preloadFiles).concat(usedAsyncFiles)
   } else {
     return []
   }
