@@ -1,6 +1,7 @@
 import { createMapper, AsyncFileMapper } from './mapper'
 import { normalizeFile, isCSS, isJS, isModule, ensureTrailingSlash } from './utils'
 
+// Webpack client manifest format
 export type ClientManifest = {
   publicPath: string;
   all: Array<string>;
@@ -13,6 +14,23 @@ export type ClientManifest = {
     [file: string]: boolean;
   }
 }
+
+// Newer (Vite/vue3) client manifest format:
+type SourceFile = string
+type OutputFile = string
+
+export interface ManifestMeta {
+  file: OutputFile
+  src?: SourceFile
+  isEntry?: boolean
+  isDynamicEntry?: boolean
+  dynamicImports?: SourceFile[]
+  imports?: SourceFile[]
+  css?: string[]
+  assets?: string[]
+}
+
+export type Manifest = Record<SourceFile, ManifestMeta>
 
 export type Resource = {
   file: string;
@@ -30,6 +48,8 @@ export type SSRContext = {
   nonce?: string,
   head?: string,
   styles?: string,
+  // Vite: https://vitejs.dev/guide/ssr.html#generating-preload-directives
+  modules?: Set<SourceFile>,
   _mappedFiles?: Array<Resource>,
   _registeredComponents?: Set<any>,
 }
@@ -41,20 +61,23 @@ export type RenderContext = {
   shouldPreload?: (file: string, type: string) => boolean,
   publicPath?: string,
   clientManifest?: ClientManifest,
+  manifest?: Manifest,
   mapFiles?: AsyncFileMapper,
   basedir?: string,
 }
 
 export type RenderOptions = Partial<RenderContext>
 
-export function createRenderContext ({ clientManifest, publicPath, basedir }: RenderOptions) {
+export function createRenderContext ({ clientManifest, publicPath, basedir, manifest }: RenderOptions) {
   const renderContext: RenderContext = {
-    clientManifest,
     publicPath,
     basedir
   }
 
-  if (renderContext.clientManifest) {
+  if (clientManifest && clientManifest.publicPath) {
+    // Legacy format
+    renderContext.clientManifest = clientManifest
+
     renderContext.publicPath = renderContext.publicPath || renderContext.clientManifest.publicPath
 
     // preload/prefetch directives
@@ -63,6 +86,17 @@ export function createRenderContext ({ clientManifest, publicPath, basedir }: Re
 
     // Initial async chunk mapping
     renderContext.mapFiles = createMapper(renderContext.clientManifest)
+  } else if (manifest || clientManifest) {
+    // Explicit or detected modern manifest format
+    renderContext.manifest = manifest || (clientManifest as unknown as Manifest)
+    // Pre-compute entry files
+    const entryFiles = Array.from(Object.values(renderContext.manifest || {}))
+      .filter(i => i.isEntry)
+    renderContext.preloadFiles = entryFiles.map(i => normalizeFile(i.file))
+    renderContext.prefetchFiles = entryFiles.flatMap(e => [
+      ...e.dynamicImports || [],
+      ...e.imports || []
+    ]).map(i => normalizeFile(renderContext.manifest![i].file))
   }
 
   renderContext.publicPath = ensureTrailingSlash(renderContext.publicPath || '/')
@@ -72,7 +106,7 @@ export function createRenderContext ({ clientManifest, publicPath, basedir }: Re
 
 export function renderStyles (ssrContext: SSRContext, renderContext: RenderContext): string {
   const initial = renderContext.preloadFiles || []
-  const async = getUsedAsyncFiles(ssrContext, renderContext) || []
+  const async = getUsedAsyncFiles(ssrContext, renderContext)
   const cssFiles = initial.concat(async).filter(({ file }) => isCSS(file))
 
   return cssFiles.map(({ file }) => {
@@ -136,12 +170,12 @@ export function renderPrefetchLinks (ssrContext: SSRContext, renderContext: Rend
 }
 
 export function renderScripts (ssrContext: SSRContext, renderContext: RenderContext): string {
-  if (renderContext.clientManifest && renderContext.preloadFiles) {
+  if (renderContext.preloadFiles) {
     const initial = renderContext.preloadFiles.filter(({ file }) => isJS(file))
     if (!initial.length) {
       return ''
     }
-    const async = (getUsedAsyncFiles(ssrContext, renderContext) || []).filter(({ file }) => isJS(file))
+    const async = getUsedAsyncFiles(ssrContext, renderContext).filter(({ file }) => isJS(file))
     const needed = [initial[0]].concat(async, initial.slice(1))
     return needed.map(({ file }) => {
       return `<script${isModule(file) ? ' type="module"' : ''} src="${renderContext.publicPath}${file}" defer></script>`
@@ -154,19 +188,37 @@ export function renderScripts (ssrContext: SSRContext, renderContext: RenderCont
 export function getPreloadFiles (ssrContext: SSRContext, renderContext: RenderContext): Array<Resource> {
   const usedAsyncFiles = getUsedAsyncFiles(ssrContext, renderContext)
   if (renderContext.preloadFiles || usedAsyncFiles) {
-    return (renderContext.preloadFiles || []).concat(usedAsyncFiles || [])
+    return (renderContext.preloadFiles || []).concat(usedAsyncFiles)
   } else {
     return []
   }
 }
 
 export function getUsedAsyncFiles (ssrContext: SSRContext, renderContext: RenderContext): Array<Resource> {
+  if (ssrContext.modules && renderContext.manifest) {
+    return Array.from(ssrContext.modules).flatMap(
+      (usedSourceFile) => {
+        const meta = renderContext.manifest![usedSourceFile]
+        if (!meta) {
+          return []
+        }
+        return [
+          meta.file,
+          ...(meta.imports || []).map(i => renderContext.manifest![i].file),
+          ...meta.css || [],
+          ...meta.assets || []
+        ].map(normalizeFile)
+      }
+    )
+  }
   if (!ssrContext._mappedFiles && ssrContext._registeredComponents && renderContext.mapFiles) {
     const registered = Array.from(ssrContext._registeredComponents)
     ssrContext._mappedFiles = renderContext.mapFiles(registered).map(normalizeFile)
   }
   return ssrContext._mappedFiles || []
 }
+
+export type RenderToStringFunction = (ssrContext: SSRContext, renderContext: RenderContext) => string
 
 export function createRenderer (createApp: any, renderOptions: RenderOptions & { renderToString: Function }) {
   const renderContext = createRenderContext(renderOptions)
@@ -179,7 +231,7 @@ export function createRenderer (createApp: any, renderOptions: RenderOptions & {
       const app = await _createApp(ssrContext)
       const html = await renderOptions.renderToString(app, ssrContext)
 
-      const wrap = (fn: Function) => () => fn(ssrContext, renderContext)
+      const wrap = (fn: RenderToStringFunction) => () => fn(ssrContext, renderContext)
 
       return {
         html,
