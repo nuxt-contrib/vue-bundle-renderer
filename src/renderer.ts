@@ -1,48 +1,37 @@
 import { createMapper, AsyncFileMapper } from './mapper'
 import { normalizeFile, isCSS, isJS, isModule, ensureTrailingSlash } from './utils'
 
-// Webpack client manifest format
-export type WebpackClientManifest = {
-  publicPath: string;
-  all: Array<string>;
-  initial: Array<string>;
-  async: Array<string>;
-  modules: {
-    [id: string]: Array<number>;
-  },
-  hasNoCssVersion?: {
-    [file: string]: boolean;
-  }
-}
-
-/** @deprecated Type has been renamed to WebpackClientManifest **/
-export type ClientManifest = WebpackClientManifest
-
-// Newer (Vite/vue3) client manifest format:
-type SourceFile = string
-type OutputFile = string
-
-export interface ManifestMeta {
-  file: OutputFile
-  src?: SourceFile
+export interface ResourceMeta {
+  file: string
+  src?: string
   isEntry?: boolean
   isDynamicEntry?: boolean
-  dynamicImports?: SourceFile[]
-  imports?: SourceFile[]
+  dynamicImports?: string[]
+  imports?: string[]
   css?: string[]
   assets?: string[]
 }
 
-export type Manifest = Record<SourceFile, ManifestMeta>
+export type ClientManifest = Record<string, ResourceMeta>
 
-export type Resource = {
+// Vue2 Webpack client manifest format
+export interface LegacyClientManifest {
+  publicPath: string;
+  all: Array<string>;
+  initial: Array<string>;
+  async: Array<string>;
+  modules: { [id: string]: Array<number>; },
+  hasNoCssVersion?: { [file: string]: boolean; }
+}
+
+export interface Resource {
   file: string;
   extension: string;
   fileWithoutQuery: string;
   asType: string;
 }
 
-export type SSRContext = {
+export interface SSRContext {
   getPreloadFiles?: Function,
   renderResourceHints?: Function,
   renderState?: Function,
@@ -52,70 +41,27 @@ export type SSRContext = {
   head?: string,
   styles?: string,
   // Vite: https://vitejs.dev/guide/ssr.html#generating-preload-directives
-  modules?: Set<SourceFile>,
+  modules?: Set<string>,
   _mappedFiles?: Array<Resource>,
   _registeredComponents?: Set<any>,
 }
 
-export type RenderContext = {
+export interface RenderContext {
   preloadFiles: Array<any>,
   prefetchFiles: Array<any>,
   shouldPrefetch?: (file: string, type: string) => boolean,
   shouldPreload?: (file: string, type: string) => boolean,
   publicPath?: string,
-  clientManifest?: WebpackClientManifest,
-  manifest?: Manifest,
+  clientManifest: ClientManifest,
   mapFiles?: AsyncFileMapper,
   basedir?: string,
 }
 
 export type RenderOptions = Partial<RenderContext>
 
-function isLegacyManifest (manifest: Manifest | WebpackClientManifest): manifest is WebpackClientManifest {
-  return !!manifest.publicPath
-}
-
-function normalizeManifest (manifest?: Manifest | WebpackClientManifest) {
-  if (!manifest) {
-    return {
-      preloadFiles: [],
-      prefetchFiles: []
-    }
-  }
-
-  if (isLegacyManifest(manifest)) {
-    // Legacy format
-    return {
-      clientManifest: manifest,
-      publicPath: manifest.publicPath,
-
-      // preload/prefetch directives
-      preloadFiles: (manifest.initial || []).map(normalizeFile),
-      prefetchFiles: (manifest.async || []).map(normalizeFile),
-
-      // Initial async chunk mapping
-      mapFiles: createMapper(manifest)
-    }
-  }
-
-  // Explicit or detected modern manifest format
-  // Pre-compute entry files
-  const entryFiles = Array.from(Object.values(manifest))
-    .filter(i => i.isEntry)
-
-  return {
-    manifest,
-    preloadFiles: entryFiles.map(i => normalizeFile(i.file)),
-    prefetchFiles: entryFiles.flatMap(e => [
-      ...e.dynamicImports || [],
-      ...e.imports || []
-    ]).map(i => normalizeFile(manifest![i].file))
-  }
-}
-
-export function createRenderContext ({ clientManifest, publicPath, basedir, manifest }: RenderOptions) {
+export function createRenderContext ({ clientManifest, publicPath, basedir }: RenderOptions) {
   const renderContext: Partial<RenderContext> = {
-    ...normalizeManifest(manifest || clientManifest),
+    clientManifest: normalizeClientManifest(clientManifest!),
     publicPath,
     basedir
   }
@@ -123,6 +69,51 @@ export function createRenderContext ({ clientManifest, publicPath, basedir, mani
   renderContext.publicPath = ensureTrailingSlash(renderContext.publicPath || '/')
 
   return renderContext
+}
+
+function isLegacyClientManifest (clientManifest: ClientManifest | LegacyClientManifest): clientManifest is LegacyClientManifest {
+  return 'all' in clientManifest && 'initial' in clientManifest
+}
+
+function normalizeClientManifest (legacyClientManifest: ClientManifest | LegacyClientManifest = {}): ClientManifest {
+  if (!isLegacyClientManifest(legacyClientManifest)) {
+    return legacyClientManifest
+  }
+
+  // Upgrade legacy manifest
+  // https://github.com/nuxt-contrib/vue-bundle-renderer/issues/12
+  const clientManifest: ClientManifest = {}
+
+  // Initialize with all keys
+  for (const outfile of legacyClientManifest.all) {
+    clientManifest[outfile] = {
+      file: outfile
+    }
+  }
+  // Set initial entries
+  for (const outfile of legacyClientManifest.initial) {
+    clientManifest[outfile].isEntry = true
+  }
+  // Set dynamic async entries
+  for (const outfile of legacyClientManifest.async) {
+    clientManifest[outfile].isDynamicEntry = true
+  }
+  // Map modules to virtual entries
+  for (const [moduleId, importIndexes] of Object.entries(legacyClientManifest.modules)) {
+    clientManifest['module:' + moduleId] = {
+      file: '',
+      imports: importIndexes.map(index => legacyClientManifest.all[index])
+    }
+  }
+  // Link
+  for (const [assetId, importIndexes] of Object.entries(legacyClientManifest.modules)) {
+    clientManifest['asset:' + assetId] = {
+      file: '',
+      imports: importIndexes.map(index => legacyClientManifest.all[index])
+    }
+  }
+
+  return clientManifest
 }
 
 export function renderStyles (ssrContext: SSRContext, renderContext: RenderContext): string {
@@ -216,16 +207,16 @@ export function getPreloadFiles (ssrContext: SSRContext, renderContext: RenderCo
 }
 
 export function getUsedAsyncFiles (ssrContext: SSRContext, renderContext: RenderContext): Array<Resource> {
-  if (ssrContext.modules && renderContext.manifest) {
+  if (ssrContext.modules && renderContext.clientManifest) {
     return Array.from(ssrContext.modules).flatMap(
       (usedSourceFile) => {
-        const meta = renderContext.manifest![usedSourceFile]
+        const meta = renderContext.clientManifest![usedSourceFile]
         if (!meta) {
           return []
         }
         return [
           meta.file,
-          ...(meta.imports || []).map(i => renderContext.manifest![i].file),
+          ...(meta.imports || []).map(i => renderContext.clientManifest![i].file),
           ...meta.css || [],
           ...meta.assets || []
         ].map(normalizeFile)
