@@ -1,5 +1,4 @@
-import { createMapper, AsyncFileMapper } from './mapper'
-import { normalizeFile, isCSS, isJS, isModule, ensureTrailingSlash } from './utils'
+import { normalizeFile, isModule, ensureTrailingSlash, unique, isJS, isCSS } from './utils'
 
 export interface ResourceMeta {
   file: string
@@ -16,68 +15,77 @@ export type ClientManifest = Record<string, ResourceMeta>
 
 // Vue2 Webpack client manifest format
 export interface LegacyClientManifest {
-  publicPath: string;
-  all: Array<string>;
-  initial: Array<string>;
-  async: Array<string>;
-  modules: { [id: string]: Array<number>; },
-  hasNoCssVersion?: { [file: string]: boolean; }
+  publicPath: string
+  all: Array<string>
+  initial: Array<string>
+  async: Array<string>
+  modules: { [id: string]: Array<number> },
+  hasNoCssVersion?: { [file: string]: boolean }
 }
 
 export interface Resource {
-  file: string;
-  extension: string;
-  fileWithoutQuery: string;
-  asType: string;
+  file: string
+  extension: string
+  fileWithoutQuery: string
+  asType: string
 }
 
 export interface SSRContext {
-  getPreloadFiles?: Function,
-  renderResourceHints?: Function,
-  renderState?: Function,
-  renderScripts?: Function,
-  renderStyles?: Function,
-  nonce?: string,
-  head?: string,
-  styles?: string,
+  getPreloadFiles?: Function
+  renderResourceHints?: Function
+  renderState?: Function
+  renderScripts?: Function
+  renderStyles?: Function
+  nonce?: string
+  head?: string
+  styles?: string
   // Vite: https://vitejs.dev/guide/ssr.html#generating-preload-directives
   modules?: Set<string>,
-  _mappedFiles?: Array<Resource>,
-  _registeredComponents?: Set<any>,
+  _usedResources?: {
+    sources: string[]
+    dynamicImports: string[]
+    modules: ResourceMeta[]
+    assets: string[]
+    styles: string[]
+  },
+  _registeredComponents?: Set<string>,
 }
 
 export interface RenderContext {
-  preloadFiles: Array<any>,
-  prefetchFiles: Array<any>,
-  shouldPrefetch?: (file: string, type: string) => boolean,
-  shouldPreload?: (file: string, type: string) => boolean,
-  publicPath?: string,
-  clientManifest: ClientManifest,
-  mapFiles?: AsyncFileMapper,
-  basedir?: string,
+  shouldPrefetch: (file: string, type: string) => boolean
+  shouldPreload: (file: string, type: string) => boolean
+  publicPath?: string
+  clientManifest: ClientManifest
+  basedir?: string
+  _entrypoints: string[]
+  _dynamicEntrypoints: string[]
 }
 
-export type RenderOptions = Partial<RenderContext>
+export type RenderOptions = Partial<Exclude<RenderContext, 'entrypoints'>>
 
-export function createRenderContext ({ clientManifest, publicPath, basedir }: RenderOptions) {
-  const renderContext: Partial<RenderContext> = {
-    clientManifest: normalizeClientManifest(clientManifest!),
-    publicPath,
-    basedir
+export function createRenderContext ({ clientManifest, publicPath, basedir, shouldPrefetch, shouldPreload }: RenderOptions): RenderContext {
+  const manifest = normalizeClientManifest(clientManifest!)
+  return {
+    // User customisation of output
+    shouldPrefetch: shouldPrefetch || (() => true),
+    shouldPreload: shouldPreload || ((_file: string, asType: string) => ['script', 'style'].includes(asType)),
+    // Manifest
+    publicPath: ensureTrailingSlash(publicPath || (clientManifest as any).publicPath || '/'),
+    clientManifest: manifest,
+    basedir,
+    // Internal cache
+    _entrypoints: Object.entries(manifest).filter(([, meta]) => meta.isEntry).map(([module]) => module),
+    _dynamicEntrypoints: Object.entries(manifest).filter(([, meta]) => meta.isDynamicEntry).map(([module]) => module)
   }
-
-  renderContext.publicPath = ensureTrailingSlash(renderContext.publicPath || '/')
-
-  return renderContext
 }
 
-function isLegacyClientManifest (clientManifest: ClientManifest | LegacyClientManifest): clientManifest is LegacyClientManifest {
+export function isLegacyClientManifest (clientManifest: ClientManifest | LegacyClientManifest): clientManifest is LegacyClientManifest {
   return 'all' in clientManifest && 'initial' in clientManifest
 }
 
-function normalizeClientManifest (legacyClientManifest: ClientManifest | LegacyClientManifest = {}): ClientManifest {
-  if (!isLegacyClientManifest(legacyClientManifest)) {
-    return legacyClientManifest
+export function normalizeClientManifest (manifest: ClientManifest | LegacyClientManifest = { }): ClientManifest {
+  if (!isLegacyClientManifest(manifest)) {
+    return manifest
   }
 
   // Upgrade legacy manifest
@@ -85,45 +93,85 @@ function normalizeClientManifest (legacyClientManifest: ClientManifest | LegacyC
   const clientManifest: ClientManifest = {}
 
   // Initialize with all keys
-  for (const outfile of legacyClientManifest.all) {
-    clientManifest[outfile] = {
-      file: outfile
+  for (const outfile of manifest.all) {
+    if (isJS(outfile)) {
+      clientManifest[outfile] = {
+        file: outfile
+      }
     }
   }
-  // Set initial entries
-  for (const outfile of legacyClientManifest.initial) {
-    clientManifest[outfile].isEntry = true
+
+  // Prepare first entrypoint to receive extra data
+  const first = manifest.initial.find(isJS)
+  if (first) {
+    clientManifest[first].css = []
+    clientManifest[first].assets = []
+    clientManifest[first].dynamicImports = []
   }
-  // Set dynamic async entries
-  for (const outfile of legacyClientManifest.async) {
-    clientManifest[outfile].isDynamicEntry = true
+
+  for (const outfile of manifest.initial) {
+    if (isJS(outfile)) {
+      clientManifest[outfile].isEntry = true
+    } else if (isCSS(outfile) && first) {
+      clientManifest[first].css!.push(outfile)
+    } else if (first) {
+      clientManifest[first].assets!.push(outfile)
+    }
   }
+
+  for (const outfile of manifest.async) {
+    if (isJS(outfile)) {
+      clientManifest[outfile].isDynamicEntry = true
+    } else if (first) {
+      // Add assets (CSS/JS) as dynamic imports to first entrypoints
+      // as a workaround so can be prefetched.
+      const identifier = `_${outfile}`
+      const key = isCSS(outfile) ? 'css' : 'assets'
+      clientManifest[identifier] = {
+        file: '',
+        [key]: [outfile]
+      }
+      clientManifest[first].dynamicImports!.push(identifier)
+    }
+  }
+
   // Map modules to virtual entries
-  for (const [moduleId, importIndexes] of Object.entries(legacyClientManifest.modules)) {
-    clientManifest['module:' + moduleId] = {
+  for (const [moduleId, importIndexes] of Object.entries(manifest.modules)) {
+    clientManifest[moduleId] = {
       file: '',
-      imports: importIndexes.map(index => legacyClientManifest.all[index])
-    }
-  }
-  // Link
-  for (const [assetId, importIndexes] of Object.entries(legacyClientManifest.modules)) {
-    clientManifest['asset:' + assetId] = {
-      file: '',
-      imports: importIndexes.map(index => legacyClientManifest.all[index])
+      imports: importIndexes.map(index => manifest.all[index])
     }
   }
 
   return clientManifest
 }
 
-export function renderStyles (ssrContext: SSRContext, renderContext: RenderContext): string {
-  const initial = renderContext.preloadFiles
-  const async = getUsedAsyncFiles(ssrContext, renderContext)
-  const cssFiles = initial.concat(async).filter(({ file }) => isCSS(file))
+export function getUsedResources (ssrContext: SSRContext, renderContext: RenderContext): NonNullable<SSRContext['_usedResources']> {
+  if (ssrContext._usedResources) { return ssrContext._usedResources }
 
-  return cssFiles.map(({ file }) => {
-    return `<link rel="stylesheet" href="${renderContext.publicPath}${file}">`
-  }).join('')
+  const sources = unique([
+    ...renderContext._entrypoints,
+    ...Array.from(ssrContext.modules || ssrContext._registeredComponents || [])
+      .flatMap(m => [m, ...renderContext.clientManifest[m]?.imports || []])
+  ]).filter(Boolean)
+
+  const modules = sources.map(m => renderContext.clientManifest[m]).filter(Boolean)
+  const dynamicImports = unique(modules.flatMap(m => m.dynamicImports || []))
+  const assets = unique(modules.flatMap(m => m.assets || []))
+  const styles = unique(modules.flatMap(m => m.css || []))
+
+  ssrContext._usedResources = { sources, modules, dynamicImports, assets, styles }
+  return ssrContext._usedResources
+}
+
+export function getEntrypoints (ssrContext: SSRContext, renderContext: RenderContext): ResourceMeta[] {
+  const { modules } = getUsedResources(ssrContext, renderContext)
+  return modules.filter(m => m.isEntry || m.isDynamicEntry)
+}
+
+export function renderStyles (ssrContext: SSRContext, renderContext: RenderContext): string {
+  const { styles } = getUsedResources(ssrContext, renderContext)
+  return styles.map(file => `<link rel="stylesheet" href="${renderContext.publicPath}${file}">`).join('')
 }
 
 export function renderResourceHints (ssrContext: SSRContext, renderContext: RenderContext): string {
@@ -131,103 +179,42 @@ export function renderResourceHints (ssrContext: SSRContext, renderContext: Rend
 }
 
 export function renderPreloadLinks (ssrContext: SSRContext, renderContext: RenderContext): string {
-  const files = getPreloadFiles(ssrContext, renderContext)
-  const shouldPreload = renderContext.shouldPreload
-  if (files.length) {
-    return files.map(({ file, extension, fileWithoutQuery, asType }) => {
-      let extra = ''
-      // by default, we only preload scripts or css
-      if (!shouldPreload && asType !== 'script' && asType !== 'style') {
-        return ''
-      }
-      // user wants to explicitly control what to preload
-      if (shouldPreload && !shouldPreload(fileWithoutQuery, asType)) {
-        return ''
-      }
-      if (asType === 'font') {
-        extra = ` type="font/${extension}" crossorigin`
-      }
-      return `<link rel="${isModule(file) ? 'modulepreload' : 'preload'}" href="${
-        renderContext.publicPath}${file
-        }"${
-        asType !== '' ? ` as="${asType}"` : ''
-        }${
-        extra
-        }>`
+  const { modules, assets, styles } = getUsedResources(ssrContext, renderContext)
+  return [...modules.map(m => m.file), ...assets, ...styles]
+    .map((file) => {
+      const { extension, fileWithoutQuery, asType } = normalizeFile(file)
+      if (!file || !renderContext.shouldPreload(fileWithoutQuery, asType)) { return '' }
+
+      const rel = isModule(file) ? 'modulepreload' : 'preload'
+      const as = asType ? ` as="${asType}"` : ''
+      const type = asType === 'font' ? ` type="font/${extension}" crossorigin` : ''
+
+      return `<link rel="${rel}" href="${renderContext.publicPath}${file}"${as}${type}>`
     }).join('')
-  } else {
-    return ''
-  }
+}
+
+export function getAsyncFiles (ssrContext: SSRContext, renderContext: RenderContext): ResourceMeta[] {
+  const { sources, dynamicImports } = getUsedResources(ssrContext, renderContext)
+  return unique([...renderContext._dynamicEntrypoints, ...dynamicImports])
+    .filter(s => !sources.includes(s))
+    .map(m => renderContext.clientManifest[m]).filter(Boolean)
 }
 
 export function renderPrefetchLinks (ssrContext: SSRContext, renderContext: RenderContext): string {
-  const shouldPrefetch = renderContext.shouldPrefetch
-  if (renderContext.prefetchFiles) {
-    const usedAsyncFiles = getUsedAsyncFiles(ssrContext, renderContext)
-    const alreadyRendered = (file: string) => {
-      return usedAsyncFiles && usedAsyncFiles.some(f => f.file === file)
-    }
-    return renderContext.prefetchFiles.map(({ file, fileWithoutQuery, asType }) => {
-      if (shouldPrefetch && !shouldPrefetch(fileWithoutQuery, asType)) {
-        return ''
-      }
-      if (alreadyRendered(file)) {
-        return ''
-      }
-      return `<link ${isModule(file) ? 'type="module" ' : ''}rel="prefetch" href="${renderContext.publicPath}${file}">`
-    }).join('')
-  } else {
-    return ''
-  }
+  const dynamicImports = getAsyncFiles(ssrContext, renderContext)
+  const filesToPrefetch = dynamicImports
+    .flatMap(m => [m.file, ...m.css || [], ...m.assets || []])
+    .filter(file => file && renderContext.shouldPrefetch(file, normalizeFile(file).asType))
+
+  return filesToPrefetch.map(file =>
+    `<link ${isModule(file) ? 'type="module" ' : ''}rel="prefetch" href="${renderContext.publicPath}${file}">`
+  ).join('')
 }
 
 export function renderScripts (ssrContext: SSRContext, renderContext: RenderContext): string {
-  if (renderContext.preloadFiles) {
-    const initial = renderContext.preloadFiles.filter(({ file }) => isJS(file))
-    if (!initial.length) {
-      return ''
-    }
-    const async = getUsedAsyncFiles(ssrContext, renderContext).filter(({ file }) => isJS(file))
-    const needed = [initial[0]].concat(async, initial.slice(1))
-    return needed.map(({ file }) => {
-      return `<script${isModule(file) ? ' type="module"' : ''} src="${renderContext.publicPath}${file}" defer></script>`
-    }).join('')
-  } else {
-    return ''
-  }
-}
-
-export function getPreloadFiles (ssrContext: SSRContext, renderContext: RenderContext): Array<Resource> {
-  const usedAsyncFiles = getUsedAsyncFiles(ssrContext, renderContext)
-  if (renderContext.preloadFiles || usedAsyncFiles) {
-    return (renderContext.preloadFiles).concat(usedAsyncFiles)
-  } else {
-    return []
-  }
-}
-
-export function getUsedAsyncFiles (ssrContext: SSRContext, renderContext: RenderContext): Array<Resource> {
-  if (ssrContext.modules && renderContext.clientManifest) {
-    return Array.from(ssrContext.modules).flatMap(
-      (usedSourceFile) => {
-        const meta = renderContext.clientManifest![usedSourceFile]
-        if (!meta) {
-          return []
-        }
-        return [
-          meta.file,
-          ...(meta.imports || []).map(i => renderContext.clientManifest![i].file),
-          ...meta.css || [],
-          ...meta.assets || []
-        ].map(normalizeFile)
-      }
-    )
-  }
-  if (!ssrContext._mappedFiles && ssrContext._registeredComponents && renderContext.mapFiles) {
-    const registered = Array.from(ssrContext._registeredComponents)
-    ssrContext._mappedFiles = renderContext.mapFiles(registered).map(normalizeFile)
-  }
-  return ssrContext._mappedFiles || []
+  return getEntrypoints(ssrContext, renderContext).map(({ file }) =>
+    `<script${isModule(file) ? ' type="module"' : ''} src="${renderContext.publicPath}${file}" defer></script>`
+  ).join('')
 }
 
 export type RenderToStringFunction = (ssrContext: SSRContext, renderContext: RenderContext) => string

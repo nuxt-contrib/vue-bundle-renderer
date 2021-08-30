@@ -35,7 +35,7 @@ export function ensureTrailingSlash (path: string) {
   return path.replace(/([^/])$/, '$1/')
 }
 
-export function getPreloadType (ext: string): string {
+function getPreloadType (ext: string): string {
   if (ext === 'js' || ext === 'cjs' || ext === 'mjs') {
     return 'script'
   } else if (ext === 'css') {
@@ -49,3 +49,5 @@ export function getPreloadType (ext: string): string {
     return ''
   }
 }
+
+export const unique = <T> (array: T[]) => Array.from(new Set(array))

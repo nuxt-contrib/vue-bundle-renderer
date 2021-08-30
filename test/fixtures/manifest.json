@@ -1,0 +1,28 @@
+{
+  "../packages/nuxt3/src/app/entry.ts": {
+    "file": "entry.mjs",
+    "src": "../packages/nuxt3/src/app/entry.ts",
+    "isEntry": true,
+    "imports": [
+      "_vendor.mjs"
+    ],
+    "dynamicImports": [
+      "pages/index.vue"
+    ]
+  },
+  "_vendor.mjs": {
+    "file": "vendor.mjs"
+  },
+  "pages/index.vue": {
+    "file": "index.mjs",
+    "src": "pages/index.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor.mjs",
+      "../packages/nuxt3/src/app/entry.ts"
+    ],
+    "css": [
+      "index.css"
+    ]
+  }
+}
