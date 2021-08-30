@@ -34,7 +34,7 @@ describe('legacy manifest', () => {
       LICENSES: {
         file: 'LICENSES'
       },
-      '_pages/another.css': {
+      'css:pages/another.css': {
         css: [
           'pages/another.css'
         ],
@@ -59,7 +59,7 @@ describe('legacy manifest', () => {
       'runtime.js': {
         assets: [],
         css: ['app.css'],
-        dynamicImports: ['_pages/another.css'],
+        dynamicImports: ['css:pages/another.css'],
         file: 'runtime.js',
         isEntry: true
       }

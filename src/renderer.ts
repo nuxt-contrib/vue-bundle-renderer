@@ -125,8 +125,8 @@ export function normalizeClientManifest (manifest: ClientManifest | LegacyClient
     } else if (first) {
       // Add assets (CSS/JS) as dynamic imports to first entrypoints
       // as a workaround so can be prefetched.
-      const identifier = `_${outfile}`
       const key = isCSS(outfile) ? 'css' : 'assets'
+      const identifier = `${key}:${outfile}`
       clientManifest[identifier] = {
         file: '',
         [key]: [outfile]
