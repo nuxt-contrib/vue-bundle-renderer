@@ -69,13 +69,6 @@ export interface SSRContext {
   _registeredComponents?: Set<Identifier>
   // Cache
   _requestDependencies?: ModuleDependencies
-  _usedResources?: {
-    sources: Identifier[]
-    dynamicImports: Identifier[]
-    modules: ResourceMeta[]
-    assets: OutputPath[]
-    styles: OutputPath[]
-  }
 }
 
 export interface RendererContext {
