@@ -218,16 +218,19 @@ export function getModuleDependencies (id: Identifier, rendererContext: Renderer
   for (const css of meta.css || []) {
     dependencies.styles[css] = { path: css }
     dependencies.preload[css] = { path: css, type: 'style' }
+    dependencies.prefetch[css] = { path: css }
   }
   // Add assets as preload
   for (const asset of meta.assets || []) {
     dependencies.preload[asset] = { path: asset, type: getPreloadType(asset), extension: getExtension(asset) }
+    dependencies.prefetch[asset] = { path: asset }
   }
   // Resolve nested dependencies and merge
   for (const depId of meta.imports || []) {
     const depDeps = getModuleDependencies(depId, rendererContext)
     Object.assign(dependencies.styles, depDeps.styles)
     Object.assign(dependencies.preload, depDeps.preload)
+    Object.assign(dependencies.prefetch, depDeps.prefetch)
   }
   const filteredPreload: ModuleDependencies['preload'] = {}
   for (const id in dependencies.preload) {
@@ -261,6 +264,20 @@ export function getAllDependencies (ids: Set<Identifier>, rendererContext: Rende
     Object.assign(allDeps.styles, deps.styles)
     Object.assign(allDeps.preload, deps.preload)
     Object.assign(allDeps.prefetch, deps.prefetch)
+
+    for (const dynamicDepId of rendererContext.clientManifest[id]?.dynamicImports || []) {
+      const dynamicDeps = getModuleDependencies(dynamicDepId, rendererContext)
+      Object.assign(allDeps.prefetch, dynamicDeps.scripts)
+      Object.assign(allDeps.prefetch, dynamicDeps.styles)
+      Object.assign(allDeps.prefetch, dynamicDeps.preload)
+      Object.assign(allDeps.prefetch, dynamicDeps.prefetch)
+    }
+  }
+
+  for (const id in allDeps.prefetch) {
+    if (id in allDeps.preload) {
+      delete allDeps.prefetch[id]
+    }
   }
 
   rendererContext._dependencySets[cacheKey] = allDeps

@@ -79,6 +79,7 @@ describe('renderer with legacy manifest', () => {
     const result = renderResourceHints().split('>').slice(0, -1).map(s => `${s}>`).sort()
     expect(result).to.deep.equal(
       [
+        '<link rel="prefetch" href="/_nuxt/pages/another.css">',
         '<link rel="preload" href="/_nuxt/app.css" as="style">', // entrypoint CSS
         '<link rel="preload" href="/_nuxt/app.js" as="script">',
         '<link rel="preload" href="/_nuxt/commons/app.js" as="script">',
