@@ -13,53 +13,61 @@ describe('legacy manifest', () => {
     expect(normalizeClientManifest(legacyManifest)).to.deep.equal({
       '4d87aad8': {
         file: '',
+        assets: [],
+        css: [
+          'app.css'
+        ],
         imports: [
-          'app.css',
-          'app.js'
+          '_app.js'
         ]
       },
       '56940b2e': {
         file: '',
+        assets: [],
+        css: [],
         imports: [
-          'pages/index.js'
+          '_pages/index.js'
         ]
       },
       '630f1d84': {
         file: '',
+        assets: [],
+        css: [
+          'app.css'
+        ],
         imports: [
-          'app.css',
-          'app.js'
+          '_app.js'
         ]
       },
-      LICENSES: {
+      _LICENSES: {
         file: 'LICENSES'
       },
-      'css:pages/another.css': {
+      '_pages/another.css': {
         css: [
           'pages/another.css'
         ],
         file: ''
       },
-      'app.js': {
+      '_app.js': {
         file: 'app.js',
         isEntry: true
       },
-      'commons/app.js': {
+      '_commons/app.js': {
         file: 'commons/app.js',
         isEntry: true
       },
-      'pages/another.js': {
+      '_pages/another.js': {
         file: 'pages/another.js',
         isDynamicEntry: true
       },
-      'pages/index.js': {
+      '_pages/index.js': {
         file: 'pages/index.js',
         isDynamicEntry: true
       },
-      'runtime.js': {
+      '_runtime.js': {
         assets: [],
         css: ['app.css'],
-        dynamicImports: ['css:pages/another.css'],
+        dynamicImports: ['_pages/another.css'],
         file: 'runtime.js',
         isEntry: true
       }

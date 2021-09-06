@@ -64,7 +64,6 @@ describe('renderer with legacy manifest', () => {
       [
         '<script src="/_nuxt/app.js" defer></script>',
         '<script src="/_nuxt/commons/app.js" defer></script>',
-        '<script src="/_nuxt/pages/index.js" defer></script>',
         '<script src="/_nuxt/runtime.js" defer></script>'
       ]
     )
@@ -80,8 +79,6 @@ describe('renderer with legacy manifest', () => {
     const result = renderResourceHints().split('>').slice(0, -1).map(s => `${s}>`).sort()
     expect(result).to.deep.equal(
       [
-        '<link rel="prefetch" href="/_nuxt/pages/another.css">', // dynamic import CSS
-        '<link rel="prefetch" href="/_nuxt/pages/another.js">', // dynamic import
         '<link rel="preload" href="/_nuxt/app.css" as="style">', // entrypoint CSS
         '<link rel="preload" href="/_nuxt/app.js" as="script">',
         '<link rel="preload" href="/_nuxt/commons/app.js" as="script">',

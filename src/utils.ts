@@ -1,5 +1,3 @@
-import { Resource } from './renderer'
-
 const IS_JS_RE = /\.[cm]?js(\?[^.]+)?$/
 const IS_MODULE_RE = /\.mjs(\?[^.]+)?$/
 const HAS_EXT_RE = /[^./]+\.[^./]+$/
@@ -17,15 +15,9 @@ export function isCSS (file: string) {
   return IS_CSS_RE.test(file)
 }
 
-export function normalizeFile (file: string): Resource {
+export function getExtension (file: string) {
   const withoutQuery = file.replace(/\?.*/, '')
-  const extension = withoutQuery.split('.').pop() || ''
-  return {
-    file,
-    extension,
-    fileWithoutQuery: withoutQuery,
-    asType: getPreloadType(extension)
-  }
+  return withoutQuery.split('.').pop() || ''
 }
 
 export function ensureTrailingSlash (path: string) {
@@ -35,7 +27,7 @@ export function ensureTrailingSlash (path: string) {
   return path.replace(/([^/])$/, '$1/')
 }
 
-function getPreloadType (ext: string): string {
+export function getPreloadType (ext: string): 'script' | 'style' | 'image' | 'font' | undefined {
   if (ext === 'js' || ext === 'cjs' || ext === 'mjs') {
     return 'script'
   } else if (ext === 'css') {
@@ -46,8 +38,6 @@ function getPreloadType (ext: string): string {
     return 'font'
   } else {
     // not exhausting all possibilities here, but above covers common cases
-    return ''
+    return undefined
   }
 }
-
-export const unique = <T> (array: T[]) => Array.from(new Set(array))
