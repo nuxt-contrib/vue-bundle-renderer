@@ -153,7 +153,9 @@ export function normalizeClientManifest (manifest: ClientManifest | LegacyClient
 
   for (const outfile of manifest.async) {
     if (isJS(outfile)) {
-      clientManifest[getIdentifier(outfile)].isDynamicEntry = true
+      const identifier = getIdentifier(outfile)
+      clientManifest[identifier].isDynamicEntry = true
+      clientManifest[first].dynamicImports!.push(identifier)
     } else if (first) {
       // Add assets (CSS/JS) as dynamic imports to first entrypoints
       // as a workaround so can be prefetched.

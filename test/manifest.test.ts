@@ -67,7 +67,11 @@ describe('legacy manifest', () => {
       '_runtime.js': {
         assets: [],
         css: ['app.css'],
-        dynamicImports: ['_pages/another.css'],
+        dynamicImports: [
+          '_pages/another.css',
+          '_pages/another.js',
+          '_pages/index.js'
+        ],
         file: 'runtime.js',
         isEntry: true
       }
