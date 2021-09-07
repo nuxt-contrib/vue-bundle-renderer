@@ -179,11 +179,13 @@ export function normalizeClientManifest (manifest: ClientManifest | LegacyClient
         file
       }
     })
+
+    const mappedIndexes = importIndexes.map(index => manifest.all[index])
     clientManifest[moduleId as Identifier] = {
       file: '' as OutputPath,
       imports: jsFiles.map(id => getIdentifier(id)),
-      css: importIndexes.map(index => manifest.all[index]).filter(isCSS),
-      assets: importIndexes.map(index => manifest.all[index]).filter(i => !isJS(i) && !isCSS(i))
+      css: mappedIndexes.filter(isCSS),
+      assets: mappedIndexes.filter(i => !isJS(i) && !isCSS(i))
     }
   }
 
