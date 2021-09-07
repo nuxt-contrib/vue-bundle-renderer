@@ -3,10 +3,10 @@ name: test
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
 
 jobs:
   ci:
@@ -41,8 +41,8 @@ jobs:
       - name: Build
         run: yarn build
 
-      # - name: Test
-      #  run: yarn jest
+      - name: Unit test
+        run: yarn test:unit
 
       # - name: Coverage
       #  uses: codecov/codecov-action@v1

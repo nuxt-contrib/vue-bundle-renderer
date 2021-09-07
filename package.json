@@ -21,7 +21,8 @@
     "dev": "rollup -c --watch",
     "lint": "eslint --ext .ts src",
     "release": "yarn test && yarn build && standard-version && git push --follow-tags && npm publish",
-    "test": "yarn lint"
+    "test": "yarn lint && yarn test:unit",
+    "test:unit": "mocha -r jiti/register test/*.test.*"
   },
   "dependencies": {
     "bundle-runner": "^0.0.1"
@@ -29,14 +30,18 @@
   "devDependencies": {
     "@nuxtjs/eslint-config-typescript": "latest",
     "@rollup/plugin-typescript": "latest",
+    "@types/chai": "^4.2.21",
+    "@types/mocha": "^9.0.0",
     "@vue/server-renderer": "latest",
+    "chai": "^4.3.4",
     "eslint": "latest",
+    "jiti": "^1.11.0",
+    "mocha": "^9.0.3",
     "rollup": "latest",
     "rollup-plugin-babel": "latest",
     "rollup-plugin-node-resolve": "latest",
     "siroc": "latest",
     "standard-version": "latest",
-    "ts-jest": "latest",
     "typescript": "latest"
   }
 }

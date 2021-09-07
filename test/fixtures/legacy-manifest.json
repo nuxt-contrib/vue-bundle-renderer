@@ -1,0 +1,31 @@
+{
+  "publicPath": "/_nuxt/",
+  "all": [
+    "../server/index.spa.html",
+    "../server/index.ssr.html",
+    "LICENSES",
+    "app.css",
+    "app.js",
+    "commons/app.js",
+    "pages/another.css",
+    "pages/another.js",
+    "pages/index.js",
+    "runtime.js"
+  ],
+  "initial": [
+    "runtime.js",
+    "commons/app.js",
+    "app.css",
+    "app.js"
+  ],
+  "async": [
+    "pages/another.css",
+    "pages/another.js",
+    "pages/index.js"
+  ],
+  "modules": {
+    "4d87aad8": [3,4],
+    "630f1d84": [3,4],
+    "56940b2e": [8]
+  }
+}
