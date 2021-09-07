@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.2.10...v0.3.0) (2021-09-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* rewrite to use new client manifest format (#15)
+
+### Features
+
+* rewrite to use new client manifest format ([#15](https://github.com/nuxt-contrib/vue-bundle-renderer/issues/15)) ([38020b4](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/38020b4a626afb9d054299a833221bfd5f0daa1f))
+
 ### [0.2.10](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.2.9...v0.2.10) (2021-07-28)
 
 
