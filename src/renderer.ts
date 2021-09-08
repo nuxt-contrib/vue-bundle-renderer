@@ -136,6 +136,11 @@ export function normalizeClientManifest (manifest: ClientManifest | LegacyClient
   // Prepare first entrypoint to receive extra data
   const first = getIdentifier(manifest.initial.find(isJS)!)
   if (first) {
+    if (!(first in clientManifest)) {
+      throw new Error(
+        `Invalid manifest - initial entrypoint not in \`all\`: ${manifest.initial.find(isJS)}`
+      )
+    }
     clientManifest[first].css = []
     clientManifest[first].assets = []
     clientManifest[first].dynamicImports = []
@@ -154,6 +159,9 @@ export function normalizeClientManifest (manifest: ClientManifest | LegacyClient
   for (const outfile of manifest.async) {
     if (isJS(outfile)) {
       const identifier = getIdentifier(outfile)
+      if (!(identifier in clientManifest)) {
+        throw new Error(`Invalid manifest - async module not in \`all\`: ${outfile}`)
+      }
       clientManifest[identifier].isDynamicEntry = true
       clientManifest[first].dynamicImports!.push(identifier)
     } else if (first) {
