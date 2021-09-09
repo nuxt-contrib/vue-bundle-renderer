@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.1](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.3.0...v0.3.1) (2021-09-09)
+
+
+### Bug Fixes
+
+* add meaningful errors to client manifest normalizer ([#17](https://github.com/nuxt-contrib/vue-bundle-renderer/issues/17)) ([7782991](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/778299133ee58dfa5b87559cf0617f612446da7d))
+
 ## [0.3.0](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.2.10...v0.3.0) (2021-09-07)
 
 
