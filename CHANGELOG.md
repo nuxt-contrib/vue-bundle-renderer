@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.2](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.3.1...v0.3.2) (2021-10-13)
+
+
+### Bug Fixes
+
+* improve css regex for preprocessors ([#18](https://github.com/nuxt-contrib/vue-bundle-renderer/issues/18)) ([bf80fb8](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/bf80fb877b5fe64ff2ce1005f45924ff08e8e593))
+
 ### [0.3.1](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.3.0...v0.3.1) (2021-09-09)
 
 
