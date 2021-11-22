@@ -21,14 +21,13 @@ describe('renderer', () => {
     const { renderScripts } = await getRenderer()
     const result = renderScripts().split('</script>').slice(0, -1).map(s => `${s}</script>`).sort()
     expect(result).to.deep.equal([
-      '<script type="module" src="/entry.mjs" defer></script>',
-      '<script type="module" src="/index.mjs" defer></script>'
+      '<script type="module" src="/entry.mjs" defer></script>'
     ])
   })
   it('renders styles correctly', async () => {
     const { renderStyles } = await getRenderer()
     expect(renderStyles()).to.equal(
-      '<link rel="stylesheet" href="/index.css">'
+      '<link rel="stylesheet" href="/app.css">'
     )
   })
   it('renders resource hints correctly', async () => {
@@ -39,6 +38,7 @@ describe('renderer', () => {
         '<link rel="modulepreload" href="/entry.mjs" as="script">',
         '<link rel="modulepreload" href="/index.mjs" as="script">',
         '<link rel="modulepreload" href="/vendor.mjs" as="script">',
+        '<link rel="preload" href="/app.css" as="style">',
         '<link rel="preload" href="/index.css" as="style">'
       ]
     )
