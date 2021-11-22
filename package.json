@@ -1,6 +1,6 @@
 {
   "name": "vue-bundle-renderer",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Bundle Renderer for Vue 3.0",
   "repository": "nuxt-contrib/vue-bundle-renderer",
   "license": "MIT",
