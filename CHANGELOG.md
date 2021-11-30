@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.4](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.3.3...v0.3.4) (2021-11-30)
+
+
+### Bug Fixes
+
+* include dynamic css (revert [#19](https://github.com/nuxt-contrib/vue-bundle-renderer/issues/19)) ([#21](https://github.com/nuxt-contrib/vue-bundle-renderer/issues/21)) ([b9317e8](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/b9317e8b05369161619d3b20372e883f32ae9390))
+
 ### [0.3.3](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.3.2...v0.3.3) (2021-11-22)
 
 
