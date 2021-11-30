@@ -272,14 +272,8 @@ export function getAllDependencies (ids: Set<Identifier>, rendererContext: Rende
 
   for (const id of ids) {
     const deps = getModuleDependencies(id, rendererContext)
-    const isDynamic = rendererContext.clientManifest[id]?.isDynamicEntry
-    if (isDynamic) {
-      Object.assign(allDeps.prefetch, deps.styles)
-      Object.assign(allDeps.prefetch, deps.scripts)
-    } else {
-      Object.assign(allDeps.styles, deps.styles)
-      Object.assign(allDeps.scripts, deps.scripts)
-    }
+    Object.assign(allDeps.scripts, deps.scripts)
+    Object.assign(allDeps.styles, deps.styles)
     Object.assign(allDeps.preload, deps.preload)
     Object.assign(allDeps.prefetch, deps.prefetch)
 
