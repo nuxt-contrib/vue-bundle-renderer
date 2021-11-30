@@ -8,9 +8,6 @@
     ],
     "dynamicImports": [
       "pages/index.vue"
-    ],
-    "css": [
-      "app.css"
     ]
   },
   "_vendor.mjs": {
