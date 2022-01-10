@@ -336,7 +336,7 @@ export function renderPreloadLinks (ssrContext: SSRContext, rendererContext: Ren
 export function renderPrefetchLinks (ssrContext: SSRContext, rendererContext: RendererContext): string {
   const { prefetch } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(prefetch).map(({ path }) =>
-    `<link ${isModule(path) ? 'type="module" ' : ''}rel="prefetch" href="${rendererContext.publicPath}${path}">`
+    `<link ${isModule(path) ? 'type="module" ' : ''}rel="prefetch${isCSS(path) ? ' stylesheet' : '' }" href="${rendererContext.publicPath}${path}">`
   ).join('')
 }
 
