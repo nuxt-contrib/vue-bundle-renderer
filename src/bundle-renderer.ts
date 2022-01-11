@@ -15,7 +15,7 @@ export function createBundleRenderer (_bundle: any, renderOptions: BundleRenderO
       const entry = await evaluateEntry(evalContext)
       const app = await entry(ssrContext)
       return app
-    } catch (err) {
+    } catch (err: any) {
       rewriteErrorTrace(err)
       throw err
     }

@@ -17,8 +17,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "siroc build",
-    "dev": "rollup -c --watch",
+    "build": "unbuild",
     "lint": "eslint --ext .ts src",
     "release": "yarn test && yarn build && standard-version && git push --follow-tags && npm publish",
     "test": "yarn lint && yarn test:unit",
@@ -30,18 +29,18 @@
   "devDependencies": {
     "@nuxtjs/eslint-config-typescript": "latest",
     "@rollup/plugin-typescript": "latest",
-    "@types/chai": "^4.2.21",
-    "@types/mocha": "^9.0.0",
+    "@types/chai": "latest",
+    "@types/mocha": "latest",
     "@vue/server-renderer": "latest",
-    "chai": "^4.3.4",
+    "chai": "latest",
     "eslint": "latest",
-    "jiti": "^1.11.0",
-    "mocha": "^9.0.3",
+    "jiti": "latest",
+    "mocha": "latest",
     "rollup": "latest",
     "rollup-plugin-babel": "latest",
     "rollup-plugin-node-resolve": "latest",
-    "siroc": "latest",
     "standard-version": "latest",
-    "typescript": "latest"
+    "typescript": "latest",
+    "unbuild": "latest"
   }
 }
