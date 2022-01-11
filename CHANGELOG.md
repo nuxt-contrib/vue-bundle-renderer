@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.5](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.3.4...v0.3.5) (2022-01-11)
+
+
+### Bug Fixes
+
+* add missing `stylesheet` rel for prefetch tags ([#23](https://github.com/nuxt-contrib/vue-bundle-renderer/issues/23)) ([d2ec8a3](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/d2ec8a3740e2532bc857284c536a1c0945e8099e))
+
 ### [0.3.4](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.3.3...v0.3.4) (2021-11-30)
 
 
