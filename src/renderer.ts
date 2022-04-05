@@ -63,6 +63,7 @@ export interface SSRContext {
   nonce?: string
   head?: string
   styles?: string
+  rendered?: Function
   // @vitejs/plugin-vue: https://vitejs.dev/guide/ssr.html#generating-preload-directives
   modules?: Set<Identifier>
   // vue-loader (webpack)
@@ -359,6 +360,10 @@ export function createRenderer (createApp: any, renderOptions: RenderOptions & {
       const _createApp = await Promise.resolve(createApp).then(r => r.default || r)
       const app = await _createApp(ssrContext)
       const html = await renderOptions.renderToString(app, ssrContext)
+
+      if (typeof ssrContext.rendered === 'function') {
+        ssrContext.rendered()
+      }
 
       const wrap = (fn: RenderToStringFunction) => () => fn(ssrContext, rendererContext)
 
