@@ -335,15 +335,19 @@ export function renderPreloadLinks (ssrContext: SSRContext, rendererContext: Ren
 
 export function renderPrefetchLinks (ssrContext: SSRContext, rendererContext: RendererContext): string {
   const { prefetch } = getRequestDependencies(ssrContext, rendererContext)
-  return Object.values(prefetch).map(({ path }) =>
-    `<link ${isModule(path) ? 'type="module" ' : ''}rel="prefetch${isCSS(path) ? ' stylesheet' : ''}" href="${rendererContext.publicPath}${path}">`
+  return Object.values(prefetch).map(({ path }) => {
+    const rel = 'prefetch' + (isCSS(path) ? ' stylesheet' : '')
+    const as = isJS(path) ? ' as="script"' : ''
+
+    return `<link rel="${rel}"${as} href="${rendererContext.publicPath}${path}">`
+  }
   ).join('')
 }
 
 export function renderScripts (ssrContext: SSRContext, rendererContext: RendererContext): string {
   const { scripts } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(scripts).map(({ path, type }) =>
-    `<script${type === 'module' ? ' type="module"' : ''} src="${rendererContext.publicPath}${path}" defer></script>`
+    `<script${type === 'module' ? ' type="module"' : ''} src="${rendererContext.publicPath}${path}" ${type === 'module' ? 'async' : 'defer'}></script>`
   ).join('')
 }
 

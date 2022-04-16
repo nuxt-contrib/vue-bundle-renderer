@@ -21,8 +21,8 @@ describe('renderer', () => {
     const { renderScripts } = await getRenderer()
     const result = renderScripts().split('</script>').slice(0, -1).map(s => `${s}</script>`).sort()
     expect(result).to.deep.equal([
-      '<script type="module" src="/entry.mjs" defer></script>',
-      '<script type="module" src="/index.mjs" defer></script>'
+      '<script type="module" src="/entry.mjs" async></script>',
+      '<script type="module" src="/index.mjs" async></script>'
     ])
   })
   it('renders styles correctly', async () => {
@@ -80,7 +80,7 @@ describe('renderer with legacy manifest', () => {
     expect(result).to.deep.equal(
       [
         '<link rel="prefetch stylesheet" href="/_nuxt/pages/another.css">', // dynamic import CSS
-        '<link rel="prefetch" href="/_nuxt/pages/another.js">', // dynamic import
+        '<link rel="prefetch" as="script" href="/_nuxt/pages/another.js">', // dynamic import
         '<link rel="preload" href="/_nuxt/app.css" as="style">', // entrypoint CSS
         '<link rel="preload" href="/_nuxt/app.js" as="script">',
         '<link rel="preload" href="/_nuxt/commons/app.js" as="script">',
