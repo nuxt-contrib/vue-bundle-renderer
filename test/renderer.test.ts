@@ -62,9 +62,9 @@ describe('renderer with legacy manifest', () => {
     const result = renderScripts().split('</script>').slice(0, -1).map(s => `${s}</script>`).sort()
     expect(result).to.deep.equal(
       [
-        '<script src="/_nuxt/app.js"></script>',
-        '<script src="/_nuxt/commons/app.js"></script>',
-        '<script src="/_nuxt/runtime.js"></script>'
+        '<script src="/_nuxt/app.js" defer></script>',
+        '<script src="/_nuxt/commons/app.js" defer></script>',
+        '<script src="/_nuxt/runtime.js" defer></script>'
       ]
     )
   })
