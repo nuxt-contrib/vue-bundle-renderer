@@ -347,7 +347,7 @@ export function renderPrefetchLinks (ssrContext: SSRContext, rendererContext: Re
 export function renderScripts (ssrContext: SSRContext, rendererContext: RendererContext): string {
   const { scripts } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(scripts).map(({ path, type }) =>
-    `<script${type === 'module' ? ' type="module"' : ''} src="${rendererContext.publicPath}${path}" ${type === 'module' ? 'async' : 'defer'}></script>`
+    `<script${type === 'module' ? ' type="module"' : ''} src="${rendererContext.publicPath}${path}"></script>`
   ).join('')
 }
 
