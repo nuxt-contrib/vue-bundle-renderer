@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.6](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.3.5...v0.3.6) (2022-04-19)
+
+
+### Bug Fixes
+
+* render modules with `async` and omit prefetch type ([#26](https://github.com/nuxt-contrib/vue-bundle-renderer/issues/26)) ([a2d0f48](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/a2d0f484efa731901c63a37fbdf895c3de9e1204))
+
 ### [0.3.5](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.3.4...v0.3.5) (2022-01-11)
 
 
