@@ -21,8 +21,8 @@ describe('renderer', () => {
     const { renderScripts } = await getRenderer()
     const result = renderScripts().split('</script>').slice(0, -1).map(s => `${s}</script>`).sort()
     expect(result).to.deep.equal([
-      '<script type="module" src="/entry.mjs"></script>',
-      '<script type="module" src="/index.mjs"></script>'
+      '<script type="module" src="/entry.mjs" crossorigin></script>',
+      '<script type="module" src="/index.mjs" crossorigin></script>'
     ])
   })
   it('renders styles correctly', async () => {
@@ -36,9 +36,9 @@ describe('renderer', () => {
     const result = renderResourceHints().split('>').slice(0, -1).map(s => `${s}>`).sort()
     expect(result).to.deep.equal(
       [
-        '<link rel="modulepreload" href="/entry.mjs" as="script">',
-        '<link rel="modulepreload" href="/index.mjs" as="script">',
-        '<link rel="modulepreload" href="/vendor.mjs" as="script">',
+        '<link rel="modulepreload" href="/entry.mjs" as="script" crossorigin>',
+        '<link rel="modulepreload" href="/index.mjs" as="script" crossorigin>',
+        '<link rel="modulepreload" href="/vendor.mjs" as="script" crossorigin>',
         '<link rel="preload" href="/index.css" as="style">'
       ]
     )
@@ -62,9 +62,9 @@ describe('renderer with legacy manifest', () => {
     const result = renderScripts().split('</script>').slice(0, -1).map(s => `${s}</script>`).sort()
     expect(result).to.deep.equal(
       [
-        '<script src="/_nuxt/app.js" defer></script>',
-        '<script src="/_nuxt/commons/app.js" defer></script>',
-        '<script src="/_nuxt/runtime.js" defer></script>'
+        '<script src="/_nuxt/app.js" defer crossorigin></script>',
+        '<script src="/_nuxt/commons/app.js" defer crossorigin></script>',
+        '<script src="/_nuxt/runtime.js" defer crossorigin></script>'
       ]
     )
   })

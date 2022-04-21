@@ -328,8 +328,9 @@ export function renderPreloadLinks (ssrContext: SSRContext, rendererContext: Ren
       const rel = file.type === 'module' ? 'modulepreload' : 'preload'
       const as = file.type ? file.type === 'module' ? ' as="script"' : ` as="${file.type}"` : ''
       const type = file.type === 'font' ? ` type="font/${file.extension}" crossorigin` : ''
+      const crossorigin = file.type === 'font' || file.type === 'module' ? ' crossorigin' : ''
 
-      return `<link rel="${rel}" href="${rendererContext.publicPath}${file.path}"${as}${type}>`
+      return `<link rel="${rel}" href="${rendererContext.publicPath}${file.path}"${as}${type}${crossorigin}>`
     }).join('')
 }
 
@@ -347,7 +348,7 @@ export function renderPrefetchLinks (ssrContext: SSRContext, rendererContext: Re
 export function renderScripts (ssrContext: SSRContext, rendererContext: RendererContext): string {
   const { scripts } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(scripts).map(({ path, type }) =>
-    `<script${type === 'module' ? ' type="module"' : ''} src="${rendererContext.publicPath}${path}"${type !== 'module' ? ' defer' : ''}></script>`
+    `<script${type === 'module' ? ' type="module"' : ''} src="${rendererContext.publicPath}${path}"${type !== 'module' ? ' defer' : ''} crossorigin></script>`
   ).join('')
 }
 
