@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.7](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.3.6...v0.3.7) (2022-04-22)
+
+
+### Features
+
+* render `crossorigin` anonymous for scripts and script/font preloads ([#27](https://github.com/nuxt-contrib/vue-bundle-renderer/issues/27)) ([111f973](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/111f973c419fa29665eda011052b8a13d33986d1))
+
 ### [0.3.6](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.3.5...v0.3.6) (2022-04-19)
 
 
