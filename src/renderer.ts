@@ -234,7 +234,8 @@ export function getModuleDependencies (id: Identifier, rendererContext: Renderer
   }
   // Add assets as preload
   for (const asset of meta.assets || []) {
-    dependencies.preload[asset] = { path: asset, type: getPreloadType(asset), extension: getExtension(asset) }
+    const extension = getExtension(asset)
+    dependencies.preload[asset] = { path: asset, type: getPreloadType(extension), extension }
     dependencies.prefetch[asset] = { path: asset }
   }
   // Resolve nested dependencies and merge
