@@ -30,7 +30,7 @@ describe('renderer', () => {
   it('renders styles correctly', async () => {
     const { renderStyles } = await getRenderer()
     expect(renderStyles()).to.equal(
-      '<link rel="stylesheet" href="/index.css">'
+      '<link rel="stylesheet" href="/test.css"><link rel="stylesheet" href="/index.css">'
     )
   })
   it('renders resource hints correctly', async () => {
@@ -40,8 +40,7 @@ describe('renderer', () => {
       [
         '<link rel="modulepreload" as="script" crossorigin href="/entry.mjs">',
         '<link rel="modulepreload" as="script" crossorigin href="/index.mjs">',
-        '<link rel="modulepreload" as="script" crossorigin href="/vendor.mjs">',
-        '<link rel="preload" as="style" href="/index.css">'
+        '<link rel="modulepreload" as="script" crossorigin href="/vendor.mjs">'
       ]
     )
   })
@@ -86,8 +85,7 @@ describe('renderer with legacy manifest', () => {
         '<link rel="preload" as="script" href="/_nuxt/app.js">',
         '<link rel="preload" as="script" href="/_nuxt/commons/app.js">',
         '<link rel="preload" as="script" href="/_nuxt/pages/index.js">', // dynamic entrypoint
-        '<link rel="preload" as="script" href="/_nuxt/runtime.js">',
-        '<link rel="preload" as="style" href="/_nuxt/app.css">' // entrypoint CSS
+        '<link rel="preload" as="script" href="/_nuxt/runtime.js">'
       ]
     )
   })
@@ -97,7 +95,7 @@ describe('renderer with legacy manifest', () => {
     const result = renderResourceHeaders()
     expect(result).toMatchInlineSnapshot(`
       {
-        "link": "</_nuxt/app.js>; rel=\\"preload\\"; as=\\"script\\", </_nuxt/commons/app.js>; rel=\\"preload\\"; as=\\"script\\", </_nuxt/runtime.js>; rel=\\"preload\\"; as=\\"script\\", </_nuxt/app.css>; rel=\\"preload\\"; as=\\"style\\", </_nuxt/pages/index.js>; rel=\\"preload\\"; as=\\"script\\", </_nuxt/pages/another.css>; rel=\\"prefetch stylesheet\\", </_nuxt/pages/another.js>; rel=\\"prefetch\\"; as=\\"script\\"",
+        "link": "</_nuxt/app.js>; rel=\\"preload\\"; as=\\"script\\", </_nuxt/commons/app.js>; rel=\\"preload\\"; as=\\"script\\", </_nuxt/runtime.js>; rel=\\"preload\\"; as=\\"script\\", </_nuxt/pages/index.js>; rel=\\"preload\\"; as=\\"script\\", </_nuxt/pages/another.css>; rel=\\"prefetch stylesheet\\", </_nuxt/pages/another.js>; rel=\\"prefetch\\"; as=\\"script\\"",
       }
     `)
   })

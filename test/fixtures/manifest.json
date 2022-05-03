@@ -6,6 +6,7 @@
     "imports": [
       "_vendor.mjs"
     ],
+    "css": ["test.css"],
     "dynamicImports": [
       "pages/index.vue"
     ]
