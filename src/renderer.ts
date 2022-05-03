@@ -1,6 +1,6 @@
 import type { Manifest, ManifestChunk } from 'vite'
 import { withLeadingSlash } from 'ufo'
-import { isModule, isJS, isCSS, getPreloadType, getExtension } from './utils'
+import { isModule, isJS, isCSS, getPreloadType, getExtension, renderLinkToString, LinkAttributes, renderLinkToHeader, renderScriptToString } from './utils'
 
 // Uncomment for better type hinting in development
 // const type = Symbol('type')
@@ -188,48 +188,55 @@ export function getRequestDependencies (ssrContext: SSRContext, rendererContext:
 
 export function renderStyles (ssrContext: SSRContext, rendererContext: RendererContext): string {
   const { styles } = getRequestDependencies(ssrContext, rendererContext)
-  return Object.values(styles).map(({ path }) =>
-    `<link rel="stylesheet" href="${rendererContext.buildAssetsURL(path)}">`
-  ).join('')
+  return Object.values(styles).map(({ path }) => renderLinkToString({ rel: 'stylesheet', href: rendererContext.buildAssetsURL(path) })).join('')
+}
+
+export function getResources (ssrContext: SSRContext, rendererContext: RendererContext): LinkAttributes[] {
+  return [...getPreloadLinks(ssrContext, rendererContext), ...getPrefetchLinks(ssrContext, rendererContext)]
 }
 
 export function renderResourceHints (ssrContext: SSRContext, rendererContext: RendererContext): string {
-  return renderPreloadLinks(ssrContext, rendererContext) + renderPrefetchLinks(ssrContext, rendererContext)
+  return getResources(ssrContext, rendererContext).map(renderLinkToString).join('')
 }
 
-export function renderPreloadLinks (ssrContext: SSRContext, rendererContext: RendererContext): string {
+export function renderResourceHeaders (ssrContext: SSRContext, rendererContext: RendererContext): Record<string, string> {
+  return {
+    link: getResources(ssrContext, rendererContext).map(renderLinkToHeader).join(', ')
+  }
+}
+
+export function getPreloadLinks (ssrContext: SSRContext, rendererContext: RendererContext): LinkAttributes[] {
   const { preload } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(preload)
-    .map((file) => {
-      // const isModule = file.type === 'module' || file.type === 'script'
-      const rel = file.type === 'module' ? 'modulepreload' : 'preload'
-      const as = file.type ? file.type === 'module' ? ' as="script"' : ` as="${file.type}"` : ''
-      const type = file.type === 'font' ? ` type="font/${file.extension}" crossorigin` : ''
-      const crossorigin = file.type === 'font' || file.type === 'module' ? ' crossorigin' : ''
-
-      return `<link rel="${rel}" href="${rendererContext.buildAssetsURL(file.path)}"${as}${type}${crossorigin}>`
-    }).join('')
+    .map(file => ({
+      rel: file.type === 'module' ? 'modulepreload' : 'preload',
+      href: rendererContext.buildAssetsURL(file.path),
+      as: file.type ? file.type === 'module' ? 'script' : file.type : null,
+      type: file.type === 'font' ? `font/${file.extension}` : null,
+      crossorigin: file.type === 'font' || file.type === 'module' ? '' : null
+    }))
 }
 
-export function renderPrefetchLinks (ssrContext: SSRContext, rendererContext: RendererContext): string {
+export function getPrefetchLinks (ssrContext: SSRContext, rendererContext: RendererContext): LinkAttributes[] {
   const { prefetch } = getRequestDependencies(ssrContext, rendererContext)
-  return Object.values(prefetch).map(({ path }) => {
-    const rel = 'prefetch' + (isCSS(path) ? ' stylesheet' : '')
-    const as = isJS(path) ? ' as="script"' : ''
-
-    return `<link rel="${rel}"${as} href="${rendererContext.buildAssetsURL(path)}">`
-  }
-  ).join('')
+  return Object.values(prefetch).map(({ path }) => ({
+    rel: 'prefetch' + (isCSS(path) ? ' stylesheet' : ''),
+    as: isJS(path) ? 'script' : null,
+    href: rendererContext.buildAssetsURL(path)
+  }))
 }
 
 export function renderScripts (ssrContext: SSRContext, rendererContext: RendererContext): string {
   const { scripts } = getRequestDependencies(ssrContext, rendererContext)
-  return Object.values(scripts).map(({ path, type }) =>
-    `<script${type === 'module' ? ' type="module"' : ''} src="${rendererContext.buildAssetsURL(path)}"${type !== 'module' ? ' defer' : ''} crossorigin></script>`
-  ).join('')
+  return Object.values(scripts).map(({ path, type }) => renderScriptToString({
+    type: type === 'module' ? 'module' : null,
+    src: rendererContext.buildAssetsURL(path),
+    defer: type !== 'module' ? '' : null,
+    crossorigin: ''
+  })).join('')
 }
 
-export type RenderToStringFunction = (ssrContext: SSRContext, rendererContext: RendererContext) => string
+export type RenderFunction = (ssrContext: SSRContext, rendererContext: RendererContext) => any
 
 export function createRenderer (createApp: any, renderOptions: RenderOptions & { renderToString: Function }) {
   const rendererContext = createRendererContext(renderOptions)
@@ -242,10 +249,11 @@ export function createRenderer (createApp: any, renderOptions: RenderOptions & {
       const app = await _createApp(ssrContext)
       const html = await renderOptions.renderToString(app, ssrContext)
 
-      const wrap = (fn: RenderToStringFunction) => () => fn(ssrContext, rendererContext)
+      const wrap = <T extends RenderFunction>(fn: T) => () => fn(ssrContext, rendererContext) as ReturnType<T>
 
       return {
         html,
+        renderResourceHeaders: wrap(renderResourceHeaders),
         renderResourceHints: wrap(renderResourceHints),
         renderStyles: wrap(renderStyles),
         renderScripts: wrap(renderScripts)

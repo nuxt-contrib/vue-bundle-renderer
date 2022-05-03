@@ -91,4 +91,14 @@ describe('renderer with legacy manifest', () => {
       ]
     )
   })
+
+  it('renders link headers correctly', async () => {
+    const { renderResourceHeaders } = await getRenderer()
+    const result = renderResourceHeaders()
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "link": "</_nuxt/app.js>; rel=\\"preload\\"; as=\\"script\\", </_nuxt/commons/app.js>; rel=\\"preload\\"; as=\\"script\\", </_nuxt/runtime.js>; rel=\\"preload\\"; as=\\"script\\", </_nuxt/app.css>; rel=\\"preload\\"; as=\\"style\\", </_nuxt/pages/index.js>; rel=\\"preload\\"; as=\\"script\\", </_nuxt/pages/another.css>; rel=\\"prefetch stylesheet\\", </_nuxt/pages/another.js>; rel=\\"prefetch\\"; as=\\"script\\"",
+      }
+    `)
+  })
 })
