@@ -1,6 +1,6 @@
 import type { Manifest, ManifestChunk } from 'vite'
 import { withLeadingSlash } from 'ufo'
-import { isModule, isJS, isCSS, getPreloadType, getExtension, renderLinkToString, LinkAttributes, renderLinkToHeader, renderScriptToString } from './utils'
+import { isModule, isJS, isCSS, getPreloadType, getContentType, renderLinkToString, LinkAttributes, renderLinkToHeader, renderScriptToString } from './utils'
 
 // Uncomment for better type hinting in development
 // const type = Symbol('type')
@@ -25,7 +25,7 @@ export interface ModuleDependencies {
     path: OutputPath
     // https://developer.mozilla.org/en-US/docs/Web/HTML/Link_types/preload#what_types_of_content_can_be_preloaded
     type?: 'module' | 'script' | 'style' | 'font' | 'fetch' | 'image'
-    extension?: string
+    contentType?: string
   }>
   prefetch: Record<string, {
     path: OutputPath
@@ -111,7 +111,7 @@ export function getModuleDependencies (id: Identifier, rendererContext: Renderer
   }
   // Add assets as preload
   for (const asset of meta.assets || []) {
-    dependencies.preload[asset] = { path: asset, type: getPreloadType(asset), extension: getExtension(asset) }
+    dependencies.preload[asset] = { path: asset, type: getPreloadType(asset), contentType: getContentType(asset) }
     dependencies.prefetch[asset] = { path: asset }
   }
   // Resolve nested dependencies and merge
@@ -210,10 +210,10 @@ export function getPreloadLinks (ssrContext: SSRContext, rendererContext: Render
   return Object.values(preload)
     .map(file => ({
       rel: file.type === 'module' ? 'modulepreload' : 'preload',
-      href: rendererContext.buildAssetsURL(file.path),
       as: file.type ? file.type === 'module' ? 'script' : file.type : null,
-      type: file.type === 'font' ? `font/${file.extension}` : null,
-      crossorigin: file.type === 'font' || file.type === 'module' ? '' : null
+      type: file.contentType || null,
+      crossorigin: file.type === 'font' || file.type === 'module' ? '' : null,
+      href: rendererContext.buildAssetsURL(file.path)
     }))
 }
 

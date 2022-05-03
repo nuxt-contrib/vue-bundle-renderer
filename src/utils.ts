@@ -15,9 +15,21 @@ export function isCSS (file: string) {
   return IS_CSS_RE.test(file)
 }
 
-export function getExtension (file: string) {
-  const withoutQuery = file.replace(/\?.*/, '')
-  return withoutQuery.split('.').pop() || ''
+const contentTypeMap: Record<string, string> = {
+  ico: 'image/x-icon',
+  jpg: 'image/jpeg',
+  svg: 'image/svg+xml'
+}
+
+export function getContentType (file: string) {
+  const extension = file.replace(/\?.*/, '').split('.').pop() || ''
+  const type = getPreloadType(extension)
+  if (type === 'font') {
+    return `font/${extension}`
+  }
+  if (type === 'image') {
+    return contentTypeMap[extension] || `image/${extension}`
+  }
 }
 
 export function getPreloadType (ext: string): 'script' | 'style' | 'image' | 'font' | undefined {

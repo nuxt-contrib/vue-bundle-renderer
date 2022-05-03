@@ -38,10 +38,10 @@ describe('renderer', () => {
     const result = renderResourceHints().split('>').slice(0, -1).map(s => `${s}>`).sort()
     expect(result).to.deep.equal(
       [
-        '<link rel="modulepreload" href="/entry.mjs" as="script" crossorigin>',
-        '<link rel="modulepreload" href="/index.mjs" as="script" crossorigin>',
-        '<link rel="modulepreload" href="/vendor.mjs" as="script" crossorigin>',
-        '<link rel="preload" href="/index.css" as="style">'
+        '<link rel="modulepreload" as="script" crossorigin href="/entry.mjs">',
+        '<link rel="modulepreload" as="script" crossorigin href="/index.mjs">',
+        '<link rel="modulepreload" as="script" crossorigin href="/vendor.mjs">',
+        '<link rel="preload" as="style" href="/index.css">'
       ]
     )
   })
@@ -83,11 +83,11 @@ describe('renderer with legacy manifest', () => {
       [
         '<link rel="prefetch stylesheet" href="/_nuxt/pages/another.css">', // dynamic import CSS
         '<link rel="prefetch" as="script" href="/_nuxt/pages/another.js">', // dynamic import
-        '<link rel="preload" href="/_nuxt/app.css" as="style">', // entrypoint CSS
-        '<link rel="preload" href="/_nuxt/app.js" as="script">',
-        '<link rel="preload" href="/_nuxt/commons/app.js" as="script">',
-        '<link rel="preload" href="/_nuxt/pages/index.js" as="script">', // dynamic entrypoint
-        '<link rel="preload" href="/_nuxt/runtime.js" as="script">'
+        '<link rel="preload" as="script" href="/_nuxt/app.js">',
+        '<link rel="preload" as="script" href="/_nuxt/commons/app.js">',
+        '<link rel="preload" as="script" href="/_nuxt/pages/index.js">', // dynamic entrypoint
+        '<link rel="preload" as="script" href="/_nuxt/runtime.js">',
+        '<link rel="preload" as="style" href="/_nuxt/app.css">' // entrypoint CSS
       ]
     )
   })
