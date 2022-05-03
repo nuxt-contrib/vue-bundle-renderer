@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { createRenderer } from '../src/renderer'
 
+import { normalizeClientManifest } from '../src/legacy'
 import clientManifest from './fixtures/manifest.json'
 import legacyManifest from './fixtures/legacy-manifest.json'
 
@@ -47,7 +48,7 @@ describe('renderer', () => {
 
 describe('renderer with legacy manifest', () => {
   const getRenderer = async () => {
-    const renderer = createRenderer(() => { }, { clientManifest: legacyManifest as any, renderToString: () => '' })
+    const renderer = createRenderer(() => { }, { clientManifest: normalizeClientManifest(legacyManifest), publicPath: '/_nuxt', renderToString: () => '' })
     return await renderer.renderToString({
       _registeredComponents: new Set([
         '4d87aad8',

@@ -26,6 +26,16 @@ import { createRenderer } from 'vue-bundle-renderer'
 declare function createRenderer(createApp:, renderOptions: RenderOptions)
 ```
 
+### `normalizeClientManifest`
+
+If using a webpack manifest, you should normalize it with this function before passing it to `createRenderer`.
+
+```ts
+import { normalizeClientManifest } from 'vue-bundle-renderer'
+
+declare function normalizeClientManifest(manifest: ClientManifest | LegacyClientManifest)
+```
+
 ### `createBundleRenderer`
 
 ```ts

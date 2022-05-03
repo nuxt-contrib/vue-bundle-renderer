@@ -19,16 +19,6 @@ export interface ResourceMeta {
 
 export type ClientManifest = Record<Identifier, ResourceMeta>
 
-// Vue2 Webpack client manifest format
-export interface LegacyClientManifest {
-  publicPath: string
-  all: Array<OutputPath>
-  initial: Array<OutputPath>
-  async: Array<OutputPath>
-  modules: Record<Identifier, Array<number>>
-  hasNoCssVersion?: { [file: string]: boolean }
-}
-
 export interface Resource {
   file: string
   extension: string
@@ -83,11 +73,10 @@ export interface RendererContext {
   _dynamicEntrypoints: Identifier[]
 }
 
-export type RenderOptions = Partial<Exclude<RendererContext, 'entrypoints'>>
+export type RenderOptions = Partial<Exclude<RendererContext, 'entrypoints'>> & { clientManifest: ClientManifest }
 
 export function createRendererContext ({ clientManifest, publicPath, basedir, shouldPrefetch, shouldPreload }: RenderOptions): RendererContext {
-  const manifest = normalizeClientManifest(clientManifest!)
-  const manifestEntries = Object.entries(manifest) as [Identifier, ResourceMeta][]
+  const manifestEntries = Object.entries(clientManifest) as [Identifier, ResourceMeta][]
 
   return {
     // User customisation of output
@@ -95,7 +84,7 @@ export function createRendererContext ({ clientManifest, publicPath, basedir, sh
     shouldPreload: shouldPreload || ((_file: string, asType: ModuleDependencies['preload'][string]['type']) => ['module', 'script', 'style'].includes(asType as string)),
     // Manifest
     publicPath: ensureTrailingSlash(publicPath || (clientManifest as any).publicPath || '/'),
-    clientManifest: manifest,
+    clientManifest,
     basedir,
     // Internal cache
     _dependencies: {},
@@ -103,101 +92,6 @@ export function createRendererContext ({ clientManifest, publicPath, basedir, sh
     _entrypoints: manifestEntries.filter(e => e[1].isEntry).map(([module]) => module),
     _dynamicEntrypoints: manifestEntries.filter(e => e[1].isDynamicEntry).map(([module]) => module)
   }
-}
-
-export function isLegacyClientManifest (clientManifest: ClientManifest | LegacyClientManifest): clientManifest is LegacyClientManifest {
-  return 'all' in clientManifest && 'initial' in clientManifest
-}
-
-function getIdentifier (output: OutputPath): Identifier
-function getIdentifier (output?: undefined): null
-function getIdentifier (output?: OutputPath): null | Identifier {
-  return output ? `_${output}` as Identifier : null
-}
-
-export function normalizeClientManifest (manifest: ClientManifest | LegacyClientManifest = { }): ClientManifest {
-  if (!isLegacyClientManifest(manifest)) {
-    return manifest
-  }
-
-  // Upgrade legacy manifest
-  // https://github.com/nuxt-contrib/vue-bundle-renderer/issues/12
-  const clientManifest: ClientManifest = {}
-
-  // Initialize with all keys
-  for (const outfile of manifest.all) {
-    if (isJS(outfile)) {
-      clientManifest[getIdentifier(outfile)] = {
-        file: outfile
-      }
-    }
-  }
-
-  // Prepare first entrypoint to receive extra data
-  const first = getIdentifier(manifest.initial.find(isJS)!)
-  if (first) {
-    if (!(first in clientManifest)) {
-      throw new Error(
-        `Invalid manifest - initial entrypoint not in \`all\`: ${manifest.initial.find(isJS)}`
-      )
-    }
-    clientManifest[first].css = []
-    clientManifest[first].assets = []
-    clientManifest[first].dynamicImports = []
-  }
-
-  for (const outfile of manifest.initial) {
-    if (isJS(outfile)) {
-      clientManifest[getIdentifier(outfile)].isEntry = true
-    } else if (isCSS(outfile) && first) {
-      clientManifest[first].css!.push(outfile)
-    } else if (first) {
-      clientManifest[first].assets!.push(outfile)
-    }
-  }
-
-  for (const outfile of manifest.async) {
-    if (isJS(outfile)) {
-      const identifier = getIdentifier(outfile)
-      if (!(identifier in clientManifest)) {
-        throw new Error(`Invalid manifest - async module not in \`all\`: ${outfile}`)
-      }
-      clientManifest[identifier].isDynamicEntry = true
-      clientManifest[first].dynamicImports!.push(identifier)
-    } else if (first) {
-      // Add assets (CSS/JS) as dynamic imports to first entrypoints
-      // as a workaround so can be prefetched.
-      const key = isCSS(outfile) ? 'css' : 'assets'
-      const identifier = getIdentifier(outfile)
-      clientManifest[identifier] = {
-        file: '' as OutputPath,
-        [key]: [outfile]
-      }
-      clientManifest[first].dynamicImports!.push(identifier)
-    }
-  }
-
-  // Map modules to virtual entries
-  for (const [moduleId, importIndexes] of Object.entries(manifest.modules)) {
-    const jsFiles = importIndexes.map(index => manifest.all[index]).filter(isJS)
-    jsFiles.forEach((file) => {
-      const identifier = getIdentifier(file)
-      clientManifest[identifier] = {
-        ...clientManifest[identifier],
-        file
-      }
-    })
-
-    const mappedIndexes = importIndexes.map(index => manifest.all[index])
-    clientManifest[moduleId as Identifier] = {
-      file: '' as OutputPath,
-      imports: jsFiles.map(id => getIdentifier(id)),
-      css: mappedIndexes.filter(isCSS),
-      assets: mappedIndexes.filter(i => !isJS(i) && !isCSS(i))
-    }
-  }
-
-  return clientManifest
 }
 
 export function getModuleDependencies (id: Identifier, rendererContext: RendererContext): ModuleDependencies {
