@@ -1,3 +1,4 @@
+import type { Manifest, ManifestChunk } from 'vite'
 import { isModule, ensureTrailingSlash, isJS, isCSS, getPreloadType, getExtension } from './utils'
 
 // Uncomment for better type hinting in development
@@ -5,19 +6,6 @@ import { isModule, ensureTrailingSlash, isJS, isCSS, getPreloadType, getExtensio
 // type As<T, L> = T & { [type]: L }
 export type Identifier = string // & As<string, 'Identifier'>
 export type OutputPath = string // & As<string, 'OutputPath'>
-
-export interface ResourceMeta {
-  file: OutputPath
-  src?: Identifier
-  isEntry?: boolean
-  isDynamicEntry?: boolean
-  dynamicImports?: Identifier[]
-  imports?: Identifier[]
-  css?: OutputPath[]
-  assets?: OutputPath[]
-}
-
-export type ClientManifest = Record<Identifier, ResourceMeta>
 
 export interface Resource {
   file: string
@@ -65,7 +53,7 @@ export interface RendererContext {
   shouldPrefetch: (file: string, type: ModuleDependencies['prefetch'][string]['type']) => boolean
   shouldPreload: (file: string, type: ModuleDependencies['preload'][string]['type']) => boolean
   publicPath?: string
-  clientManifest: ClientManifest
+  clientManifest: Manifest
   basedir?: string
   _dependencies: Record<string, ModuleDependencies>
   _dependencySets: Record<string, ModuleDependencies>
@@ -73,10 +61,10 @@ export interface RendererContext {
   _dynamicEntrypoints: Identifier[]
 }
 
-export type RenderOptions = Partial<Exclude<RendererContext, 'entrypoints'>> & { clientManifest: ClientManifest }
+export type RenderOptions = Partial<Exclude<RendererContext, 'entrypoints'>> & { clientManifest: Manifest }
 
 export function createRendererContext ({ clientManifest, publicPath, basedir, shouldPrefetch, shouldPreload }: RenderOptions): RendererContext {
-  const manifestEntries = Object.entries(clientManifest) as [Identifier, ResourceMeta][]
+  const manifestEntries = Object.entries(clientManifest) as [Identifier, ManifestChunk][]
 
   return {
     // User customisation of output

@@ -1,4 +1,5 @@
-import { ClientManifest, Identifier, OutputPath } from './renderer'
+import type { Manifest } from 'vite'
+import type { Identifier, OutputPath } from './renderer'
 import { isJS, isCSS } from './utils'
 
 // Vue2 Webpack client manifest format
@@ -11,7 +12,7 @@ export interface LegacyClientManifest {
   hasNoCssVersion?: { [file: string]: boolean }
 }
 
-export function isLegacyClientManifest (clientManifest: ClientManifest | LegacyClientManifest): clientManifest is LegacyClientManifest {
+export function isLegacyClientManifest (clientManifest: Manifest | LegacyClientManifest): clientManifest is LegacyClientManifest {
   return 'all' in clientManifest && 'initial' in clientManifest
 }
 
@@ -21,14 +22,14 @@ function getIdentifier (output?: OutputPath): null | Identifier {
   return output ? `_${output}` as Identifier : null
 }
 
-export function normalizeClientManifest (manifest: ClientManifest | LegacyClientManifest = {}): ClientManifest {
+export function normalizeClientManifest (manifest: Manifest | LegacyClientManifest = {}): Manifest {
   if (!isLegacyClientManifest(manifest)) {
     return manifest
   }
 
   // Upgrade legacy manifest
   // https://github.com/nuxt-contrib/vue-bundle-renderer/issues/12
-  const clientManifest: ClientManifest = {}
+  const clientManifest: Manifest = {}
 
   // Initialize with all keys
   for (const outfile of manifest.all) {
