@@ -1,14 +1,15 @@
 import { describe, expect, it } from 'vitest'
+import { joinURL } from 'ufo'
 
 import { createRenderer } from '../src/renderer'
 
 import { normalizeClientManifest } from '../src/legacy'
-import clientManifest from './fixtures/manifest.json'
+import manifest from './fixtures/manifest.json'
 import legacyManifest from './fixtures/legacy-manifest.json'
 
 describe('renderer', () => {
   const getRenderer = async () => {
-    const renderer = createRenderer(() => { }, { clientManifest, renderToString: () => '' })
+    const renderer = createRenderer(() => { }, { manifest, renderToString: () => '' })
     return await renderer.renderToString({
       modules: new Set([
         'app.vue',
@@ -48,7 +49,7 @@ describe('renderer', () => {
 
 describe('renderer with legacy manifest', () => {
   const getRenderer = async () => {
-    const renderer = createRenderer(() => { }, { clientManifest: normalizeClientManifest(legacyManifest), publicPath: '/_nuxt', renderToString: () => '' })
+    const renderer = createRenderer(() => { }, { manifest: normalizeClientManifest(legacyManifest), buildAssetsURL: id => joinURL('/_nuxt', id), renderToString: () => '' })
     return await renderer.renderToString({
       _registeredComponents: new Set([
         '4d87aad8',

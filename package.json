@@ -36,5 +36,8 @@
     "unbuild": "latest",
     "vite": "^2.9.7",
     "vitest": "latest"
+  },
+  "dependencies": {
+    "ufo": "^0.8.3"
   }
 }

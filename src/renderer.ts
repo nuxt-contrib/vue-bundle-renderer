@@ -1,5 +1,6 @@
 import type { Manifest, ManifestChunk } from 'vite'
-import { isModule, ensureTrailingSlash, isJS, isCSS, getPreloadType, getExtension } from './utils'
+import { withLeadingSlash } from 'ufo'
+import { isModule, isJS, isCSS, getPreloadType, getExtension } from './utils'
 
 // Uncomment for better type hinting in development
 // const type = Symbol('type')
@@ -33,47 +34,41 @@ export interface ModuleDependencies {
 }
 
 export interface SSRContext {
-  getPreloadFiles?: Function
   renderResourceHints?: Function
-  renderState?: Function
   renderScripts?: Function
   renderStyles?: Function
-  nonce?: string
-  head?: string
-  styles?: string
   // @vitejs/plugin-vue: https://vitejs.dev/guide/ssr.html#generating-preload-directives
   modules?: Set<Identifier>
   // vue-loader (webpack)
   _registeredComponents?: Set<Identifier>
   // Cache
   _requestDependencies?: ModuleDependencies
+  [key: string]: any
 }
 
 export interface RendererContext {
   shouldPrefetch: (file: string, type: ModuleDependencies['prefetch'][string]['type']) => boolean
   shouldPreload: (file: string, type: ModuleDependencies['preload'][string]['type']) => boolean
-  publicPath?: string
-  clientManifest: Manifest
-  basedir?: string
+  buildAssetsURL: (id: string) => string
+  manifest: Manifest
   _dependencies: Record<string, ModuleDependencies>
   _dependencySets: Record<string, ModuleDependencies>
   _entrypoints: Identifier[]
   _dynamicEntrypoints: Identifier[]
 }
 
-export type RenderOptions = Partial<Exclude<RendererContext, 'entrypoints'>> & { clientManifest: Manifest }
+export type RenderOptions = Partial<Exclude<RendererContext, 'entrypoints'>> & { manifest: Manifest }
 
-export function createRendererContext ({ clientManifest, publicPath, basedir, shouldPrefetch, shouldPreload }: RenderOptions): RendererContext {
-  const manifestEntries = Object.entries(clientManifest) as [Identifier, ManifestChunk][]
+export function createRendererContext ({ manifest, buildAssetsURL, shouldPrefetch, shouldPreload }: RenderOptions): RendererContext {
+  const manifestEntries = Object.entries(manifest) as [Identifier, ManifestChunk][]
 
   return {
     // User customisation of output
     shouldPrefetch: shouldPrefetch || (() => true),
     shouldPreload: shouldPreload || ((_file: string, asType: ModuleDependencies['preload'][string]['type']) => ['module', 'script', 'style'].includes(asType as string)),
     // Manifest
-    publicPath: ensureTrailingSlash(publicPath || (clientManifest as any).publicPath || '/'),
-    clientManifest,
-    basedir,
+    buildAssetsURL: buildAssetsURL ?? withLeadingSlash,
+    manifest,
     // Internal cache
     _dependencies: {},
     _dependencySets: {},
@@ -94,7 +89,7 @@ export function getModuleDependencies (id: Identifier, rendererContext: Renderer
     prefetch: {}
   }
 
-  const meta = rendererContext.clientManifest[id]
+  const meta = rendererContext.manifest[id]
 
   if (!meta) {
     rendererContext._dependencies[id] = dependencies
@@ -159,7 +154,7 @@ export function getAllDependencies (ids: Set<Identifier>, rendererContext: Rende
     Object.assign(allDeps.preload, deps.preload)
     Object.assign(allDeps.prefetch, deps.prefetch)
 
-    for (const dynamicDepId of rendererContext.clientManifest[id]?.dynamicImports || []) {
+    for (const dynamicDepId of rendererContext.manifest[id]?.dynamicImports || []) {
       const dynamicDeps = getModuleDependencies(dynamicDepId, rendererContext)
       Object.assign(allDeps.prefetch, dynamicDeps.scripts)
       Object.assign(allDeps.prefetch, dynamicDeps.styles)
@@ -194,7 +189,7 @@ export function getRequestDependencies (ssrContext: SSRContext, rendererContext:
 export function renderStyles (ssrContext: SSRContext, rendererContext: RendererContext): string {
   const { styles } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(styles).map(({ path }) =>
-    `<link rel="stylesheet" href="${rendererContext.publicPath}${path}">`
+    `<link rel="stylesheet" href="${rendererContext.buildAssetsURL(path)}">`
   ).join('')
 }
 
@@ -212,7 +207,7 @@ export function renderPreloadLinks (ssrContext: SSRContext, rendererContext: Ren
       const type = file.type === 'font' ? ` type="font/${file.extension}" crossorigin` : ''
       const crossorigin = file.type === 'font' || file.type === 'module' ? ' crossorigin' : ''
 
-      return `<link rel="${rel}" href="${rendererContext.publicPath}${file.path}"${as}${type}${crossorigin}>`
+      return `<link rel="${rel}" href="${rendererContext.buildAssetsURL(file.path)}"${as}${type}${crossorigin}>`
     }).join('')
 }
 
@@ -222,7 +217,7 @@ export function renderPrefetchLinks (ssrContext: SSRContext, rendererContext: Re
     const rel = 'prefetch' + (isCSS(path) ? ' stylesheet' : '')
     const as = isJS(path) ? ' as="script"' : ''
 
-    return `<link rel="${rel}"${as} href="${rendererContext.publicPath}${path}">`
+    return `<link rel="${rel}"${as} href="${rendererContext.buildAssetsURL(path)}">`
   }
   ).join('')
 }
@@ -230,7 +225,7 @@ export function renderPrefetchLinks (ssrContext: SSRContext, rendererContext: Re
 export function renderScripts (ssrContext: SSRContext, rendererContext: RendererContext): string {
   const { scripts } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(scripts).map(({ path, type }) =>
-    `<script${type === 'module' ? ' type="module"' : ''} src="${rendererContext.publicPath}${path}"${type !== 'module' ? ' defer' : ''} crossorigin></script>`
+    `<script${type === 'module' ? ' type="module"' : ''} src="${rendererContext.buildAssetsURL(path)}"${type !== 'module' ? ' defer' : ''} crossorigin></script>`
   ).join('')
 }
 

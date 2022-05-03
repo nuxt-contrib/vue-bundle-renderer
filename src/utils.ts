@@ -20,13 +20,6 @@ export function getExtension (file: string) {
   return withoutQuery.split('.').pop() || ''
 }
 
-export function ensureTrailingSlash (path: string) {
-  if (path === '') {
-    return path
-  }
-  return path.replace(/([^/])$/, '$1/')
-}
-
 export function getPreloadType (ext: string): 'script' | 'style' | 'image' | 'font' | undefined {
   if (ext === 'js' || ext === 'cjs' || ext === 'mjs') {
     return 'script'
