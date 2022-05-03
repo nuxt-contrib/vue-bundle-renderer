@@ -23,9 +23,6 @@
     "test": "yarn lint && yarn test:unit",
     "test:unit": "vitest"
   },
-  "dependencies": {
-    "bundle-runner": "^0.0.1"
-  },
   "devDependencies": {
     "@nuxtjs/eslint-config-typescript": "latest",
     "@rollup/plugin-typescript": "latest",

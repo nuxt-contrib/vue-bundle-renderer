@@ -6,7 +6,7 @@
 [![Dependencies][david-dm-src]][david-dm-href]
 <!-- [![Codecov][codecov-src]][codecov-href] -->
 
-SSR Bundle Renderer for Vue 3 using [bundle-runner](https://github.com/nuxt-contrib/bundle-runner).
+SSR Bundle Renderer for Vue 3.
 
 ## Install
 
@@ -34,23 +34,6 @@ If using a webpack manifest, you should normalize it with this function before p
 import { normalizeClientManifest } from 'vue-bundle-renderer'
 
 declare function normalizeClientManifest(manifest: ClientManifest | LegacyClientManifest)
-```
-
-### `createBundleRenderer`
-
-```ts
-import { createBundleRenderer } from 'vue-bundle-renderer'
-
-declare function createBundleRenderer(bundle, renderOptions: BundleRenderOptions)
-
-type BundleRenderOptions = {
-  runInNewContext?: boolean | 'once';
-  basedir?: string;
-  renderToString: typeof import('@vue/server-renderer').renderToString;
-  bundleRunner: typeof import('bundle-runner');
-  clientManifest?: ClientManifest;
-  publicPath?: string;
-}
 ```
 
 ## Credits
