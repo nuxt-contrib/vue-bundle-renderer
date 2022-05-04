@@ -40,7 +40,9 @@ declare function normalizeClientManifest(manifest: ClientManifest | LegacyClient
 
 ```ts
 import { createBundleRenderer } from 'vue-bundle-renderer'
+
 declare function createBundleRenderer(bundle, renderOptions: BundleRenderOptions)
+
 type BundleRenderOptions = {
   runInNewContext?: boolean | 'once';
   basedir?: string;
