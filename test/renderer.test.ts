@@ -2,101 +2,85 @@ import { describe, expect, it } from 'vitest'
 import { joinURL } from 'ufo'
 
 import { createRenderer } from '../src/renderer'
-
-import { normalizeClientManifest } from '../src/legacy'
 import manifest from './fixtures/manifest.json'
-import legacyManifest from './fixtures/legacy-manifest.json'
 
 describe('renderer', () => {
-  const getRenderer = async () => {
-    const renderer = createRenderer(() => { }, { manifest, renderToString: () => '' })
+  const getRenderer = async (modules = [
+    'app.vue',
+    '../packages/nuxt3/src/pages/runtime/page.vue',
+    'pages/index.vue'
+  ]) => {
+    const renderer = createRenderer(() => { }, {
+      manifest,
+      renderToString: () => '',
+      buildAssetsURL: id => joinURL('/assets', id)
+    })
     return await renderer.renderToString({
-      modules: new Set([
-        'app.vue',
-        '../packages/nuxt3/src/pages/runtime/page.vue',
-        'pages/index.vue'
-      ])
+      modules: new Set(modules)
     })
   }
 
   it('renders scripts correctly', async () => {
     const { renderScripts } = await getRenderer()
-    const result = renderScripts().split('</script>').slice(0, -1).map(s => `${s}</script>`).sort()
-    expect(result).to.deep.equal([
-      '<script type="module" src="/entry.mjs" crossorigin></script>',
-      '<script type="module" src="/index.mjs" crossorigin></script>'
-    ])
+    const result = renderScripts().split('</script>').slice(0, -1).map(s => `${s}</script>`)
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "<script type=\\"module\\" src=\\"/assets/entry.mjs\\" crossorigin></script>",
+        "<script type=\\"module\\" src=\\"/assets/index.mjs\\" crossorigin></script>",
+      ]
+    `)
   })
+
   it('renders styles correctly', async () => {
     const { renderStyles } = await getRenderer()
-    expect(renderStyles()).to.equal(
-      '<link rel="stylesheet" href="/test.css"><link rel="stylesheet" href="/index.css">'
+    expect(renderStyles().split('>').slice(0, -1).map(s => `${s}>`).sort()).toMatchInlineSnapshot(
+      `
+      [
+        "<link rel=\\"stylesheet\\" href=\\"/assets/index.css\\">",
+        "<link rel=\\"stylesheet\\" href=\\"/assets/test.css\\">",
+      ]
+    `
     )
   })
+
   it('renders resource hints correctly', async () => {
     const { renderResourceHints } = await getRenderer()
     const result = renderResourceHints().split('>').slice(0, -1).map(s => `${s}>`).sort()
-    expect(result).to.deep.equal(
+    expect(result).toMatchInlineSnapshot(
+    `
       [
-        '<link rel="modulepreload" as="script" crossorigin href="/entry.mjs">',
-        '<link rel="modulepreload" as="script" crossorigin href="/index.mjs">',
-        '<link rel="modulepreload" as="script" crossorigin href="/vendor.mjs">'
+        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/entry.mjs\\">",
+        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/index.mjs\\">",
+        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/vendor.mjs\\">",
       ]
-    )
-  })
-})
-
-describe('renderer with legacy manifest', () => {
-  const getRenderer = async () => {
-    const renderer = createRenderer(() => { }, { manifest: normalizeClientManifest(legacyManifest), buildAssetsURL: id => joinURL('/_nuxt', id), renderToString: () => '' })
-    return await renderer.renderToString({
-      _registeredComponents: new Set([
-        '4d87aad8',
-        '630f1d84',
-        '56940b2e'
-      ])
-    })
-  }
-
-  it('renders scripts correctly', async () => {
-    const { renderScripts } = await getRenderer()
-    const result = renderScripts().split('</script>').slice(0, -1).map(s => `${s}</script>`).sort()
-    expect(result).to.deep.equal(
-      [
-        '<script src="/_nuxt/app.js" defer crossorigin></script>',
-        '<script src="/_nuxt/commons/app.js" defer crossorigin></script>',
-        '<script src="/_nuxt/runtime.js" defer crossorigin></script>'
-      ]
-    )
-  })
-  it('renders styles correctly', async () => {
-    const { renderStyles } = await getRenderer()
-    expect(renderStyles()).to.equal(
-      '<link rel="stylesheet" href="/_nuxt/app.css">'
-    )
-  })
-  it('renders resource hints correctly', async () => {
-    const { renderResourceHints } = await getRenderer()
-    const result = renderResourceHints().split('>').slice(0, -1).map(s => `${s}>`).sort()
-    expect(result).to.deep.equal(
-      [
-        '<link rel="prefetch stylesheet" href="/_nuxt/pages/another.css">', // dynamic import CSS
-        '<link rel="prefetch" as="script" href="/_nuxt/pages/another.js">', // dynamic import
-        '<link rel="preload" as="script" href="/_nuxt/app.js">',
-        '<link rel="preload" as="script" href="/_nuxt/commons/app.js">',
-        '<link rel="preload" as="script" href="/_nuxt/pages/index.js">', // dynamic entrypoint
-        '<link rel="preload" as="script" href="/_nuxt/runtime.js">'
-      ]
-    )
+    `)
   })
 
-  it('renders link headers correctly', async () => {
+  it('renders resource hint headers correctly', async () => {
     const { renderResourceHeaders } = await getRenderer()
     const result = renderResourceHeaders()
     expect(result).toMatchInlineSnapshot(`
       {
-        "link": "</_nuxt/app.js>; rel=\\"preload\\"; as=\\"script\\", </_nuxt/commons/app.js>; rel=\\"preload\\"; as=\\"script\\", </_nuxt/runtime.js>; rel=\\"preload\\"; as=\\"script\\", </_nuxt/pages/index.js>; rel=\\"preload\\"; as=\\"script\\", </_nuxt/pages/another.css>; rel=\\"prefetch stylesheet\\", </_nuxt/pages/another.js>; rel=\\"prefetch\\"; as=\\"script\\"",
+        "link": "</assets/entry.mjs>; rel=\\"modulepreload\\"; as=\\"script\\"; crossorigin, </assets/vendor.mjs>; rel=\\"modulepreload\\"; as=\\"script\\"; crossorigin, </assets/index.mjs>; rel=\\"modulepreload\\"; as=\\"script\\"; crossorigin",
       }
+    `)
+  })
+
+  it('prefetches dynamic imports minimally', async () => {
+    const { renderResourceHints } = await getRenderer([
+      'pages/about.vue'
+    ])
+    const result = renderResourceHints().split('>').slice(0, -1).map(s => `${s}>`).sort()
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/about.mjs\\">",
+        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/entry.mjs\\">",
+        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/vendor.mjs\\">",
+        "<link rel=\\"prefetch stylesheet\\" href=\\"/assets/index.css\\">",
+        "<link rel=\\"prefetch stylesheet\\" href=\\"/assets/lazy-component.css\\">",
+        "<link rel=\\"prefetch\\" as=\\"script\\" href=\\"/assets/index.mjs\\">",
+        "<link rel=\\"prefetch\\" as=\\"script\\" href=\\"/assets/lazy-component.mjs\\">",
+      ]
     `)
   })
 })

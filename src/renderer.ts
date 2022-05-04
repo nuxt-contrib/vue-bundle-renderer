@@ -26,8 +26,8 @@ export interface SSRContext {
 }
 
 export interface RenderOptions {
-  shouldPrefetch?: (file: string, resource: ParsedResource) => boolean
-  shouldPreload?: (file: string, resource: ParsedResource) => boolean
+  shouldPrefetch?: (resource: ParsedResource) => boolean
+  shouldPreload?: (resource: ParsedResource) => boolean
   buildAssetsURL?: (id: string) => string
   manifest: Manifest
 }
@@ -44,11 +44,10 @@ export interface RendererContext extends Required<RenderOptions> {
   _dependencySets: Record<string, ModuleDependencies>
   _parsedResources: Record<string, ParsedResource>
   _entrypoints: string[]
-  _dynamicEntrypoints: string[]
 }
 
 const defaultShouldPrefetch = () => true
-const defaultShouldPreload = (_file: string, resource: ParsedResource) => ['module', 'script', 'style'].includes(resource.asType || '')
+const defaultShouldPreload = (resource: ParsedResource) => ['module', 'script', 'style'].includes(resource.asType || '')
 
 export function createRendererContext ({ manifest, buildAssetsURL, shouldPrefetch, shouldPreload, clientManifest, publicPath = clientManifest?.publicPath as string }: RenderOptions & LegacyRenderOptions): RendererContext {
   manifest = manifest || normalizeClientManifest(clientManifest)
@@ -65,8 +64,7 @@ export function createRendererContext ({ manifest, buildAssetsURL, shouldPrefetc
     _dependencies: {},
     _dependencySets: {},
     _parsedResources: {},
-    _entrypoints: manifestEntries.filter(e => e[1].isEntry).map(([module]) => module),
-    _dynamicEntrypoints: manifestEntries.filter(e => e[1].isDynamicEntry).map(([module]) => module)
+    _entrypoints: manifestEntries.filter(e => e[1].isEntry).map(([module]) => module)
   }
 }
 
@@ -112,8 +110,8 @@ export function getModuleDependencies (id: string, rendererContext: RendererCont
   const filteredPreload: ModuleDependencies['preload'] = {}
   for (const id in dependencies.preload) {
     const dep = dependencies.preload[id]
-    if (rendererContext.shouldPreload(dep.path, dep)) {
-      filteredPreload[id] = dependencies.preload[id]
+    if (rendererContext.shouldPreload(dep)) {
+      filteredPreload[id] = dep
     }
   }
   dependencies.preload = filteredPreload
@@ -147,17 +145,26 @@ export function getAllDependencies (ids: Set<string>, rendererContext: RendererC
       Object.assign(allDeps.prefetch, dynamicDeps.scripts)
       Object.assign(allDeps.prefetch, dynamicDeps.styles)
       Object.assign(allDeps.prefetch, dynamicDeps.preload)
-      Object.assign(allDeps.prefetch, dynamicDeps.prefetch)
     }
   }
 
+  const filteredPrefetch: ModuleDependencies['prefetch'] = {}
+  for (const id in allDeps.prefetch) {
+    const dep = allDeps.prefetch[id]
+    if (rendererContext.shouldPrefetch(dep)) {
+      filteredPrefetch[id] = dep
+    }
+  }
+  allDeps.prefetch = filteredPrefetch
+
+  // Don't render prefetch links if we're preloading them
   for (const id in allDeps.prefetch) {
     if (id in allDeps.preload) {
       delete allDeps.prefetch[id]
     }
   }
 
-  // Don't render preload links for stylesheets within the HTML
+  // Don't render preload links if we're adding them as stylesheets
   for (const id in allDeps.styles) {
     if (id in allDeps.preload) {
       delete allDeps.preload[id]
