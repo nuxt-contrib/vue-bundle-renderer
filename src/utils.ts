@@ -59,7 +59,7 @@ export const renderLinkToString = (attrs: LinkAttributes) =>
   `<link${Object.entries(attrs).map(([key, value]) => value === null ? '' : value ? ` ${key}="${value}"` : ' ' + key).join('')}>`
 
 export const renderLinkToHeader = (attrs: LinkAttributes) =>
-  `<${attrs.href}>${Object.entries(attrs).map(([key, value]) => key === 'href' || value === null ? '' : value ? `; ${key}="${value}"` : '; ').join('')}`
+  `<${attrs.href}>${Object.entries(attrs).map(([key, value]) => key === 'href' || value === null ? '' : value ? `; ${key}="${value}"` : `; ${key}`).join('')}`
 
 export interface ParsedResource {
   path: string
