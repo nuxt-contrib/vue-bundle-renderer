@@ -23,6 +23,9 @@
     "test": "yarn lint && yarn test:unit",
     "test:unit": "vitest"
   },
+  "dependencies": {
+    "ufo": "^0.8.3"
+  },
   "devDependencies": {
     "@nuxtjs/eslint-config-typescript": "latest",
     "@rollup/plugin-typescript": "latest",
@@ -36,8 +39,5 @@
     "unbuild": "latest",
     "vite": "^2.9.7",
     "vitest": "latest"
-  },
-  "dependencies": {
-    "ufo": "^0.8.3"
   }
 }
