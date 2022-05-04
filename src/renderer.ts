@@ -225,7 +225,9 @@ export function getPrefetchLinks (ssrContext: SSRContext, rendererContext: Rende
   const { prefetch } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(prefetch).map(resource => ({
     rel: 'prefetch' + (resource.asType === 'style' ? ' stylesheet' : ''),
-    as: resource.asType === 'script' ? 'script' : null,
+    as: resource.asType !== 'style' ? resource.asType : null,
+    type: resource.contentType,
+    crossorigin: resource.asType === 'font' || resource.isModule ? '' : null,
     href: rendererContext.buildAssetsURL(resource.path)
   }))
 }

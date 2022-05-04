@@ -9,6 +9,9 @@
     "css": ["test.css"],
     "dynamicImports": [
       "pages/index.vue"
+    ],
+    "assets": [
+      "entry.png"
     ]
   },
   "_vendor.mjs": {

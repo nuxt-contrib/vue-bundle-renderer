@@ -17,6 +17,7 @@ describe('dependencies', () => {
     const { prefetch, preload, scripts, styles } = getRequestDependencies({}, context)
     expect(Object.values(prefetch).map(i => i.path)).toMatchInlineSnapshot(`
       [
+        "entry.png",
         "index.mjs",
         "index.css",
       ]
@@ -46,6 +47,7 @@ describe('dependencies', () => {
     }, context)
     expect(Object.values(prefetch).map(i => i.path)).toMatchInlineSnapshot(`
       [
+        "entry.png",
         "index.mjs",
         "index.css",
         "lazy-component.mjs",

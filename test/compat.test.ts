@@ -38,7 +38,8 @@ describe('renderer', () => {
       [
         '<link rel="modulepreload" as="script" crossorigin href="/entry.mjs">',
         '<link rel="modulepreload" as="script" crossorigin href="/index.mjs">',
-        '<link rel="modulepreload" as="script" crossorigin href="/vendor.mjs">'
+        '<link rel="modulepreload" as="script" crossorigin href="/vendor.mjs">',
+        '<link rel="prefetch" as="image" type="image/png" href="/entry.png">'
       ]
     )
   })
