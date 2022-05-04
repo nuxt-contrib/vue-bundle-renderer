@@ -1,6 +1,10 @@
 import type { Manifest } from 'vite'
-import type { Identifier, OutputPath } from './renderer'
 import { isJS, isCSS } from './utils'
+
+const type = Symbol('type')
+type As<T, L> = T & { [type]: L }
+type Identifier = string & As<string, 'Identifier'>
+type OutputPath = string & As<string, 'OutputPath'>
 
 // Vue2 Webpack client manifest format
 export interface LegacyClientManifest {
