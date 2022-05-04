@@ -36,6 +36,21 @@ import { normalizeClientManifest } from 'vue-bundle-renderer'
 declare function normalizeClientManifest(manifest: ClientManifest | LegacyClientManifest)
 ```
 
+### `createBundleRenderer`
+
+```ts
+import { createBundleRenderer } from 'vue-bundle-renderer'
+declare function createBundleRenderer(bundle, renderOptions: BundleRenderOptions)
+type BundleRenderOptions = {
+  runInNewContext?: boolean | 'once';
+  basedir?: string;
+  renderToString: typeof import('@vue/server-renderer').renderToString;
+  bundleRunner: typeof import('bundle-runner');
+  clientManifest?: ClientManifest;
+  publicPath?: string;
+}
+```
+
 ## Credits
 
 Based on [vue-server-renderer](https://www.npmjs.com/package/vue-server-renderer) made by [Evan You](https://github.com/yyx990803).

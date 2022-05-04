@@ -24,6 +24,7 @@
     "test:unit": "vitest"
   },
   "dependencies": {
+    "bundle-runner": "^0.0.1",
     "ufo": "^0.8.3"
   },
   "devDependencies": {
