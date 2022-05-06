@@ -1,6 +1,6 @@
 import { RenderOptions, createRenderer } from './renderer'
 
-type BundleRenderOptions = {
+export type BundleRenderOptions = {
   runInNewContext?: boolean | 'once',
   basedir?: string,
   renderToString: typeof import('@vue/server-renderer').renderToString,
