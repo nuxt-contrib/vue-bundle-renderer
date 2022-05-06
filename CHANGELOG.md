@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.8](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.3.7...v0.3.8) (2022-05-06)
+
+
+### Features
+
+* expose all types and utils ([cf0788f](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/cf0788f6b83a9127ebee4d1a0b284f77104e9633))
+
 ### [0.3.7](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.3.6...v0.3.7) (2022-04-22)
 
 
