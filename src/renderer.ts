@@ -81,28 +81,42 @@ export interface RendererContext {
   _dependencySets: Record<string, ModuleDependencies>
   _entrypoints: Identifier[]
   _dynamicEntrypoints: Identifier[]
+  updateManifest: (manifest: ClientManifest) => void
 }
 
 export type RenderOptions = Partial<Exclude<RendererContext, 'entrypoints'>>
 
 export function createRendererContext ({ clientManifest, publicPath, basedir, shouldPrefetch, shouldPreload }: RenderOptions): RendererContext {
-  const manifest = normalizeClientManifest(clientManifest!)
-  const manifestEntries = Object.entries(manifest) as [Identifier, ResourceMeta][]
-
-  return {
+  const ctx: RendererContext = {
     // User customisation of output
     shouldPrefetch: shouldPrefetch || (() => true),
     shouldPreload: shouldPreload || ((_file: string, asType: ModuleDependencies['preload'][string]['type']) => ['module', 'script', 'style'].includes(asType as string)),
     // Manifest
-    publicPath: ensureTrailingSlash(publicPath || (clientManifest as any).publicPath || '/'),
-    clientManifest: manifest,
+    publicPath: ensureTrailingSlash(publicPath || '/'),
     basedir,
+    clientManifest: undefined!,
+    updateManifest,
     // Internal cache
-    _dependencies: {},
-    _dependencySets: {},
-    _entrypoints: manifestEntries.filter(e => e[1].isEntry).map(([module]) => module),
-    _dynamicEntrypoints: manifestEntries.filter(e => e[1].isDynamicEntry).map(([module]) => module)
+    _dependencies: undefined!,
+    _dependencySets: undefined!,
+    _entrypoints: undefined!,
+    _dynamicEntrypoints: undefined!
   }
+
+  function updateManifest (clientManifest?: ClientManifest) {
+    const manifest = normalizeClientManifest(clientManifest!)
+    const manifestEntries = Object.entries(manifest) as [Identifier, ResourceMeta][]
+    ctx.clientManifest = manifest
+    ctx._dependencies = {}
+    ctx._dependencySets = {}
+    ctx._entrypoints = manifestEntries.filter(e => e[1].isEntry).map(([module]) => module)
+    ctx._dynamicEntrypoints = manifestEntries.filter(e => e[1].isDynamicEntry).map(([module]) => module)
+    ctx.publicPath = ensureTrailingSlash(publicPath || (clientManifest as any).publicPath || '/')
+  }
+
+  updateManifest(clientManifest)
+
+  return ctx
 }
 
 export function isLegacyClientManifest (clientManifest: ClientManifest | LegacyClientManifest): clientManifest is LegacyClientManifest {
@@ -358,6 +372,7 @@ export function createRenderer (createApp: any, renderOptions: RenderOptions & {
   const rendererContext = createRendererContext(renderOptions)
 
   return {
+    rendererContext,
     async renderToString (ssrContext: SSRContext) {
       ssrContext._registeredComponents = ssrContext._registeredComponents || new Set()
 
