@@ -90,7 +90,7 @@ export function createRendererContext ({ clientManifest, publicPath, basedir, sh
   const ctx: RendererContext = {
     // User customisation of output
     shouldPrefetch: shouldPrefetch || (() => true),
-    shouldPreload: shouldPreload || ((_file: string, asType: ModuleDependencies['preload'][string]['type']) => ['module', 'script', 'style'].includes(asType as string)),
+    shouldPreload: shouldPreload || ((_file: string, asType: ModuleDependencies['preload'][string]['type']) => typeof asType !== 'undefined'),
     // Manifest
     publicPath: ensureTrailingSlash(publicPath || '/'),
     basedir,
