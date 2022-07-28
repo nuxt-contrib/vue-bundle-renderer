@@ -31,7 +31,7 @@ declare function createRenderer(createApp:, renderOptions: RenderOptions)
 If using a webpack manifest, you should normalize it with this function before passing it to `createRenderer`.
 
 ```ts
-import { normalizeClientManifest } from 'vue-bundle-renderer'
+import { normalizeClientManifest } from 'vue-bundle-renderer/legacy'
 
 declare function normalizeClientManifest(manifest: ClientManifest | LegacyClientManifest)
 ```
