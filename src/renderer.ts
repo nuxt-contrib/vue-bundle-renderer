@@ -44,6 +44,7 @@ export interface RendererContext extends Required<RenderOptions> {
   _dependencySets: Record<string, ModuleDependencies>
   _parsedResources: Record<string, ParsedResource>
   _entrypoints: string[]
+  updateManifest: (manifest: Manifest) => void
 }
 
 const defaultShouldPrefetch = () => true
@@ -51,21 +52,34 @@ const defaultShouldPreload = (resource: ParsedResource) => ['module', 'script', 
 
 export function createRendererContext ({ manifest, buildAssetsURL, shouldPrefetch, shouldPreload, clientManifest, publicPath = clientManifest?.publicPath as string }: RenderOptions & LegacyRenderOptions): RendererContext {
   manifest = manifest || normalizeClientManifest(clientManifest)
-  const manifestEntries = Object.entries(manifest) as [string, ManifestChunk][]
 
-  return {
+  const ctx: RendererContext = {
     // User customisation of output
     shouldPrefetch: shouldPrefetch || defaultShouldPrefetch,
     shouldPreload: shouldPreload || defaultShouldPreload,
     // Manifest
     buildAssetsURL: buildAssetsURL || (publicPath ? id => joinURL(publicPath!, id) : withLeadingSlash),
-    manifest,
+    manifest: undefined!,
+    updateManifest,
     // Internal cache
-    _dependencies: {},
-    _dependencySets: {},
-    _parsedResources: {},
-    _entrypoints: manifestEntries.filter(e => e[1].isEntry).map(([module]) => module)
+    _dependencies: undefined!,
+    _dependencySets: undefined!,
+    _parsedResources: undefined!,
+    _entrypoints: undefined!
   }
+
+  function updateManifest (manifest: Manifest) {
+    const manifestEntries = Object.entries(manifest) as [string, ManifestChunk][]
+    ctx.manifest = manifest
+    ctx._dependencies = {}
+    ctx._dependencySets = {}
+    ctx._parsedResources = {}
+    ctx._entrypoints = manifestEntries.filter(e => e[1].isEntry).map(([module]) => module)
+  }
+
+  updateManifest(manifest)
+
+  return ctx
 }
 
 export function getModuleDependencies (id: string, rendererContext: RendererContext): ModuleDependencies {
@@ -248,6 +262,7 @@ export function createRenderer (createApp: any, renderOptions: RenderOptions & L
   const rendererContext = createRendererContext(renderOptions)
 
   return {
+    rendererContext,
     async renderToString (ssrContext: SSRContext) {
       ssrContext._registeredComponents = ssrContext._registeredComponents || new Set()
 

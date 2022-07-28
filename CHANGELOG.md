@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.3.9](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.3.8...v0.3.9) (2022-06-10)
+
+
+### Features
+
+* expose function to update manifest ([#31](https://github.com/nuxt-contrib/vue-bundle-renderer/issues/31)) ([c1c6d74](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/c1c6d74e4f20fd75743bb0882efdf47c137ac721))
+
 ### [0.3.8](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.3.7...v0.3.8) (2022-05-06)
 
 
