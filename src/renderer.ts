@@ -1,9 +1,7 @@
 import type { Manifest, ManifestChunk } from 'vite'
-import { joinURL, withLeadingSlash } from 'ufo'
+import { withLeadingSlash } from 'ufo'
 import { renderLinkToString, renderLinkToHeader, renderScriptToString, parseResource } from './utils'
 import type { LinkAttributes, ParsedResource } from './utils'
-import { normalizeClientManifest } from './legacy'
-import type { LegacyClientManifest } from './legacy'
 
 export interface ModuleDependencies {
   scripts: Record<string, ParsedResource>
@@ -32,13 +30,6 @@ export interface RenderOptions {
   manifest: Manifest
 }
 
-export interface LegacyRenderOptions {
-  /** @deprecated */
-  publicPath?: string
-  /** @deprecated */
-  clientManifest?: Manifest | LegacyClientManifest
-}
-
 export interface RendererContext extends Required<RenderOptions> {
   _dependencies: Record<string, ModuleDependencies>
   _dependencySets: Record<string, ModuleDependencies>
@@ -50,15 +41,13 @@ export interface RendererContext extends Required<RenderOptions> {
 const defaultShouldPrefetch = () => true
 const defaultShouldPreload = (resource: ParsedResource) => ['module', 'script', 'style'].includes(resource.asType || '')
 
-export function createRendererContext ({ manifest, buildAssetsURL, shouldPrefetch, shouldPreload, clientManifest, publicPath = clientManifest?.publicPath as string }: RenderOptions & LegacyRenderOptions): RendererContext {
-  manifest = manifest || normalizeClientManifest(clientManifest)
-
+export function createRendererContext ({ manifest, buildAssetsURL, shouldPrefetch, shouldPreload }: RenderOptions): RendererContext {
   const ctx: RendererContext = {
     // User customisation of output
     shouldPrefetch: shouldPrefetch || defaultShouldPrefetch,
     shouldPreload: shouldPreload || defaultShouldPreload,
     // Manifest
-    buildAssetsURL: buildAssetsURL || (publicPath ? id => joinURL(publicPath!, id) : withLeadingSlash),
+    buildAssetsURL: buildAssetsURL || withLeadingSlash,
     manifest: undefined!,
     updateManifest,
     // Internal cache
@@ -258,7 +247,7 @@ export function renderScripts (ssrContext: SSRContext, rendererContext: Renderer
 
 export type RenderFunction = (ssrContext: SSRContext, rendererContext: RendererContext) => any
 
-export function createRenderer (createApp: any, renderOptions: RenderOptions & LegacyRenderOptions & { renderToString: Function }) {
+export function createRenderer (createApp: any, renderOptions: RenderOptions & { renderToString: Function }) {
   const rendererContext = createRendererContext(renderOptions)
 
   return {

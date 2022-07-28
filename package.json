@@ -8,6 +8,10 @@
     ".": {
       "require": "./dist/index.cjs",
       "import": "./dist/index.mjs"
+    },
+    "./legacy": {
+      "require": "./dist/legacy.cjs",
+      "import": "./dist/legacy.mjs"
     }
   },
   "main": "./dist/index.cjs",
