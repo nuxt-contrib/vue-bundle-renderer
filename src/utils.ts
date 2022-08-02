@@ -59,7 +59,7 @@ export const parseResource = (path: string) => {
     chunk.contentType = asType
 
     if (asType === 'script') {
-      chunk.isModule = true
+      chunk.module = true
     }
   }
 

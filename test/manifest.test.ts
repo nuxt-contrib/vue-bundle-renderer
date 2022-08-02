@@ -48,25 +48,25 @@ describe('webpack manifest', () => {
         contentType: 'script',
         file: 'app.js',
         isEntry: true,
-        isModule: true
+        module: true
       },
       '_commons/app.js': {
         contentType: 'script',
         file: 'commons/app.js',
         isEntry: true,
-        isModule: true
+        module: true
       },
       '_pages/another.js': {
         contentType: 'script',
         file: 'pages/another.js',
         isDynamicEntry: true,
-        isModule: true
+        module: true
       },
       '_pages/index.js': {
         contentType: 'script',
         file: 'pages/index.js',
         isDynamicEntry: true,
-        isModule: true
+        module: true
       },
       '_runtime.js': {
         contentType: 'script',
@@ -79,7 +79,7 @@ describe('webpack manifest', () => {
         ],
         file: 'runtime.js',
         isEntry: true,
-        isModule: true
+        module: true
       },
       'app.css': {
         contentType: 'style',

@@ -52,7 +52,7 @@ describe('renderer with webpack manifest', () => {
   const getRenderer = async () => {
     const manifest = normalizeWebpackManifest(webpackManifest)
     for (const entry in manifest) {
-      manifest[entry].isModule = false
+      manifest[entry].module = false
     }
     const renderer = createRenderer(() => { }, { manifest, buildAssetsURL: r => joinURL(webpackManifest.publicPath, r), renderToString: () => '' })
     return await renderer.renderToString({

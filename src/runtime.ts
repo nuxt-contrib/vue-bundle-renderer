@@ -212,10 +212,10 @@ export function getPreloadLinks (ssrContext: SSRContext, rendererContext: Render
   const { preload } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(preload)
     .map(resource => ({
-      rel: resource.isModule ? 'modulepreload' : 'preload',
+      rel: resource.module ? 'modulepreload' : 'preload',
       as: resource.contentType,
       type: resource.mimeType ?? null,
-      crossorigin: resource.contentType === 'font' || resource.isModule ? '' : null,
+      crossorigin: resource.contentType === 'font' || resource.module ? '' : null,
       href: rendererContext.buildAssetsURL(resource.file)
     }))
 }
@@ -226,7 +226,7 @@ export function getPrefetchLinks (ssrContext: SSRContext, rendererContext: Rende
     rel: 'prefetch' + (resource.contentType === 'style' ? ' stylesheet' : ''),
     as: resource.contentType !== 'style' ? resource.contentType : null,
     type: resource.mimeType ?? null,
-    crossorigin: resource.contentType === 'font' || resource.isModule ? '' : null,
+    crossorigin: resource.contentType === 'font' || resource.module ? '' : null,
     href: rendererContext.buildAssetsURL(resource.file)
   }))
 }
@@ -234,9 +234,9 @@ export function getPrefetchLinks (ssrContext: SSRContext, rendererContext: Rende
 export function renderScripts (ssrContext: SSRContext, rendererContext: RendererContext): string {
   const { scripts } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(scripts).map(resource => renderScriptToString({
-    type: resource.isModule ? 'module' : null,
+    type: resource.module ? 'module' : null,
     src: rendererContext.buildAssetsURL(resource.file),
-    defer: resource.isModule ? null : '',
+    defer: resource.module ? null : '',
     crossorigin: ''
   })).join('')
 }
