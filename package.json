@@ -25,6 +25,7 @@
     "build": "unbuild",
     "dev": "vitest",
     "lint": "eslint --ext .ts src",
+    "prerelease": "pnpm test && pnpm build && standard-version -p && git push --follow-tags && pnpm publish --tag prerelease",
     "release": "pnpm test && pnpm build && standard-version && git push --follow-tags && pnpm publish",
     "test": "pnpm lint && pnpm vitest run --coverage"
   },
