@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { joinURL } from 'ufo'
 
-import { createRendererContext, getRequestDependencies } from '../src/renderer'
-import manifest from './fixtures/manifest.json'
+import { createRendererContext, getRequestDependencies } from '../src/runtime'
+import { normalizeViteManifest } from '../src/vite'
+import viteManifest from './fixtures/vite-manifest.json'
 
 describe('dependencies', () => {
   const getContext = () => {
     return createRendererContext({
-      manifest,
+      manifest: normalizeViteManifest(viteManifest),
       buildAssetsURL: id => joinURL('/assets', id)
     })
   }
@@ -15,25 +16,25 @@ describe('dependencies', () => {
   it('gets all entrypoint dependencies', () => {
     const context = getContext()
     const { prefetch, preload, scripts, styles } = getRequestDependencies({}, context)
-    expect(Object.values(prefetch).map(i => i.path)).toMatchInlineSnapshot(`
+    expect(Object.values(prefetch).map(i => i.file)).toMatchInlineSnapshot(`
       [
         "entry.png",
         "index.mjs",
         "index.css",
       ]
     `)
-    expect(Object.values(preload).map(i => i.path)).toMatchInlineSnapshot(`
+    expect(Object.values(preload).map(i => i.file)).toMatchInlineSnapshot(`
       [
         "entry.mjs",
         "vendor.mjs",
       ]
     `)
-    expect(Object.values(scripts).map(i => i.path)).toMatchInlineSnapshot(`
+    expect(Object.values(scripts).map(i => i.file)).toMatchInlineSnapshot(`
       [
         "entry.mjs",
       ]
     `)
-    expect(Object.values(styles).map(i => i.path)).toMatchInlineSnapshot(`
+    expect(Object.values(styles).map(i => i.file)).toMatchInlineSnapshot(`
       [
         "test.css",
       ]
@@ -45,7 +46,7 @@ describe('dependencies', () => {
     const { prefetch, preload, scripts, styles } = getRequestDependencies({
       modules: new Set(['pages/about.vue'])
     }, context)
-    expect(Object.values(prefetch).map(i => i.path)).toMatchInlineSnapshot(`
+    expect(Object.values(prefetch).map(i => i.file)).toMatchInlineSnapshot(`
       [
         "entry.png",
         "index.mjs",
@@ -54,20 +55,20 @@ describe('dependencies', () => {
         "lazy-component.css",
       ]
     `)
-    expect(Object.values(preload).map(i => i.path)).toMatchInlineSnapshot(`
+    expect(Object.values(preload).map(i => i.file)).toMatchInlineSnapshot(`
       [
         "entry.mjs",
         "vendor.mjs",
         "about.mjs",
       ]
     `)
-    expect(Object.values(scripts).map(i => i.path)).toMatchInlineSnapshot(`
+    expect(Object.values(scripts).map(i => i.file)).toMatchInlineSnapshot(`
       [
         "entry.mjs",
         "about.mjs",
       ]
     `)
-    expect(Object.values(styles).map(i => i.path)).toMatchInlineSnapshot(`
+    expect(Object.values(styles).map(i => i.file)).toMatchInlineSnapshot(`
       [
         "test.css",
         "about.css",

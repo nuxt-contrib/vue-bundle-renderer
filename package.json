@@ -9,9 +9,9 @@
       "require": "./dist/index.cjs",
       "import": "./dist/index.mjs"
     },
-    "./legacy": {
-      "require": "./dist/legacy.cjs",
-      "import": "./dist/legacy.mjs"
+    "./runtime": {
+      "require": "./dist/runtime.cjs",
+      "import": "./dist/runtime.mjs"
     }
   },
   "main": "./dist/index.cjs",
@@ -19,7 +19,7 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
-    "legacy.d.ts"
+    "runtime.d.ts"
   ],
   "scripts": {
     "build": "unbuild",

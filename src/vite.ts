@@ -1,0 +1,23 @@
+import type { Manifest as ViteManifest } from 'vite'
+import { Manifest, parseResource } from './manifest'
+
+export const normalizeViteManifest = (manifest: ViteManifest): Manifest => {
+  const _manifest: Manifest = {}
+
+  for (const file in manifest) {
+    const chunk = manifest[file]
+    _manifest[file] = { ...chunk, ...parseResource(chunk.file || file) }
+    for (const item of chunk.css || []) {
+      if (!_manifest[item]) {
+        _manifest[item] = { file: item, ...parseResource(item) }
+      }
+    }
+    for (const item of chunk.assets || []) {
+      if (!_manifest[item]) {
+        _manifest[item] = { file: item, ...parseResource(item) }
+      }
+    }
+  }
+
+  return _manifest
+}
