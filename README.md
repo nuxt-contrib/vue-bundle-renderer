@@ -3,7 +3,6 @@
 [![npm version][npm-version-src]][npm-version-href]
 [![npm downloads][npm-downloads-src]][npm-downloads-href]
 [![Github Actions][github-actions-src]][github-actions-href]
-[![Dependencies][david-dm-src]][david-dm-href]
 <!-- [![Codecov][codecov-src]][codecov-href] -->
 
 SSR Bundle Renderer for [Vue 3](https://vuejs.org/).
@@ -58,6 +57,3 @@ MIT
 
 [codecov-src]: https://img.shields.io/codecov/c/gh/nuxt-contrib/vue-bundle-renderer/master?style=flat-square
 [codecov-href]: https://codecov.io/gh/nuxt-contrib/vue-bundle-renderer
-
-[david-dm-src]: https://img.shields.io/david/nuxt-contrib/vue-bundle-renderer?style=flat-square
-[david-dm-href]: https://david-dm.org/nuxt-contrib/vue-bundle-renderer
