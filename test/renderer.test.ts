@@ -1,92 +1,115 @@
-import { expect } from 'chai'
+import { describe, expect, it } from 'vitest'
+import { joinURL } from 'ufo'
 
 import { createRenderer } from '../src/renderer'
-
-import clientManifest from './fixtures/manifest.json'
-import legacyManifest from './fixtures/legacy-manifest.json'
+import manifest from './fixtures/manifest.json'
 
 describe('renderer', () => {
-  const getRenderer = async () => {
-    const renderer = createRenderer(() => { }, { clientManifest, renderToString: () => '' })
+  const getRenderer = async (modules = [
+    'app.vue',
+    '../packages/nuxt3/src/pages/runtime/page.vue',
+    'pages/index.vue'
+  ]) => {
+    const renderer = createRenderer(() => { }, {
+      manifest,
+      renderToString: () => '',
+      buildAssetsURL: id => joinURL('/assets', id)
+    })
     return await renderer.renderToString({
-      modules: new Set([
-        'app.vue',
-        '../packages/nuxt3/src/pages/runtime/page.vue',
-        'pages/index.vue'
-      ])
+      modules: new Set(modules)
     })
   }
 
   it('renders scripts correctly', async () => {
     const { renderScripts } = await getRenderer()
-    const result = renderScripts().split('</script>').slice(0, -1).map(s => `${s}</script>`).sort()
-    expect(result).to.deep.equal([
-      '<script type="module" src="/entry.mjs" crossorigin></script>',
-      '<script type="module" src="/index.mjs" crossorigin></script>'
+    const result = renderScripts().split('</script>').slice(0, -1).map(s => `${s}</script>`)
+    expect(result).toMatchInlineSnapshot(`
+      [
+        "<script type=\\"module\\" src=\\"/assets/entry.mjs\\" crossorigin></script>",
+        "<script type=\\"module\\" src=\\"/assets/index.mjs\\" crossorigin></script>",
+      ]
+    `)
+  })
+
+  it('renders styles correctly', async () => {
+    const { renderStyles } = await getRenderer()
+    expect(renderStyles().split('>').slice(0, -1).map(s => `${s}>`).sort()).toMatchInlineSnapshot(
+      `
+      [
+        "<link rel=\\"stylesheet\\" href=\\"/assets/index.css\\">",
+        "<link rel=\\"stylesheet\\" href=\\"/assets/test.css\\">",
+      ]
+    `
+    )
+  })
+
+  it('renders resource hints correctly', async () => {
+    const { renderResourceHints } = await getRenderer()
+    const result = renderResourceHints().split('>').slice(0, -1).map(s => `${s}>`).sort()
+    expect(result).toMatchInlineSnapshot(
+    `
+      [
+        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/entry.mjs\\">",
+        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/index.mjs\\">",
+        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/vendor.mjs\\">",
+        "<link rel=\\"prefetch\\" as=\\"image\\" type=\\"image/png\\" href=\\"/assets/entry.png\\">",
+      ]
+    `)
+  })
+
+  it('renders resource hint headers correctly', async () => {
+    const { renderResourceHeaders } = await getRenderer()
+    const result = renderResourceHeaders()
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "link": "</assets/entry.mjs>; rel=\\"modulepreload\\"; as=\\"script\\"; crossorigin, </assets/vendor.mjs>; rel=\\"modulepreload\\"; as=\\"script\\"; crossorigin, </assets/index.mjs>; rel=\\"modulepreload\\"; as=\\"script\\"; crossorigin, </assets/entry.png>; rel=\\"prefetch\\"; as=\\"image\\"; type=\\"image/png\\"",
+      }
+    `)
+  })
+
+  it('prefetches dynamic imports minimally', async () => {
+    const { renderResourceHints } = await getRenderer([
+      'pages/about.vue'
     ])
-  })
-  it('renders styles correctly', async () => {
-    const { renderStyles } = await getRenderer()
-    expect(renderStyles()).to.equal(
-      '<link rel="stylesheet" href="/index.css">'
-    )
-  })
-  it('renders resource hints correctly', async () => {
-    const { renderResourceHints } = await getRenderer()
     const result = renderResourceHints().split('>').slice(0, -1).map(s => `${s}>`).sort()
-    expect(result).to.deep.equal(
+    expect(result).toMatchInlineSnapshot(`
       [
-        '<link rel="modulepreload" href="/entry.mjs" as="script" crossorigin>',
-        '<link rel="modulepreload" href="/index.mjs" as="script" crossorigin>',
-        '<link rel="modulepreload" href="/vendor.mjs" as="script" crossorigin>',
-        '<link rel="preload" href="/index.css" as="style">'
+        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/about.mjs\\">",
+        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/entry.mjs\\">",
+        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/vendor.mjs\\">",
+        "<link rel=\\"prefetch stylesheet\\" href=\\"/assets/index.css\\">",
+        "<link rel=\\"prefetch stylesheet\\" href=\\"/assets/lazy-component.css\\">",
+        "<link rel=\\"prefetch\\" as=\\"image\\" type=\\"image/png\\" href=\\"/assets/entry.png\\">",
+        "<link rel=\\"prefetch\\" as=\\"script\\" crossorigin href=\\"/assets/index.mjs\\">",
+        "<link rel=\\"prefetch\\" as=\\"script\\" crossorigin href=\\"/assets/lazy-component.mjs\\">",
       ]
-    )
+    `)
   })
-})
 
-describe('renderer with legacy manifest', () => {
-  const getRenderer = async () => {
-    const renderer = createRenderer(() => { }, { clientManifest: legacyManifest as any, renderToString: () => '' })
-    return await renderer.renderToString({
-      _registeredComponents: new Set([
-        '4d87aad8',
-        '630f1d84',
-        '56940b2e'
-      ])
-    })
-  }
-
-  it('renders scripts correctly', async () => {
-    const { renderScripts } = await getRenderer()
-    const result = renderScripts().split('</script>').slice(0, -1).map(s => `${s}</script>`).sort()
-    expect(result).to.deep.equal(
-      [
-        '<script src="/_nuxt/app.js" defer crossorigin></script>',
-        '<script src="/_nuxt/commons/app.js" defer crossorigin></script>',
-        '<script src="/_nuxt/runtime.js" defer crossorigin></script>'
-      ]
-    )
-  })
-  it('renders styles correctly', async () => {
-    const { renderStyles } = await getRenderer()
-    expect(renderStyles()).to.equal(
-      '<link rel="stylesheet" href="/_nuxt/app.css">'
-    )
-  })
-  it('renders resource hints correctly', async () => {
-    const { renderResourceHints } = await getRenderer()
+  it('uses correct content types', async () => {
+    const { renderResourceHints } = await getRenderer([
+      'pages/about.vue',
+      'components/LazyComponent.vue'
+    ])
     const result = renderResourceHints().split('>').slice(0, -1).map(s => `${s}>`).sort()
-    expect(result).to.deep.equal(
+    expect(result).toMatchInlineSnapshot(`
       [
-        '<link rel="prefetch stylesheet" href="/_nuxt/pages/another.css">', // dynamic import CSS
-        '<link rel="prefetch" as="script" href="/_nuxt/pages/another.js">', // dynamic import
-        '<link rel="preload" href="/_nuxt/app.css" as="style">', // entrypoint CSS
-        '<link rel="preload" href="/_nuxt/app.js" as="script">',
-        '<link rel="preload" href="/_nuxt/commons/app.js" as="script">',
-        '<link rel="preload" href="/_nuxt/pages/index.js" as="script">', // dynamic entrypoint
-        '<link rel="preload" href="/_nuxt/runtime.js" as="script">'
+        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/about.mjs\\">",
+        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/entry.mjs\\">",
+        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/lazy-component.mjs\\">",
+        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/vendor.mjs\\">",
+        "<link rel=\\"prefetch stylesheet\\" href=\\"/assets/index.css\\">",
+        "<link rel=\\"prefetch\\" as=\\"audio\\" href=\\"/assets/lazy-component.mp3\\">",
+        "<link rel=\\"prefetch\\" as=\\"font\\" type=\\"font/woff\\" crossorigin href=\\"/assets/lazy-component.woff\\">",
+        "<link rel=\\"prefetch\\" as=\\"font\\" type=\\"font/woff2\\" crossorigin href=\\"/assets/lazy-component.woff2\\">",
+        "<link rel=\\"prefetch\\" as=\\"image\\" type=\\"image/jpeg\\" href=\\"/assets/lazy-component.jpg\\">",
+        "<link rel=\\"prefetch\\" as=\\"image\\" type=\\"image/png\\" href=\\"/assets/entry.png\\">",
+        "<link rel=\\"prefetch\\" as=\\"image\\" type=\\"image/png\\" href=\\"/assets/lazy-component.png\\">",
+        "<link rel=\\"prefetch\\" as=\\"image\\" type=\\"image/svg+xml\\" href=\\"/assets/lazy-component.svg\\">",
+        "<link rel=\\"prefetch\\" as=\\"image\\" type=\\"image/x-icon\\" href=\\"/assets/lazy-component.ico\\">",
+        "<link rel=\\"prefetch\\" as=\\"script\\" crossorigin href=\\"/assets/index.mjs\\">",
+        "<link rel=\\"prefetch\\" as=\\"video\\" href=\\"/assets/lazy-component.mp4\\">",
       ]
-    )
+    `)
   })
 })

@@ -1,6 +1,6 @@
-import { expect } from 'chai'
+import { describe, expect, it } from 'vitest'
 
-import { isLegacyClientManifest, normalizeClientManifest } from '../src/renderer'
+import { isLegacyClientManifest, normalizeClientManifest } from '../src/legacy'
 
 import legacyManifest from './fixtures/legacy-manifest.json'
 

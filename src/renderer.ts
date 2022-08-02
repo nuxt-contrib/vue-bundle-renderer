@@ -1,220 +1,77 @@
-import { isModule, ensureTrailingSlash, isJS, isCSS, getPreloadType, getExtension } from './utils'
-
-// Uncomment for better type hinting in development
-// const type = Symbol('type')
-// type As<T, L> = T & { [type]: L }
-export type Identifier = string // & As<string, 'Identifier'>
-export type OutputPath = string // & As<string, 'OutputPath'>
-
-export interface ResourceMeta {
-  file: OutputPath
-  src?: Identifier
-  isEntry?: boolean
-  isDynamicEntry?: boolean
-  dynamicImports?: Identifier[]
-  imports?: Identifier[]
-  css?: OutputPath[]
-  assets?: OutputPath[]
-}
-
-export type ClientManifest = Record<Identifier, ResourceMeta>
-
-// Vue2 Webpack client manifest format
-export interface LegacyClientManifest {
-  publicPath: string
-  all: Array<OutputPath>
-  initial: Array<OutputPath>
-  async: Array<OutputPath>
-  modules: Record<Identifier, Array<number>>
-  hasNoCssVersion?: { [file: string]: boolean }
-}
-
-export interface Resource {
-  file: string
-  extension: string
-  fileWithoutQuery: string
-  asType: string
-}
+import type { Manifest, ManifestChunk } from 'vite'
+import { withLeadingSlash } from 'ufo'
+import { renderLinkToString, renderLinkToHeader, renderScriptToString, parseResource } from './utils'
+import type { LinkAttributes, ParsedResource } from './utils'
 
 export interface ModuleDependencies {
-  scripts: Record<string, {
-    path: OutputPath
-    type?: 'module' | 'script'
-  }>
-  styles: Record<string, { path: OutputPath }>
-  preload: Record<string, {
-    path: OutputPath
-    // https://developer.mozilla.org/en-US/docs/Web/HTML/Link_types/preload#what_types_of_content_can_be_preloaded
-    type?: 'module' | 'script' | 'style' | 'font' | 'fetch' | 'image'
-    extension?: string
-  }>
-  prefetch: Record<string, {
-    path: OutputPath
-    type?: 'module' | 'script'
-  }>
+  scripts: Record<string, ParsedResource>
+  styles: Record<string, ParsedResource>
+  preload: Record<string, ParsedResource>
+  prefetch: Record<string, ParsedResource>
 }
 
 export interface SSRContext {
-  getPreloadFiles?: Function
   renderResourceHints?: Function
-  renderState?: Function
   renderScripts?: Function
   renderStyles?: Function
-  nonce?: string
-  head?: string
-  styles?: string
   // @vitejs/plugin-vue: https://vitejs.dev/guide/ssr.html#generating-preload-directives
-  modules?: Set<Identifier>
+  modules?: Set<string>
   // vue-loader (webpack)
-  _registeredComponents?: Set<Identifier>
+  _registeredComponents?: Set<string>
   // Cache
   _requestDependencies?: ModuleDependencies
+  [key: string]: any
 }
 
-export interface RendererContext {
-  shouldPrefetch: (file: string, type: ModuleDependencies['prefetch'][string]['type']) => boolean
-  shouldPreload: (file: string, type: ModuleDependencies['preload'][string]['type']) => boolean
-  publicPath?: string
-  clientManifest: ClientManifest
-  basedir?: string
+export interface RenderOptions {
+  shouldPrefetch?: (resource: ParsedResource) => boolean
+  shouldPreload?: (resource: ParsedResource) => boolean
+  buildAssetsURL?: (id: string) => string
+  manifest: Manifest
+}
+
+export interface RendererContext extends Required<RenderOptions> {
   _dependencies: Record<string, ModuleDependencies>
   _dependencySets: Record<string, ModuleDependencies>
-  _entrypoints: Identifier[]
-  _dynamicEntrypoints: Identifier[]
-  updateManifest: (manifest: ClientManifest) => void
+  _parsedResources: Record<string, ParsedResource>
+  _entrypoints: string[]
+  updateManifest: (manifest: Manifest) => void
 }
 
-export type RenderOptions = Partial<Exclude<RendererContext, 'entrypoints'>>
+const defaultShouldPrefetch = () => true
+const defaultShouldPreload = (resource: ParsedResource) => ['module', 'script', 'style'].includes(resource.asType || '')
 
-export function createRendererContext ({ clientManifest, publicPath, basedir, shouldPrefetch, shouldPreload }: RenderOptions): RendererContext {
+export function createRendererContext ({ manifest, buildAssetsURL, shouldPrefetch, shouldPreload }: RenderOptions): RendererContext {
   const ctx: RendererContext = {
     // User customisation of output
-    shouldPrefetch: shouldPrefetch || (() => true),
-    shouldPreload: shouldPreload || ((_file: string, asType: ModuleDependencies['preload'][string]['type']) => ['module', 'script', 'style'].includes(asType as string)),
+    shouldPrefetch: shouldPrefetch || defaultShouldPrefetch,
+    shouldPreload: shouldPreload || defaultShouldPreload,
     // Manifest
-    publicPath: ensureTrailingSlash(publicPath || '/'),
-    basedir,
-    clientManifest: undefined!,
+    buildAssetsURL: buildAssetsURL || withLeadingSlash,
+    manifest: undefined!,
     updateManifest,
     // Internal cache
     _dependencies: undefined!,
     _dependencySets: undefined!,
-    _entrypoints: undefined!,
-    _dynamicEntrypoints: undefined!
+    _parsedResources: undefined!,
+    _entrypoints: undefined!
   }
 
-  function updateManifest (clientManifest?: ClientManifest) {
-    const manifest = normalizeClientManifest(clientManifest!)
-    const manifestEntries = Object.entries(manifest) as [Identifier, ResourceMeta][]
-    ctx.clientManifest = manifest
+  function updateManifest (manifest: Manifest) {
+    const manifestEntries = Object.entries(manifest) as [string, ManifestChunk][]
+    ctx.manifest = manifest
     ctx._dependencies = {}
     ctx._dependencySets = {}
+    ctx._parsedResources = {}
     ctx._entrypoints = manifestEntries.filter(e => e[1].isEntry).map(([module]) => module)
-    ctx._dynamicEntrypoints = manifestEntries.filter(e => e[1].isDynamicEntry).map(([module]) => module)
-    ctx.publicPath = ensureTrailingSlash(publicPath || (clientManifest as any).publicPath || '/')
   }
 
-  updateManifest(clientManifest)
+  updateManifest(manifest)
 
   return ctx
 }
 
-export function isLegacyClientManifest (clientManifest: ClientManifest | LegacyClientManifest): clientManifest is LegacyClientManifest {
-  return 'all' in clientManifest && 'initial' in clientManifest
-}
-
-function getIdentifier (output: OutputPath): Identifier
-function getIdentifier (output?: undefined): null
-function getIdentifier (output?: OutputPath): null | Identifier {
-  return output ? `_${output}` as Identifier : null
-}
-
-export function normalizeClientManifest (manifest: ClientManifest | LegacyClientManifest = { }): ClientManifest {
-  if (!isLegacyClientManifest(manifest)) {
-    return manifest
-  }
-
-  // Upgrade legacy manifest
-  // https://github.com/nuxt-contrib/vue-bundle-renderer/issues/12
-  const clientManifest: ClientManifest = {}
-
-  // Initialize with all keys
-  for (const outfile of manifest.all) {
-    if (isJS(outfile)) {
-      clientManifest[getIdentifier(outfile)] = {
-        file: outfile
-      }
-    }
-  }
-
-  // Prepare first entrypoint to receive extra data
-  const first = getIdentifier(manifest.initial.find(isJS)!)
-  if (first) {
-    if (!(first in clientManifest)) {
-      throw new Error(
-        `Invalid manifest - initial entrypoint not in \`all\`: ${manifest.initial.find(isJS)}`
-      )
-    }
-    clientManifest[first].css = []
-    clientManifest[first].assets = []
-    clientManifest[first].dynamicImports = []
-  }
-
-  for (const outfile of manifest.initial) {
-    if (isJS(outfile)) {
-      clientManifest[getIdentifier(outfile)].isEntry = true
-    } else if (isCSS(outfile) && first) {
-      clientManifest[first].css!.push(outfile)
-    } else if (first) {
-      clientManifest[first].assets!.push(outfile)
-    }
-  }
-
-  for (const outfile of manifest.async) {
-    if (isJS(outfile)) {
-      const identifier = getIdentifier(outfile)
-      if (!(identifier in clientManifest)) {
-        throw new Error(`Invalid manifest - async module not in \`all\`: ${outfile}`)
-      }
-      clientManifest[identifier].isDynamicEntry = true
-      clientManifest[first].dynamicImports!.push(identifier)
-    } else if (first) {
-      // Add assets (CSS/JS) as dynamic imports to first entrypoints
-      // as a workaround so can be prefetched.
-      const key = isCSS(outfile) ? 'css' : 'assets'
-      const identifier = getIdentifier(outfile)
-      clientManifest[identifier] = {
-        file: '' as OutputPath,
-        [key]: [outfile]
-      }
-      clientManifest[first].dynamicImports!.push(identifier)
-    }
-  }
-
-  // Map modules to virtual entries
-  for (const [moduleId, importIndexes] of Object.entries(manifest.modules)) {
-    const jsFiles = importIndexes.map(index => manifest.all[index]).filter(isJS)
-    jsFiles.forEach((file) => {
-      const identifier = getIdentifier(file)
-      clientManifest[identifier] = {
-        ...clientManifest[identifier],
-        file
-      }
-    })
-
-    const mappedIndexes = importIndexes.map(index => manifest.all[index])
-    clientManifest[moduleId as Identifier] = {
-      file: '' as OutputPath,
-      imports: jsFiles.map(id => getIdentifier(id)),
-      css: mappedIndexes.filter(isCSS),
-      assets: mappedIndexes.filter(i => !isJS(i) && !isCSS(i))
-    }
-  }
-
-  return clientManifest
-}
-
-export function getModuleDependencies (id: Identifier, rendererContext: RendererContext): ModuleDependencies {
+export function getModuleDependencies (id: string, rendererContext: RendererContext): ModuleDependencies {
   if (rendererContext._dependencies[id]) {
     return rendererContext._dependencies[id]
   }
@@ -226,30 +83,25 @@ export function getModuleDependencies (id: Identifier, rendererContext: Renderer
     prefetch: {}
   }
 
-  const meta = rendererContext.clientManifest[id]
+  const meta = rendererContext.manifest[id]
 
   if (!meta) {
     rendererContext._dependencies[id] = dependencies
     return dependencies
   }
 
+  // Add to scripts + preload
   if (meta.file) {
-    // Add to scripts + preload
-    const type = isModule(meta.file) ? 'module' : 'script'
-    dependencies.scripts[id] = { path: meta.file, type }
-    dependencies.preload[id] = { path: meta.file, type }
+    dependencies.scripts[id] = dependencies.preload[id] = rendererContext._parsedResources[meta.file] || parseResource(meta.file)
   }
 
   // Add styles + preload
   for (const css of meta.css || []) {
-    dependencies.styles[css] = { path: css }
-    dependencies.preload[css] = { path: css, type: 'style' }
-    dependencies.prefetch[css] = { path: css }
+    dependencies.styles[css] = dependencies.preload[css] = dependencies.prefetch[css] = rendererContext._parsedResources[css] || parseResource(css)
   }
   // Add assets as preload
   for (const asset of meta.assets || []) {
-    dependencies.preload[asset] = { path: asset, type: getPreloadType(asset), extension: getExtension(asset) }
-    dependencies.prefetch[asset] = { path: asset }
+    dependencies.preload[asset] = dependencies.prefetch[asset] = rendererContext._parsedResources[asset] || parseResource(asset)
   }
   // Resolve nested dependencies and merge
   for (const depId of meta.imports || []) {
@@ -261,8 +113,8 @@ export function getModuleDependencies (id: Identifier, rendererContext: Renderer
   const filteredPreload: ModuleDependencies['preload'] = {}
   for (const id in dependencies.preload) {
     const dep = dependencies.preload[id]
-    if (rendererContext.shouldPreload(dep.path, dep.type)) {
-      filteredPreload[id] = dependencies.preload[id]
+    if (rendererContext.shouldPreload(dep)) {
+      filteredPreload[id] = dep
     }
   }
   dependencies.preload = filteredPreload
@@ -271,7 +123,7 @@ export function getModuleDependencies (id: Identifier, rendererContext: Renderer
   return dependencies
 }
 
-export function getAllDependencies (ids: Set<Identifier>, rendererContext: RendererContext): ModuleDependencies {
+export function getAllDependencies (ids: Set<string>, rendererContext: RendererContext): ModuleDependencies {
   const cacheKey = Array.from(ids).join(',')
   if (rendererContext._dependencySets[cacheKey]) {
     return rendererContext._dependencySets[cacheKey]
@@ -291,18 +143,34 @@ export function getAllDependencies (ids: Set<Identifier>, rendererContext: Rende
     Object.assign(allDeps.preload, deps.preload)
     Object.assign(allDeps.prefetch, deps.prefetch)
 
-    for (const dynamicDepId of rendererContext.clientManifest[id]?.dynamicImports || []) {
+    for (const dynamicDepId of rendererContext.manifest[id]?.dynamicImports || []) {
       const dynamicDeps = getModuleDependencies(dynamicDepId, rendererContext)
       Object.assign(allDeps.prefetch, dynamicDeps.scripts)
       Object.assign(allDeps.prefetch, dynamicDeps.styles)
       Object.assign(allDeps.prefetch, dynamicDeps.preload)
-      Object.assign(allDeps.prefetch, dynamicDeps.prefetch)
     }
   }
 
+  const filteredPrefetch: ModuleDependencies['prefetch'] = {}
+  for (const id in allDeps.prefetch) {
+    const dep = allDeps.prefetch[id]
+    if (rendererContext.shouldPrefetch(dep)) {
+      filteredPrefetch[id] = dep
+    }
+  }
+  allDeps.prefetch = filteredPrefetch
+
+  // Don't render prefetch links if we're preloading them
   for (const id in allDeps.prefetch) {
     if (id in allDeps.preload) {
       delete allDeps.prefetch[id]
+    }
+  }
+
+  // Don't render preload links if we're adding them as stylesheets
+  for (const id in allDeps.styles) {
+    if (id in allDeps.preload) {
+      delete allDeps.preload[id]
     }
   }
 
@@ -314,7 +182,7 @@ export function getRequestDependencies (ssrContext: SSRContext, rendererContext:
   if (ssrContext._requestDependencies) {
     return ssrContext._requestDependencies
   }
-  const ids = new Set<Identifier>(Array.from([
+  const ids = new Set<string>(Array.from([
     ...rendererContext._entrypoints,
     ...ssrContext.modules /* vite */ || ssrContext._registeredComponents /* webpack */ || []
   ]))
@@ -325,48 +193,59 @@ export function getRequestDependencies (ssrContext: SSRContext, rendererContext:
 
 export function renderStyles (ssrContext: SSRContext, rendererContext: RendererContext): string {
   const { styles } = getRequestDependencies(ssrContext, rendererContext)
-  return Object.values(styles).map(({ path }) =>
-    `<link rel="stylesheet" href="${rendererContext.publicPath}${path}">`
+  return Object.values(styles).map(resource =>
+    renderLinkToString({ rel: 'stylesheet', href: rendererContext.buildAssetsURL(resource.path) })
   ).join('')
+}
+
+export function getResources (ssrContext: SSRContext, rendererContext: RendererContext): LinkAttributes[] {
+  return [...getPreloadLinks(ssrContext, rendererContext), ...getPrefetchLinks(ssrContext, rendererContext)]
 }
 
 export function renderResourceHints (ssrContext: SSRContext, rendererContext: RendererContext): string {
-  return renderPreloadLinks(ssrContext, rendererContext) + renderPrefetchLinks(ssrContext, rendererContext)
+  return getResources(ssrContext, rendererContext).map(renderLinkToString).join('')
 }
 
-export function renderPreloadLinks (ssrContext: SSRContext, rendererContext: RendererContext): string {
+export function renderResourceHeaders (ssrContext: SSRContext, rendererContext: RendererContext): Record<string, string> {
+  return {
+    link: getResources(ssrContext, rendererContext).map(renderLinkToHeader).join(', ')
+  }
+}
+
+export function getPreloadLinks (ssrContext: SSRContext, rendererContext: RendererContext): LinkAttributes[] {
   const { preload } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(preload)
-    .map((file) => {
-      // const isModule = file.type === 'module' || file.type === 'script'
-      const rel = file.type === 'module' ? 'modulepreload' : 'preload'
-      const as = file.type ? file.type === 'module' ? ' as="script"' : ` as="${file.type}"` : ''
-      const type = file.type === 'font' ? ` type="font/${file.extension}" crossorigin` : ''
-      const crossorigin = file.type === 'font' || file.type === 'module' ? ' crossorigin' : ''
-
-      return `<link rel="${rel}" href="${rendererContext.publicPath}${file.path}"${as}${type}${crossorigin}>`
-    }).join('')
+    .map(resource => ({
+      rel: resource.isModule ? 'modulepreload' : 'preload',
+      as: resource.asType,
+      type: resource.contentType,
+      crossorigin: resource.asType === 'font' || resource.isModule ? '' : null,
+      href: rendererContext.buildAssetsURL(resource.path)
+    }))
 }
 
-export function renderPrefetchLinks (ssrContext: SSRContext, rendererContext: RendererContext): string {
+export function getPrefetchLinks (ssrContext: SSRContext, rendererContext: RendererContext): LinkAttributes[] {
   const { prefetch } = getRequestDependencies(ssrContext, rendererContext)
-  return Object.values(prefetch).map(({ path }) => {
-    const rel = 'prefetch' + (isCSS(path) ? ' stylesheet' : '')
-    const as = isJS(path) ? ' as="script"' : ''
-
-    return `<link rel="${rel}"${as} href="${rendererContext.publicPath}${path}">`
-  }
-  ).join('')
+  return Object.values(prefetch).map(resource => ({
+    rel: 'prefetch' + (resource.asType === 'style' ? ' stylesheet' : ''),
+    as: resource.asType !== 'style' ? resource.asType : null,
+    type: resource.contentType,
+    crossorigin: resource.asType === 'font' || resource.isModule ? '' : null,
+    href: rendererContext.buildAssetsURL(resource.path)
+  }))
 }
 
 export function renderScripts (ssrContext: SSRContext, rendererContext: RendererContext): string {
   const { scripts } = getRequestDependencies(ssrContext, rendererContext)
-  return Object.values(scripts).map(({ path, type }) =>
-    `<script${type === 'module' ? ' type="module"' : ''} src="${rendererContext.publicPath}${path}"${type !== 'module' ? ' defer' : ''} crossorigin></script>`
-  ).join('')
+  return Object.values(scripts).map(resource => renderScriptToString({
+    type: resource.isModule ? 'module' : null,
+    src: rendererContext.buildAssetsURL(resource.path),
+    defer: resource.isModule ? null : '',
+    crossorigin: ''
+  })).join('')
 }
 
-export type RenderToStringFunction = (ssrContext: SSRContext, rendererContext: RendererContext) => string
+export type RenderFunction = (ssrContext: SSRContext, rendererContext: RendererContext) => any
 
 export function createRenderer (createApp: any, renderOptions: RenderOptions & { renderToString: Function }) {
   const rendererContext = createRendererContext(renderOptions)
@@ -380,10 +259,11 @@ export function createRenderer (createApp: any, renderOptions: RenderOptions & {
       const app = await _createApp(ssrContext)
       const html = await renderOptions.renderToString(app, ssrContext)
 
-      const wrap = (fn: RenderToStringFunction) => () => fn(ssrContext, rendererContext)
+      const wrap = <T extends RenderFunction>(fn: T) => () => fn(ssrContext, rendererContext) as ReturnType<T>
 
       return {
         html,
+        renderResourceHeaders: wrap(renderResourceHeaders),
         renderResourceHints: wrap(renderResourceHints),
         renderStyles: wrap(renderStyles),
         renderScripts: wrap(renderScripts)

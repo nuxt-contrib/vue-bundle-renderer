@@ -6,8 +6,12 @@
     "imports": [
       "_vendor.mjs"
     ],
+    "css": ["test.css"],
     "dynamicImports": [
       "pages/index.vue"
+    ],
+    "assets": [
+      "entry.png"
     ]
   },
   "_vendor.mjs": {
@@ -23,6 +27,39 @@
     ],
     "css": [
       "index.css"
+    ]
+  },
+  "pages/about.vue": {
+    "file": "about.mjs",
+    "src": "pages/about.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "../packages/nuxt3/src/app/entry.ts"
+    ],
+    "dynamicImports": ["components/LazyComponent.vue"],
+    "css": [
+      "about.css"
+    ]
+  },
+  "components/LazyComponent.vue": {
+    "file": "lazy-component.mjs",
+    "src": "components/LazyComponent.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor.mjs"
+    ],
+    "css": [
+      "lazy-component.css"
+    ],
+    "assets": [
+      "lazy-component.svg",
+      "lazy-component.jpg",
+      "lazy-component.png",
+      "lazy-component.woff",
+      "lazy-component.woff2",
+      "lazy-component.mp3",
+      "lazy-component.mp4",
+      "lazy-component.ico"
     ]
   }
 }
