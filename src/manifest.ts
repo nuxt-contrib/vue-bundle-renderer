@@ -1,10 +1,18 @@
-import { ManifestChunk as ViteManifestChunk } from 'vite'
-
-export interface ManifestChunk extends ViteManifestChunk {
+export interface ManifestChunk {
+  // https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/manifest.ts#L8-L19
+  src?: string
+  file: string
+  css?: string[]
+  assets?: string[]
+  isEntry?: boolean
+  isDynamicEntry?: boolean
+  imports?: string[]
+  dynamicImports?: string[]
+  // Augmentation for vue-bundle-renderer
   isModule?: boolean
   // https://developer.mozilla.org/en-US/docs/Web/HTML/Link_types/preload#what_types_of_content_can_be_preloaded
-  asType?: 'audio' | 'document' | 'embed' | 'fetch' | 'font' | 'image' | 'object' | 'script' | 'style' | 'track' | 'worker' | 'video'
-  contentType?: string
+  type?: 'audio' | 'document' | 'embed' | 'fetch' | 'font' | 'image' | 'object' | 'script' | 'style' | 'track' | 'worker' | 'video'
+  mimeType?: string
 }
 
 export interface Manifest {

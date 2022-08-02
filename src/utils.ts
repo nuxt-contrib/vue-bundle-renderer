@@ -23,7 +23,7 @@ const contentTypeMap: Record<string, string> = {
   svg: 'image/svg+xml'
 }
 
-export function getContentType (asType: ManifestChunk['asType'], extension: string) {
+export function getContentType (asType: ManifestChunk['type'], extension: string) {
   if (asType === 'font') {
     return `font/${extension}`
   }
@@ -32,7 +32,7 @@ export function getContentType (asType: ManifestChunk['asType'], extension: stri
   }
 }
 
-export function getAsType (ext: string): ManifestChunk['asType'] {
+export function getAsType (ext: string): ManifestChunk['type'] {
   if (ext === 'js' || ext === 'cjs' || ext === 'mjs') {
     return 'script'
   } else if (ext === 'css') {
@@ -56,7 +56,7 @@ export const parseResource = (path: string) => {
 
   const asType = getAsType(extension)
   if (asType) {
-    chunk.asType = asType
+    chunk.type = asType
 
     if (asType === 'script') {
       chunk.isModule = true
@@ -65,7 +65,7 @@ export const parseResource = (path: string) => {
 
   const contentType = getContentType(asType, extension)
   if (contentType) {
-    chunk.contentType = contentType
+    chunk.mimeType = contentType
   }
 
   return chunk
