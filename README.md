@@ -24,7 +24,15 @@ pnpm add vue-bundle-renderer
 ```ts
 import { createRenderer } from 'vue-bundle-renderer/runtime'
 
-declare function createRenderer(createApp:, renderOptions: RenderOptions)
+declare function createRenderer(createApp, renderOptions: RenderOptions)
+```
+
+### `createRendererManifest`
+
+```ts
+import { createRendererManifest } from 'vue-bundle-renderer'
+
+declare function createRendererManifest(manifest: ViteManifest | WebpackClientManifest, options: { bundler: 'vite' | 'webpack' })
 ```
 
 ### `normalizeViteManifest`
