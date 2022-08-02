@@ -1,3 +1,3 @@
-export type { Manifest, ManifestChunk } from './manifest'
+export type { Manifest, ResourceMeta } from './manifest'
 export * from './webpack'
 export * from './vite'

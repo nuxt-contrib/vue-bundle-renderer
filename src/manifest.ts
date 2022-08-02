@@ -1,4 +1,4 @@
-export interface ManifestChunk {
+export interface ResourceMeta {
   // https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/manifest.ts#L8-L19
   src?: string
   file: string
@@ -16,5 +16,5 @@ export interface ManifestChunk {
 }
 
 export interface Manifest {
-  [key: string]: ManifestChunk
+  [key: string]: ResourceMeta
 }

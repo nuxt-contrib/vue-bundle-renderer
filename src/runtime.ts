@@ -1,12 +1,12 @@
 import { withLeadingSlash } from 'ufo'
-import type { Manifest, ManifestChunk } from './manifest'
+import type { Manifest, ResourceMeta } from './manifest'
 import { LinkAttributes, renderLinkToHeader, renderLinkToString, renderScriptToString } from './runtime/utils'
 
 export interface ModuleDependencies {
-  scripts: Record<string, ManifestChunk>
-  styles: Record<string, ManifestChunk>
-  preload: Record<string, ManifestChunk>
-  prefetch: Record<string, ManifestChunk>
+  scripts: Record<string, ResourceMeta>
+  styles: Record<string, ResourceMeta>
+  preload: Record<string, ResourceMeta>
+  prefetch: Record<string, ResourceMeta>
 }
 
 export interface SSRContext {
@@ -23,8 +23,8 @@ export interface SSRContext {
 }
 
 export interface RenderOptions {
-  shouldPrefetch?: (resource: ManifestChunk) => boolean
-  shouldPreload?: (resource: ManifestChunk) => boolean
+  shouldPrefetch?: (resource: ResourceMeta) => boolean
+  shouldPreload?: (resource: ResourceMeta) => boolean
   buildAssetsURL?: (id: string) => string
   manifest: Manifest
 }
@@ -37,7 +37,7 @@ export interface RendererContext extends Required<RenderOptions> {
 }
 
 const defaultShouldPrefetch = () => true
-const defaultShouldPreload = (resource: ManifestChunk) => ['module', 'script', 'style'].includes(resource.type || '')
+const defaultShouldPreload = (resource: ResourceMeta) => ['module', 'script', 'style'].includes(resource.type || '')
 
 export function createRendererContext ({ manifest, buildAssetsURL, shouldPrefetch, shouldPreload }: RenderOptions): RendererContext {
   const ctx: RendererContext = {
@@ -55,7 +55,7 @@ export function createRendererContext ({ manifest, buildAssetsURL, shouldPrefetc
   }
 
   function updateManifest (manifest: Manifest) {
-    const manifestEntries = Object.entries(manifest) as [string, ManifestChunk][]
+    const manifestEntries = Object.entries(manifest) as [string, ResourceMeta][]
     ctx.manifest = manifest
     ctx._dependencies = {}
     ctx._dependencySets = {}

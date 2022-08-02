@@ -1,4 +1,4 @@
-import type { ManifestChunk } from './manifest'
+import type { ResourceMeta } from './manifest'
 
 const IS_JS_RE = /\.[cm]?js(\?[^.]+)?$/
 const HAS_EXT_RE = /[^./]+\.[^./]+$/
@@ -23,7 +23,7 @@ const contentTypeMap: Record<string, string> = {
   svg: 'image/svg+xml'
 }
 
-export function getContentType (asType: ManifestChunk['type'], extension: string) {
+export function getContentType (asType: ResourceMeta['type'], extension: string) {
   if (asType === 'font') {
     return `font/${extension}`
   }
@@ -32,7 +32,7 @@ export function getContentType (asType: ManifestChunk['type'], extension: string
   }
 }
 
-export function getAsType (ext: string): ManifestChunk['type'] {
+export function getAsType (ext: string): ResourceMeta['type'] {
   if (ext === 'js' || ext === 'cjs' || ext === 'mjs') {
     return 'script'
   } else if (ext === 'css') {
@@ -50,7 +50,7 @@ export function getAsType (ext: string): ManifestChunk['type'] {
 }
 
 export const parseResource = (path: string) => {
-  const chunk: Omit<ManifestChunk, 'file'> = {}
+  const chunk: Omit<ResourceMeta, 'file'> = {}
 
   const extension = path.replace(/\?.*/, '').split('.').pop() || ''
 
