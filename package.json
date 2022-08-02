@@ -42,5 +42,5 @@
     "vitest": "0.19.1",
     "vue": "3"
   },
-  "packageManager": "pnpm@6.32.3"
+  "packageManager": "pnpm@7.8.0"
 }
