@@ -1,7 +1,6 @@
 import { withLeadingSlash } from 'ufo'
 import type { Manifest, ManifestChunk } from './manifest'
-import { renderLinkToString, renderLinkToHeader, renderScriptToString } from './utils'
-import type { LinkAttributes } from './utils'
+import { LinkAttributes, renderLinkToHeader, renderLinkToString, renderScriptToString } from './runtime/utils'
 
 export interface ModuleDependencies {
   scripts: Record<string, ManifestChunk>

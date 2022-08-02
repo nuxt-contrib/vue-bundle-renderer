@@ -1,4 +1,5 @@
-import { Manifest, isJS, isCSS, parseResource } from './manifest'
+import type { Manifest } from './manifest'
+import { isJS, isCSS, parseResource } from './utils'
 
 // Comment out in dev mode for better type support
 // const type = Symbol('type')

@@ -1,5 +1,6 @@
 import type { Manifest as ViteManifest } from 'vite'
-import { Manifest, parseResource } from './manifest'
+import type { Manifest } from './manifest'
+import { parseResource } from './utils'
 
 export const normalizeViteManifest = (manifest: ViteManifest | Manifest): Manifest => {
   const _manifest: Manifest = {}
