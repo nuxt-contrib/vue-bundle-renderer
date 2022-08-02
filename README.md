@@ -6,7 +6,7 @@
 [![Dependencies][david-dm-src]][david-dm-href]
 <!-- [![Codecov][codecov-src]][codecov-href] -->
 
-SSR Bundle Renderer for Vue 3.
+SSR Bundle Renderer for [Vue 3](https://vuejs.org/).
 
 ## Install
 
@@ -14,6 +14,8 @@ SSR Bundle Renderer for Vue 3.
 yarn add vue-bundle-renderer
 
 npm install vue-bundle-renderer
+
+pnpm add vue-bundle-renderer
 ```
 
 ## Usage
