@@ -37,7 +37,7 @@ export interface RendererContext extends Required<RenderOptions> {
 }
 
 const defaultShouldPrefetch = () => true
-const defaultShouldPreload = (resource: ResourceMeta) => ['module', 'script', 'style'].includes(resource.type || '')
+const defaultShouldPreload = (resource: ResourceMeta) => ['module', 'script', 'style'].includes(resource.contentType || '')
 
 export function createRendererContext ({ manifest, buildAssetsURL, shouldPrefetch, shouldPreload }: RenderOptions): RendererContext {
   const ctx: RendererContext = {
@@ -213,9 +213,9 @@ export function getPreloadLinks (ssrContext: SSRContext, rendererContext: Render
   return Object.values(preload)
     .map(resource => ({
       rel: resource.isModule ? 'modulepreload' : 'preload',
-      as: resource.type,
+      as: resource.contentType,
       type: resource.mimeType ?? null,
-      crossorigin: resource.type === 'font' || resource.isModule ? '' : null,
+      crossorigin: resource.contentType === 'font' || resource.isModule ? '' : null,
       href: rendererContext.buildAssetsURL(resource.file)
     }))
 }
@@ -223,10 +223,10 @@ export function getPreloadLinks (ssrContext: SSRContext, rendererContext: Render
 export function getPrefetchLinks (ssrContext: SSRContext, rendererContext: RendererContext): LinkAttributes[] {
   const { prefetch } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(prefetch).map(resource => ({
-    rel: 'prefetch' + (resource.type === 'style' ? ' stylesheet' : ''),
-    as: resource.type !== 'style' ? resource.type : null,
+    rel: 'prefetch' + (resource.contentType === 'style' ? ' stylesheet' : ''),
+    as: resource.contentType !== 'style' ? resource.contentType : null,
     type: resource.mimeType ?? null,
-    crossorigin: resource.type === 'font' || resource.isModule ? '' : null,
+    crossorigin: resource.contentType === 'font' || resource.isModule ? '' : null,
     href: rendererContext.buildAssetsURL(resource.file)
   }))
 }
