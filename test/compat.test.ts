@@ -2,15 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { joinURL } from 'ufo'
 
 import { createRenderer } from '../src/runtime'
-import { normalizeWebpackManifest } from '../src/webpack'
-import { normalizeViteManifest } from '../src/vite'
+import { createRendererManifest } from '../src'
 
 import viteManifest from './fixtures/vite-manifest.json'
 import webpackManifest from './fixtures/webpack-manifest.json'
 
 describe('renderer with vite manifest', () => {
   const getRenderer = async () => {
-    const renderer = createRenderer(() => { }, { manifest: normalizeViteManifest(viteManifest), renderToString: () => '' })
+    const renderer = createRenderer(() => { }, { manifest: createRendererManifest(viteManifest, { bundler: 'vite' }), renderToString: () => '' })
     return await renderer.renderToString({
       modules: new Set([
         'app.vue',
@@ -50,7 +49,7 @@ describe('renderer with vite manifest', () => {
 
 describe('renderer with webpack manifest', () => {
   const getRenderer = async () => {
-    const manifest = normalizeWebpackManifest(webpackManifest)
+    const manifest = createRendererManifest(webpackManifest, { bundler: 'webpack' })
     for (const entry in manifest) {
       manifest[entry].module = false
     }

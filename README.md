@@ -35,26 +35,6 @@ import { createRendererManifest } from 'vue-bundle-renderer'
 declare function createRendererManifest(manifest: ViteManifest | WebpackClientManifest, options: { bundler: 'vite' | 'webpack' })
 ```
 
-### `normalizeViteManifest`
-
-If using a Vite manifest, you should normalize it with this function before passing it to `createRenderer`.
-
-```ts
-import { normalizeViteManifest } from 'vue-bundle-renderer'
-
-declare function normalizeViteManifest(manifest: ViteClientManifest)
-```
-
-### `normalizeWebpackManifest`
-
-If using a webpack manifest, you should normalize it with this function before passing it to `createRenderer`.
-
-```ts
-import { normalizeWebpackManifest } from 'vue-bundle-renderer'
-
-declare function normalizeWebpackManifest(manifest: WebpackClientManifest)
-```
-
 ## Credits
 
 Based on [vue-server-renderer](https://www.npmjs.com/package/vue-server-renderer) made by [Evan You](https://github.com/yyx990803).
