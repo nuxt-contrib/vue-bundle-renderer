@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-0](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.3.9...v0.4.0-0) (2022-08-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* rewrite with improvements (#30)
+
+* rewrite with improvements ([#30](https://github.com/nuxt-contrib/vue-bundle-renderer/issues/30)) ([dad6993](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/dad6993e0f0e19d979b5cae93d12417538e52bcc))
+
 ### [0.3.9](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.3.8...v0.3.9) (2022-06-10)
 
 
