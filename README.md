@@ -27,12 +27,20 @@ import { createRenderer } from 'vue-bundle-renderer/runtime'
 declare function createRenderer(createApp, renderOptions: RenderOptions)
 ```
 
-### `createRendererManifest`
+### `normalizeViteManifest`
 
 ```ts
-import { createRendererManifest } from 'vue-bundle-renderer'
+import { normalizeViteManifest } from 'vue-bundle-renderer'
 
-declare function createRendererManifest(manifest: ViteManifest | WebpackClientManifest, options: { bundler: 'vite' | 'webpack' })
+declare function normalizeViteManifest(manifest: ViteManifest)
+```
+
+### `normalizeWebpackManifest`
+
+```ts
+import { normalizeWebpackManifest } from 'vue-bundle-renderer'
+
+declare function normalizeWebpackManifest(manifest: ViteManifest)
 ```
 
 ## Credits
