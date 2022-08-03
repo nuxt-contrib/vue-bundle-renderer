@@ -45,31 +45,31 @@ describe('webpack manifest', () => {
         file: ''
       },
       '_app.js': {
-        contentType: 'script',
+        resourceType: 'script',
         file: 'app.js',
         isEntry: true,
         module: true
       },
       '_commons/app.js': {
-        contentType: 'script',
+        resourceType: 'script',
         file: 'commons/app.js',
         isEntry: true,
         module: true
       },
       '_pages/another.js': {
-        contentType: 'script',
+        resourceType: 'script',
         file: 'pages/another.js',
         isDynamicEntry: true,
         module: true
       },
       '_pages/index.js': {
-        contentType: 'script',
+        resourceType: 'script',
         file: 'pages/index.js',
         isDynamicEntry: true,
         module: true
       },
       '_runtime.js': {
-        contentType: 'script',
+        resourceType: 'script',
         assets: [],
         css: ['app.css'],
         dynamicImports: [
@@ -82,11 +82,11 @@ describe('webpack manifest', () => {
         module: true
       },
       'app.css': {
-        contentType: 'style',
+        resourceType: 'style',
         file: 'app.css'
       },
       'pages/another.css': {
-        contentType: 'style',
+        resourceType: 'style',
         file: 'pages/another.css'
       }
     })
