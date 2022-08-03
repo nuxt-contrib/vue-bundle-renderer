@@ -10,7 +10,7 @@ export function normalizeViteManifest (manifest: ViteManifest | Manifest): Manif
     _manifest[file] = { ...parseResource(chunk.file || file), ...chunk }
     for (const item of chunk.css || []) {
       if (!_manifest[item]) {
-        _manifest[item] = { file: item, ...parseResource(item) }
+        _manifest[item] = { file: item, resourceType: 'style', ...parseResource(item) }
       }
     }
     for (const item of chunk.assets || []) {
