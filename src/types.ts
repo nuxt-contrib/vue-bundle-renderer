@@ -18,3 +18,7 @@ export interface ResourceMeta {
 export interface Manifest {
   [key: string]: ResourceMeta
 }
+
+export function defineManifest (manifest: Manifest): Manifest {
+  return manifest
+}

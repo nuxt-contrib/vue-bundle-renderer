@@ -1,4 +1,4 @@
-import type { Manifest } from './manifest'
+import type { Manifest } from './types'
 import { isJS, isCSS, parseResource } from './utils'
 
 // Comment out in dev mode for better type support
@@ -15,12 +15,6 @@ export interface WebpackClientManifest {
   async: Array<OutputPath>
   modules: Record<Identifier, Array<number>>
   hasNoCssVersion?: { [file: string]: boolean }
-}
-
-function getIdentifier (output: OutputPath): Identifier
-function getIdentifier (output?: undefined): null
-function getIdentifier (output?: OutputPath): null | Identifier {
-  return output ? `_${output}` as Identifier : null
 }
 
 export function normalizeWebpackManifest (manifest: WebpackClientManifest): Manifest {
@@ -110,4 +104,10 @@ export function normalizeWebpackManifest (manifest: WebpackClientManifest): Mani
   }
 
   return clientManifest
+}
+
+function getIdentifier (output: OutputPath): Identifier
+function getIdentifier (output?: undefined): null
+function getIdentifier (output?: OutputPath): null | Identifier {
+  return output ? `_${output}` as Identifier : null
 }

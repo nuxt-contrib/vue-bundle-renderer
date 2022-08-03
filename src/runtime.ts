@@ -1,6 +1,5 @@
 import { withLeadingSlash } from 'ufo'
-import type { Manifest, ResourceMeta } from './manifest'
-import { LinkAttributes, renderLinkToHeader, renderLinkToString, renderScriptToString } from './runtime/utils'
+import type { Manifest, ResourceMeta } from './types'
 
 export interface ModuleDependencies {
   scripts: Record<string, ResourceMeta>
@@ -266,4 +265,27 @@ export function createRenderer (createApp: any, renderOptions: RenderOptions & {
       }
     }
   }
+}
+
+// --- Internal ---
+
+interface LinkAttributes {
+  rel: string | null
+  href: string
+  as?: string | null
+  type?: string | null
+  crossorigin?: '' | null
+}
+
+// Utilities to render script and link tags, and link headers
+function renderScriptToString (attrs: Record<string, string | null>) {
+  return `<script${Object.entries(attrs).map(([key, value]) => value === null ? '' : value ? ` ${key}="${value}"` : ' ' + key).join('')}></script>`
+}
+
+function renderLinkToString (attrs: LinkAttributes) {
+  return `<link${Object.entries(attrs).map(([key, value]) => value === null ? '' : value ? ` ${key}="${value}"` : ' ' + key).join('')}>`
+}
+
+function renderLinkToHeader (attrs: LinkAttributes) {
+  return `<${attrs.href}>${Object.entries(attrs).map(([key, value]) => key === 'href' || value === null ? '' : value ? `; ${key}="${value}"` : `; ${key}`).join('')}`
 }

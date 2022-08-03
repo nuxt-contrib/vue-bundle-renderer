@@ -1,4 +1,4 @@
-import type { ResourceMeta } from './manifest'
+import type { ResourceMeta } from './types'
 
 const IS_JS_RE = /\.[cm]?js(\?[^.]+)?$/
 const HAS_EXT_RE = /[^./]+\.[^./]+$/
