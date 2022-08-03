@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-1](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.4.0-0...v0.4.0-1) (2022-08-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* move resource parsing -> manifest stage and expose `/runtime` export (#33)
+
+* move resource parsing -> manifest stage and expose `/runtime` export ([#33](https://github.com/nuxt-contrib/vue-bundle-renderer/issues/33)) ([5dde2d1](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/5dde2d1999bbc37f71620cc1b8f1e091b3306f82))
+
 ## [0.4.0-0](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.3.9...v0.4.0-0) (2022-08-02)
 
 
