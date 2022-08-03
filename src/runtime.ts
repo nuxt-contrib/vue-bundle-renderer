@@ -35,6 +35,14 @@ export interface RendererContext extends Required<RenderOptions> {
   updateManifest: (manifest: Manifest) => void
 }
 
+interface LinkAttributes {
+  rel: string | null
+  href: string
+  as?: string | null
+  type?: string | null
+  crossorigin?: '' | null
+}
+
 const defaultShouldPrefetch = () => true
 const defaultShouldPreload = (resource: ResourceMeta) => ['module', 'script', 'style'].includes(resource.resourceType || '')
 
@@ -268,14 +276,6 @@ export function createRenderer (createApp: any, renderOptions: RenderOptions & {
 }
 
 // --- Internal ---
-
-interface LinkAttributes {
-  rel: string | null
-  href: string
-  as?: string | null
-  type?: string | null
-  crossorigin?: '' | null
-}
 
 // Utilities to render script and link tags, and link headers
 function renderScriptToString (attrs: Record<string, string | null>) {
