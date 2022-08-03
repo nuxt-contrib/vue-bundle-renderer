@@ -1,5 +1,5 @@
-import type { Manifest } from 'vite'
-import { isJS, isCSS } from './utils'
+import type { Manifest } from './manifest'
+import { isJS, isCSS, parseResource } from './utils'
 
 // Comment out in dev mode for better type support
 // const type = Symbol('type')
@@ -8,7 +8,7 @@ type Identifier = string // & As<string, 'Identifier'>
 type OutputPath = string // & As<string, 'OutputPath'>
 
 // Vue2 Webpack client manifest format
-export interface LegacyClientManifest {
+export interface WebpackClientManifest {
   publicPath: string
   all: Array<OutputPath>
   initial: Array<OutputPath>
@@ -17,22 +17,14 @@ export interface LegacyClientManifest {
   hasNoCssVersion?: { [file: string]: boolean }
 }
 
-export function isLegacyClientManifest (clientManifest: Manifest | LegacyClientManifest): clientManifest is LegacyClientManifest {
-  return 'all' in clientManifest && 'initial' in clientManifest
-}
-
 function getIdentifier (output: OutputPath): Identifier
 function getIdentifier (output?: undefined): null
 function getIdentifier (output?: OutputPath): null | Identifier {
   return output ? `_${output}` as Identifier : null
 }
 
-export function normalizeClientManifest (manifest: Manifest | LegacyClientManifest = {}): Manifest {
-  if (!isLegacyClientManifest(manifest)) {
-    return manifest
-  }
-
-  // Upgrade legacy manifest
+export function normalizeWebpackManifest (manifest: WebpackClientManifest): Manifest {
+  // Upgrade webpack manifest
   // https://github.com/nuxt-contrib/vue-bundle-renderer/issues/12
   const clientManifest: Manifest = {}
 
@@ -40,7 +32,8 @@ export function normalizeClientManifest (manifest: Manifest | LegacyClientManife
   for (const outfile of manifest.all) {
     if (isJS(outfile)) {
       clientManifest[getIdentifier(outfile)] = {
-        file: outfile
+        file: outfile,
+        ...parseResource(outfile)
       }
     }
   }
@@ -63,8 +56,10 @@ export function normalizeClientManifest (manifest: Manifest | LegacyClientManife
       clientManifest[getIdentifier(outfile)].isEntry = true
     } else if (isCSS(outfile) && first) {
       clientManifest[first].css!.push(outfile)
+      clientManifest[outfile] = { file: outfile, ...parseResource(outfile) }
     } else if (first) {
       clientManifest[first].assets!.push(outfile)
+      clientManifest[outfile] = { file: outfile, ...parseResource(outfile) }
     }
   }
 
@@ -85,6 +80,10 @@ export function normalizeClientManifest (manifest: Manifest | LegacyClientManife
         file: '' as OutputPath,
         [key]: [outfile]
       }
+      clientManifest[outfile] = {
+        file: outfile,
+        ...parseResource(outfile)
+      }
       clientManifest[first].dynamicImports!.push(identifier)
     }
   }
@@ -103,6 +102,7 @@ export function normalizeClientManifest (manifest: Manifest | LegacyClientManife
     const mappedIndexes = importIndexes.map(index => manifest.all[index])
     clientManifest[moduleId as Identifier] = {
       file: '' as OutputPath,
+      ...parseResource(moduleId),
       imports: jsFiles.map(id => getIdentifier(id)),
       css: mappedIndexes.filter(isCSS),
       assets: mappedIndexes.filter(i => !isJS(i) && !isCSS(i))

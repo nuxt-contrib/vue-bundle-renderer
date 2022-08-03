@@ -1,16 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { isLegacyClientManifest, normalizeClientManifest } from '../src/legacy'
+import { normalizeWebpackManifest } from '../src/webpack'
 
-import legacyManifest from './fixtures/legacy-manifest.json'
+import webpackManifest from './fixtures/webpack-manifest.json'
 
-describe('legacy manifest', () => {
-  it('should be detected as a legacy manifest', () => {
-    expect(isLegacyClientManifest(legacyManifest)).to.equal(true)
-  })
-
+describe('webpack manifest', () => {
   it('should normalize manifest', () => {
-    expect(normalizeClientManifest(legacyManifest)).to.deep.equal({
+    expect(normalizeWebpackManifest(webpackManifest)).to.deep.equal({
       '4d87aad8': {
         file: '',
         assets: [],
@@ -49,22 +45,31 @@ describe('legacy manifest', () => {
         file: ''
       },
       '_app.js': {
+        resourceType: 'script',
         file: 'app.js',
-        isEntry: true
+        isEntry: true,
+        module: true
       },
       '_commons/app.js': {
+        resourceType: 'script',
         file: 'commons/app.js',
-        isEntry: true
+        isEntry: true,
+        module: true
       },
       '_pages/another.js': {
+        resourceType: 'script',
         file: 'pages/another.js',
-        isDynamicEntry: true
+        isDynamicEntry: true,
+        module: true
       },
       '_pages/index.js': {
+        resourceType: 'script',
         file: 'pages/index.js',
-        isDynamicEntry: true
+        isDynamicEntry: true,
+        module: true
       },
       '_runtime.js': {
+        resourceType: 'script',
         assets: [],
         css: ['app.css'],
         dynamicImports: [
@@ -73,7 +78,16 @@ describe('legacy manifest', () => {
           '_pages/index.js'
         ],
         file: 'runtime.js',
-        isEntry: true
+        isEntry: true,
+        module: true
+      },
+      'app.css': {
+        resourceType: 'style',
+        file: 'app.css'
+      },
+      'pages/another.css': {
+        resourceType: 'style',
+        file: 'pages/another.css'
       }
     })
   })

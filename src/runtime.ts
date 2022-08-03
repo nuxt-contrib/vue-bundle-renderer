@@ -1,13 +1,12 @@
-import type { Manifest, ManifestChunk } from 'vite'
 import { withLeadingSlash } from 'ufo'
-import { renderLinkToString, renderLinkToHeader, renderScriptToString, parseResource } from './utils'
-import type { LinkAttributes, ParsedResource } from './utils'
+import type { Manifest, ResourceMeta } from './manifest'
+import { LinkAttributes, renderLinkToHeader, renderLinkToString, renderScriptToString } from './runtime/utils'
 
 export interface ModuleDependencies {
-  scripts: Record<string, ParsedResource>
-  styles: Record<string, ParsedResource>
-  preload: Record<string, ParsedResource>
-  prefetch: Record<string, ParsedResource>
+  scripts: Record<string, ResourceMeta>
+  styles: Record<string, ResourceMeta>
+  preload: Record<string, ResourceMeta>
+  prefetch: Record<string, ResourceMeta>
 }
 
 export interface SSRContext {
@@ -24,8 +23,8 @@ export interface SSRContext {
 }
 
 export interface RenderOptions {
-  shouldPrefetch?: (resource: ParsedResource) => boolean
-  shouldPreload?: (resource: ParsedResource) => boolean
+  shouldPrefetch?: (resource: ResourceMeta) => boolean
+  shouldPreload?: (resource: ResourceMeta) => boolean
   buildAssetsURL?: (id: string) => string
   manifest: Manifest
 }
@@ -33,13 +32,12 @@ export interface RenderOptions {
 export interface RendererContext extends Required<RenderOptions> {
   _dependencies: Record<string, ModuleDependencies>
   _dependencySets: Record<string, ModuleDependencies>
-  _parsedResources: Record<string, ParsedResource>
   _entrypoints: string[]
   updateManifest: (manifest: Manifest) => void
 }
 
 const defaultShouldPrefetch = () => true
-const defaultShouldPreload = (resource: ParsedResource) => ['module', 'script', 'style'].includes(resource.asType || '')
+const defaultShouldPreload = (resource: ResourceMeta) => ['module', 'script', 'style'].includes(resource.resourceType || '')
 
 export function createRendererContext ({ manifest, buildAssetsURL, shouldPrefetch, shouldPreload }: RenderOptions): RendererContext {
   const ctx: RendererContext = {
@@ -53,16 +51,14 @@ export function createRendererContext ({ manifest, buildAssetsURL, shouldPrefetc
     // Internal cache
     _dependencies: undefined!,
     _dependencySets: undefined!,
-    _parsedResources: undefined!,
     _entrypoints: undefined!
   }
 
   function updateManifest (manifest: Manifest) {
-    const manifestEntries = Object.entries(manifest) as [string, ManifestChunk][]
+    const manifestEntries = Object.entries(manifest) as [string, ResourceMeta][]
     ctx.manifest = manifest
     ctx._dependencies = {}
     ctx._dependencySets = {}
-    ctx._parsedResources = {}
     ctx._entrypoints = manifestEntries.filter(e => e[1].isEntry).map(([module]) => module)
   }
 
@@ -92,16 +88,16 @@ export function getModuleDependencies (id: string, rendererContext: RendererCont
 
   // Add to scripts + preload
   if (meta.file) {
-    dependencies.scripts[id] = dependencies.preload[id] = rendererContext._parsedResources[meta.file] || parseResource(meta.file)
+    dependencies.scripts[id] = dependencies.preload[id] = rendererContext.manifest[id]
   }
 
   // Add styles + preload
   for (const css of meta.css || []) {
-    dependencies.styles[css] = dependencies.preload[css] = dependencies.prefetch[css] = rendererContext._parsedResources[css] || parseResource(css)
+    dependencies.styles[css] = dependencies.preload[css] = dependencies.prefetch[css] = rendererContext.manifest[css]
   }
   // Add assets as preload
   for (const asset of meta.assets || []) {
-    dependencies.preload[asset] = dependencies.prefetch[asset] = rendererContext._parsedResources[asset] || parseResource(asset)
+    dependencies.preload[asset] = dependencies.prefetch[asset] = rendererContext.manifest[asset]
   }
   // Resolve nested dependencies and merge
   for (const depId of meta.imports || []) {
@@ -194,7 +190,7 @@ export function getRequestDependencies (ssrContext: SSRContext, rendererContext:
 export function renderStyles (ssrContext: SSRContext, rendererContext: RendererContext): string {
   const { styles } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(styles).map(resource =>
-    renderLinkToString({ rel: 'stylesheet', href: rendererContext.buildAssetsURL(resource.path) })
+    renderLinkToString({ rel: 'stylesheet', href: rendererContext.buildAssetsURL(resource.file) })
   ).join('')
 }
 
@@ -216,31 +212,31 @@ export function getPreloadLinks (ssrContext: SSRContext, rendererContext: Render
   const { preload } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(preload)
     .map(resource => ({
-      rel: resource.isModule ? 'modulepreload' : 'preload',
-      as: resource.asType,
-      type: resource.contentType,
-      crossorigin: resource.asType === 'font' || resource.isModule ? '' : null,
-      href: rendererContext.buildAssetsURL(resource.path)
+      rel: resource.module ? 'modulepreload' : 'preload',
+      as: resource.resourceType,
+      type: resource.mimeType ?? null,
+      crossorigin: resource.resourceType === 'font' || resource.module ? '' : null,
+      href: rendererContext.buildAssetsURL(resource.file)
     }))
 }
 
 export function getPrefetchLinks (ssrContext: SSRContext, rendererContext: RendererContext): LinkAttributes[] {
   const { prefetch } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(prefetch).map(resource => ({
-    rel: 'prefetch' + (resource.asType === 'style' ? ' stylesheet' : ''),
-    as: resource.asType !== 'style' ? resource.asType : null,
-    type: resource.contentType,
-    crossorigin: resource.asType === 'font' || resource.isModule ? '' : null,
-    href: rendererContext.buildAssetsURL(resource.path)
+    rel: 'prefetch' + (resource.resourceType === 'style' ? ' stylesheet' : ''),
+    as: resource.resourceType !== 'style' ? resource.resourceType : null,
+    type: resource.mimeType ?? null,
+    crossorigin: resource.resourceType === 'font' || resource.module ? '' : null,
+    href: rendererContext.buildAssetsURL(resource.file)
   }))
 }
 
 export function renderScripts (ssrContext: SSRContext, rendererContext: RendererContext): string {
   const { scripts } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(scripts).map(resource => renderScriptToString({
-    type: resource.isModule ? 'module' : null,
-    src: rendererContext.buildAssetsURL(resource.path),
-    defer: resource.isModule ? null : '',
+    type: resource.module ? 'module' : null,
+    src: rendererContext.buildAssetsURL(resource.file),
+    defer: resource.module ? null : '',
     crossorigin: ''
   })).join('')
 }

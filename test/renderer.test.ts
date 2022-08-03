@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { joinURL } from 'ufo'
 
-import { createRenderer } from '../src/renderer'
-import manifest from './fixtures/manifest.json'
+import { createRenderer } from '../src/runtime'
+import { normalizeViteManifest } from '../src/vite'
+import viteManifest from './fixtures/vite-manifest.json'
 
 describe('renderer', () => {
   const getRenderer = async (modules = [
@@ -11,7 +12,7 @@ describe('renderer', () => {
     'pages/index.vue'
   ]) => {
     const renderer = createRenderer(() => { }, {
-      manifest,
+      manifest: normalizeViteManifest(viteManifest),
       renderToString: () => '',
       buildAssetsURL: id => joinURL('/assets', id)
     })

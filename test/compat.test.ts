@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { joinURL } from 'ufo'
 
-import { createRenderer } from '../src/renderer'
-import { normalizeClientManifest } from '../src/legacy'
+import { createRenderer } from '../src/runtime'
+import { normalizeViteManifest, normalizeWebpackManifest } from '../src'
 
-import manifest from './fixtures/manifest.json'
-import legacyManifest from './fixtures/legacy-manifest.json'
+import viteManifest from './fixtures/vite-manifest.json'
+import webpackManifest from './fixtures/webpack-manifest.json'
 
-describe('renderer', () => {
+describe('renderer with vite manifest', () => {
   const getRenderer = async () => {
-    const renderer = createRenderer(() => { }, { manifest, renderToString: () => '' })
+    const renderer = createRenderer(() => { }, { manifest: normalizeViteManifest(viteManifest), renderToString: () => '' })
     return await renderer.renderToString({
       modules: new Set([
         'app.vue',
@@ -47,9 +47,13 @@ describe('renderer', () => {
   })
 })
 
-describe('renderer with legacy manifest', () => {
+describe('renderer with webpack manifest', () => {
   const getRenderer = async () => {
-    const renderer = createRenderer(() => { }, { manifest: normalizeClientManifest(legacyManifest), buildAssetsURL: r => joinURL(legacyManifest.publicPath, r), renderToString: () => '' })
+    const manifest = normalizeWebpackManifest(webpackManifest)
+    for (const entry in manifest) {
+      manifest[entry].module = false
+    }
+    const renderer = createRenderer(() => { }, { manifest, buildAssetsURL: r => joinURL(webpackManifest.publicPath, r), renderToString: () => '' })
     return await renderer.renderToString({
       _registeredComponents: new Set([
         '4d87aad8',

@@ -9,9 +9,9 @@
       "require": "./dist/index.cjs",
       "import": "./dist/index.mjs"
     },
-    "./legacy": {
-      "require": "./dist/legacy.cjs",
-      "import": "./dist/legacy.mjs"
+    "./runtime": {
+      "require": "./dist/runtime.cjs",
+      "import": "./dist/runtime.mjs"
     }
   },
   "main": "./dist/index.cjs",
@@ -19,7 +19,7 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
-    "legacy.d.ts"
+    "runtime.d.ts"
   ],
   "scripts": {
     "build": "unbuild",
@@ -27,7 +27,7 @@
     "lint": "eslint --ext .ts src",
     "prerelease": "pnpm test && pnpm build && standard-version -p && git push --follow-tags && pnpm publish --tag prerelease",
     "release": "pnpm test && pnpm build && standard-version && git push --follow-tags && pnpm publish",
-    "test": "pnpm lint && pnpm vitest run --coverage"
+    "test": "pnpm lint && pnpm vitest run --coverage && tsc --noEmit"
   },
   "dependencies": {
     "ufo": "^0.8.3"
@@ -36,6 +36,7 @@
     "@nuxtjs/eslint-config-typescript": "latest",
     "c8": "^7.12.0",
     "eslint": "latest",
+    "expect-type": "^0.13.0",
     "standard-version": "latest",
     "typescript": "latest",
     "unbuild": "latest",

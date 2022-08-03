@@ -22,19 +22,25 @@ pnpm add vue-bundle-renderer
 ### `createRenderer`
 
 ```ts
-import { createRenderer } from 'vue-bundle-renderer'
+import { createRenderer } from 'vue-bundle-renderer/runtime'
 
-declare function createRenderer(createApp:, renderOptions: RenderOptions)
+declare function createRenderer(createApp, renderOptions: RenderOptions)
 ```
 
-### `normalizeClientManifest`
-
-If using a webpack manifest, you should normalize it with this function before passing it to `createRenderer`.
+### `normalizeViteManifest`
 
 ```ts
-import { normalizeClientManifest } from 'vue-bundle-renderer/legacy'
+import { normalizeViteManifest } from 'vue-bundle-renderer'
 
-declare function normalizeClientManifest(manifest: ClientManifest | LegacyClientManifest)
+declare function normalizeViteManifest(manifest: ViteManifest)
+```
+
+### `normalizeWebpackManifest`
+
+```ts
+import { normalizeWebpackManifest } from 'vue-bundle-renderer'
+
+declare function normalizeWebpackManifest(manifest: ViteManifest)
 ```
 
 ## Credits
