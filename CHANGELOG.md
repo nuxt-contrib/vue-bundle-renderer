@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0-2](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.4.0-1...v0.4.0-2) (2022-08-04)
+
+
+### Bug Fixes
+
+* set resource type for css ([#34](https://github.com/nuxt-contrib/vue-bundle-renderer/issues/34)) ([2016345](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/20163459c81879bd9ae7f9204aca817a4ea95b5f))
+
 ## [0.4.0-1](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.4.0-0...v0.4.0-1) (2022-08-03)
 
 
