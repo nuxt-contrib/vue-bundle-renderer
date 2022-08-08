@@ -41,7 +41,9 @@ describe('renderer with vite manifest', () => {
         '<link rel="modulepreload" as="script" crossorigin href="/entry.mjs">',
         '<link rel="modulepreload" as="script" crossorigin href="/index.mjs">',
         '<link rel="modulepreload" as="script" crossorigin href="/vendor.mjs">',
-        '<link rel="prefetch" as="image" type="image/png" href="/entry.png">'
+        '<link rel="prefetch" as="image" type="image/png" href="/entry.png">',
+        '<link rel="preload" as="style" href="/index.css">',
+        '<link rel="preload" as="style" href="/test.css">'
       ]
     )
   })
@@ -90,7 +92,8 @@ describe('renderer with webpack manifest', () => {
         '<link rel="preload" as="script" href="/_nuxt/app.js">',
         '<link rel="preload" as="script" href="/_nuxt/commons/app.js">',
         '<link rel="preload" as="script" href="/_nuxt/pages/index.js">', // dynamic entrypoint
-        '<link rel="preload" as="script" href="/_nuxt/runtime.js">'
+        '<link rel="preload" as="script" href="/_nuxt/runtime.js">',
+        '<link rel="preload" as="style" href="/_nuxt/app.css">' // css used directly on the page
       ]
     )
   })

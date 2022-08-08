@@ -170,13 +170,6 @@ export function getAllDependencies (ids: Set<string>, rendererContext: RendererC
     }
   }
 
-  // Don't render preload links if we're adding them as stylesheets
-  for (const id in allDeps.styles) {
-    if (id in allDeps.preload) {
-      delete allDeps.preload[id]
-    }
-  }
-
   rendererContext._dependencySets[cacheKey] = allDeps
   return allDeps
 }
