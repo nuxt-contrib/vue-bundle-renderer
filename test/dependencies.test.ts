@@ -26,6 +26,7 @@ describe('dependencies', () => {
     expect(Object.values(preload).map(i => i.file)).toMatchInlineSnapshot(`
       [
         "entry.mjs",
+        "test.css",
         "vendor.mjs",
       ]
     `)
@@ -58,8 +59,10 @@ describe('dependencies', () => {
     expect(Object.values(preload).map(i => i.file)).toMatchInlineSnapshot(`
       [
         "entry.mjs",
+        "test.css",
         "vendor.mjs",
         "about.mjs",
+        "about.css",
       ]
     `)
     expect(Object.values(scripts).map(i => i.file)).toMatchInlineSnapshot(`
