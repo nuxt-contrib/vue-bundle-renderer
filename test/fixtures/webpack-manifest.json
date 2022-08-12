@@ -10,7 +10,9 @@
     "pages/another.css",
     "pages/another.js",
     "pages/index.js",
-    "runtime.js"
+    "runtime.js",
+    "img/logo.41f2f89.svg",
+    "some.css"
   ],
   "initial": [
     "runtime.js",
@@ -24,8 +26,8 @@
     "pages/index.js"
   ],
   "modules": {
-    "4d87aad8": [3,4],
-    "630f1d84": [3,4],
-    "56940b2e": [8]
+    "4d87aad8": [3, 4],
+    "630f1d84": [3, 4],
+    "56940b2e": [8, 10, 11]
   }
 }
