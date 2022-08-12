@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.2](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.4.1...v0.4.2) (2022-08-12)
+
+
+### Bug Fixes
+
+* **webpack:** include css/assets at top level of manifest ([#36](https://github.com/nuxt-contrib/vue-bundle-renderer/issues/36)) ([6cebc93](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/6cebc93eb7c0ce69e1f9a427a0756782d07676c9))
+
 ### [0.4.1](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.4.0...v0.4.1) (2022-08-08)
 
 
