@@ -103,7 +103,7 @@ export function normalizeWebpackManifest (manifest: WebpackClientManifest): Mani
     }
 
     for (const key of ['css', 'assets'] as const) {
-      for (const file in clientManifest[moduleId as Identifier][key]) {
+      for (const file of clientManifest[moduleId as Identifier][key] || []) {
         clientManifest[file] = clientManifest[file] || { file, ...parseResource(file) }
       }
     }
