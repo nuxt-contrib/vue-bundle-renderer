@@ -79,7 +79,7 @@ describe('renderer with webpack manifest', () => {
   it('renders styles correctly', async () => {
     const { renderStyles } = await getRenderer()
     expect(renderStyles()).to.equal(
-      '<link rel="stylesheet" href="/_nuxt/app.css">'
+      '<link rel="stylesheet" href="/_nuxt/app.css"><link rel="stylesheet" href="/_nuxt/some.css">'
     )
   })
   it('renders resource hints correctly', async () => {
@@ -88,12 +88,14 @@ describe('renderer with webpack manifest', () => {
     expect(result).to.deep.equal(
       [
         '<link rel="prefetch stylesheet" href="/_nuxt/pages/another.css">', // dynamic import CSS
+        '<link rel="prefetch" as="image" type="image/svg+xml" href="/_nuxt/img/logo.41f2f89.svg">',
         '<link rel="prefetch" as="script" href="/_nuxt/pages/another.js">', // dynamic import
         '<link rel="preload" as="script" href="/_nuxt/app.js">',
         '<link rel="preload" as="script" href="/_nuxt/commons/app.js">',
         '<link rel="preload" as="script" href="/_nuxt/pages/index.js">', // dynamic entrypoint
         '<link rel="preload" as="script" href="/_nuxt/runtime.js">',
-        '<link rel="preload" as="style" href="/_nuxt/app.css">' // css used directly on the page
+        '<link rel="preload" as="style" href="/_nuxt/app.css">', // css used directly on the page
+        '<link rel="preload" as="style" href="/_nuxt/some.css">'
       ]
     )
   })

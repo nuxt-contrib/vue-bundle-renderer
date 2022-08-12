@@ -19,8 +19,12 @@ describe('webpack manifest', () => {
       },
       '56940b2e': {
         file: '',
-        assets: [],
-        css: [],
+        assets: [
+          'img/logo.41f2f89.svg'
+        ],
+        css: [
+          'some.css'
+        ],
         imports: [
           '_pages/index.js'
         ]
@@ -85,9 +89,18 @@ describe('webpack manifest', () => {
         resourceType: 'style',
         file: 'app.css'
       },
+      'img/logo.41f2f89.svg': {
+        file: 'img/logo.41f2f89.svg',
+        mimeType: 'image/svg+xml',
+        resourceType: 'image'
+      },
       'pages/another.css': {
         resourceType: 'style',
         file: 'pages/another.css'
+      },
+      'some.css': {
+        file: 'some.css',
+        resourceType: 'style'
       }
     })
   })

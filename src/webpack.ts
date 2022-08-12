@@ -101,6 +101,12 @@ export function normalizeWebpackManifest (manifest: WebpackClientManifest): Mani
       css: mappedIndexes.filter(isCSS),
       assets: mappedIndexes.filter(i => !isJS(i) && !isCSS(i))
     }
+
+    for (const key of ['css', 'assets'] as const) {
+      for (const file of clientManifest[moduleId as Identifier][key] || []) {
+        clientManifest[file] = clientManifest[file] || { file, ...parseResource(file) }
+      }
+    }
   }
 
   return clientManifest
