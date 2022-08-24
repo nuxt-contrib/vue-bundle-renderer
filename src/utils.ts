@@ -58,7 +58,7 @@ export const parseResource = (path: string) => {
   if (asType) {
     chunk.resourceType = asType
 
-    if (asType === 'script') {
+    if (asType === 'script' && extension !== 'cjs') {
       chunk.module = true
     }
   }
