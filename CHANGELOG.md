@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.3](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.4.2...v0.4.3) (2022-09-15)
+
+
+### Bug Fixes
+
+* do not consider `.cjs` files as esm ([#38](https://github.com/nuxt-contrib/vue-bundle-renderer/issues/38)) ([69e2433](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/69e2433c3ff349d55d7c1c24d74c7c5f18cb0b9e))
+
 ### [0.4.2](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.4.1...v0.4.2) (2022-08-12)
 
 
