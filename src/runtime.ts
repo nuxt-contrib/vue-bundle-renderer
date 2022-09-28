@@ -248,6 +248,9 @@ export function createRenderer (createApp: any, renderOptions: RenderOptions & {
 
   return {
     rendererContext,
+    base: {
+      resourceHeaders: renderResourceHeaders({}, rendererContext)
+    },
     async renderToString (ssrContext: SSRContext) {
       ssrContext._registeredComponents = ssrContext._registeredComponents || new Set()
 
@@ -255,7 +258,7 @@ export function createRenderer (createApp: any, renderOptions: RenderOptions & {
       const app = await _createApp(ssrContext)
       const html = await renderOptions.renderToString(app, ssrContext)
 
-      const wrap = <T extends RenderFunction>(fn: T) => () => fn(ssrContext, rendererContext) as ReturnType<T>
+      const wrap = <T extends RenderFunction> (fn: T) => () => fn(ssrContext, rendererContext) as ReturnType<T>
 
       return {
         html,
