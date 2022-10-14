@@ -127,7 +127,7 @@ export function getModuleDependencies (id: string, rendererContext: RendererCont
 }
 
 export function getAllDependencies (ids: Set<string>, rendererContext: RendererContext): ModuleDependencies {
-  const cacheKey = Array.from(ids).join(',')
+  const cacheKey = Array.from(ids).sort().join(',')
   if (rendererContext._dependencySets[cacheKey]) {
     return rendererContext._dependencySets[cacheKey]
   }
