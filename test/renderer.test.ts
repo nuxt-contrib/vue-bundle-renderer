@@ -104,8 +104,6 @@ describe('renderer', () => {
         "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/lazy-component.mjs\\">",
         "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/vendor.mjs\\">",
         "<link rel=\\"prefetch\\" as=\\"audio\\" href=\\"/assets/lazy-component.mp3\\">",
-        "<link rel=\\"prefetch\\" as=\\"font\\" type=\\"font/woff\\" crossorigin href=\\"/assets/lazy-component.woff\\">",
-        "<link rel=\\"prefetch\\" as=\\"font\\" type=\\"font/woff2\\" crossorigin href=\\"/assets/lazy-component.woff2\\">",
         "<link rel=\\"prefetch\\" as=\\"image\\" type=\\"image/jpeg\\" href=\\"/assets/lazy-component.jpg\\">",
         "<link rel=\\"prefetch\\" as=\\"image\\" type=\\"image/png\\" href=\\"/assets/entry.png\\">",
         "<link rel=\\"prefetch\\" as=\\"image\\" type=\\"image/png\\" href=\\"/assets/lazy-component.png\\">",
