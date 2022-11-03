@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.5.0](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.4.4...v0.5.0) (2022-11-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* disable font prefetching by default (#43)
+
+### Bug Fixes
+
+* disable font prefetching by default ([#43](https://github.com/nuxt-contrib/vue-bundle-renderer/issues/43)) ([12171a5](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/12171a5cfa23f4dfd4dec9c9d0c55b348d49f87c))
+
 ### [0.4.4](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.4.3...v0.4.4) (2022-10-18)
 
 ### [0.4.3](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v0.4.2...v0.4.3) (2022-09-15)
