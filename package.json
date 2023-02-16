@@ -32,7 +32,7 @@
     "test": "pnpm lint && pnpm vitest run --coverage && tsc --noEmit"
   },
   "dependencies": {
-    "ufo": "^1.0.1"
+    "ufo": "^1.1.0"
   },
   "devDependencies": {
     "@nuxtjs/eslint-config-typescript": "^11.0.0",
