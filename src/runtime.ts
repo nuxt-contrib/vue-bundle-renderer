@@ -95,7 +95,10 @@ export function getModuleDependencies (id: string, rendererContext: RendererCont
 
   // Add to scripts + preload
   if (meta.file) {
-    dependencies.scripts[id] = dependencies.preload[id] = rendererContext.manifest[id]
+    dependencies.preload[id] = meta
+    if (meta.isEntry) {
+      dependencies.scripts[id] = meta
+    }
   }
 
   // Add styles + preload
