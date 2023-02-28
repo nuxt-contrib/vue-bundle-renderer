@@ -23,8 +23,7 @@ describe('renderer with vite manifest', () => {
     const { renderScripts } = await getRenderer()
     const result = renderScripts().split('</script>').slice(0, -1).map(s => `${s}</script>`).sort()
     expect(result).to.deep.equal([
-      '<script type="module" src="/entry.mjs" crossorigin></script>',
-      '<script type="module" src="/index.mjs" crossorigin></script>'
+      '<script type="module" src="/entry.mjs" crossorigin></script>'
     ])
   })
   it('renders styles correctly', async () => {
