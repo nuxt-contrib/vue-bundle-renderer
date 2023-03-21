@@ -96,7 +96,7 @@ export function getModuleDependencies (id: string, rendererContext: RendererCont
   // Add to scripts + preload
   if (meta.file) {
     dependencies.preload[id] = meta
-    if (meta.isEntry) {
+    if (meta.isEntry || meta.selfRegister) {
       dependencies.scripts[id] = meta
     }
   }
@@ -258,7 +258,7 @@ export function createRenderer (createApp: any, renderOptions: RenderOptions & {
       const app = await _createApp(ssrContext)
       const html = await renderOptions.renderToString(app, ssrContext)
 
-      const wrap = <T extends RenderFunction>(fn: T) => () => fn(ssrContext, rendererContext) as ReturnType<T>
+      const wrap = <T extends RenderFunction> (fn: T) => () => fn(ssrContext, rendererContext) as ReturnType<T>
 
       return {
         html,

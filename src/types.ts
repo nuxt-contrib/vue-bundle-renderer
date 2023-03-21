@@ -6,6 +6,7 @@ export interface ResourceMeta {
   assets?: string[]
   isEntry?: boolean
   isDynamicEntry?: boolean
+  selfRegister?: boolean
   imports?: string[]
   dynamicImports?: string[]
   // Augmentation for vue-bundle-renderer
