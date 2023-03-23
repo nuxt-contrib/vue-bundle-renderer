@@ -95,7 +95,7 @@ export function getModuleDependencies (id: string, rendererContext: RendererCont
   // Add to scripts + preload
   if (meta.file) {
     dependencies.preload[id] = meta
-    if (meta.isEntry || meta.selfRegister) {
+    if (meta.isEntry || meta.sideEffects) {
       dependencies.scripts[id] = meta
     }
   }

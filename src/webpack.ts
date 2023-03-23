@@ -64,7 +64,7 @@ export function normalizeWebpackManifest (manifest: WebpackClientManifest): Mani
         throw new Error(`Invalid manifest - async module not in \`all\`: ${outfile}`)
       }
       clientManifest[identifier].isDynamicEntry = true
-      clientManifest[identifier].selfRegister = true
+      clientManifest[identifier].sideEffects = true
       clientManifest[first].dynamicImports!.push(identifier)
     } else if (first) {
       // Add assets (CSS/JS) as dynamic imports to first entrypoints
