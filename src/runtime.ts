@@ -79,7 +79,7 @@ export function getModuleDependencies (id: string, rendererContext: RendererCont
     return rendererContext._dependencies[id]
   }
 
-  const dependencies: ModuleDependencies = {
+  const dependencies: ModuleDependencies = rendererContext._dependencies[id] = {
     scripts: {},
     styles: {},
     preload: {},
@@ -89,7 +89,6 @@ export function getModuleDependencies (id: string, rendererContext: RendererCont
   const meta = rendererContext.manifest[id]
 
   if (!meta) {
-    rendererContext._dependencies[id] = dependencies
     return dependencies
   }
 
@@ -125,7 +124,6 @@ export function getModuleDependencies (id: string, rendererContext: RendererCont
   }
   dependencies.preload = filteredPreload
 
-  rendererContext._dependencies[id] = dependencies
   return dependencies
 }
 
