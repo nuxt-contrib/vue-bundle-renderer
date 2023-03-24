@@ -9,7 +9,7 @@ import webpackManifest from './fixtures/webpack-manifest.json'
 
 describe('renderer with vite manifest', () => {
   const getRenderer = async () => {
-    const renderer = createRenderer(() => { }, { manifest: normalizeViteManifest(viteManifest), renderToString: () => '' })
+    const renderer = createRenderer(() => {}, { manifest: normalizeViteManifest(viteManifest), renderToString: () => '' })
     return await renderer.renderToString({
       modules: new Set([
         'app.vue',
@@ -23,8 +23,7 @@ describe('renderer with vite manifest', () => {
     const { renderScripts } = await getRenderer()
     const result = renderScripts().split('</script>').slice(0, -1).map(s => `${s}</script>`).sort()
     expect(result).to.deep.equal([
-      '<script type="module" src="/entry.mjs" crossorigin></script>',
-      '<script type="module" src="/index.mjs" crossorigin></script>'
+      '<script type="module" src="/entry.mjs" crossorigin></script>'
     ])
   })
   it('renders styles correctly', async () => {
@@ -55,7 +54,7 @@ describe('renderer with webpack manifest', () => {
     for (const entry in manifest) {
       manifest[entry].module = false
     }
-    const renderer = createRenderer(() => { }, { manifest, buildAssetsURL: r => joinURL(webpackManifest.publicPath, r), renderToString: () => '' })
+    const renderer = createRenderer(() => {}, { manifest, buildAssetsURL: r => joinURL(webpackManifest.publicPath, r), renderToString: () => '' })
     return await renderer.renderToString({
       _registeredComponents: new Set([
         '4d87aad8',

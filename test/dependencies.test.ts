@@ -19,8 +19,8 @@ describe('dependencies', () => {
     expect(Object.values(prefetch).map(i => i.file)).toMatchInlineSnapshot(`
       [
         "entry.png",
-        "index.mjs",
         "index.css",
+        "index.mjs",
       ]
     `)
     expect(Object.values(preload).map(i => i.file)).toMatchInlineSnapshot(`
@@ -50,10 +50,10 @@ describe('dependencies', () => {
     expect(Object.values(prefetch).map(i => i.file)).toMatchInlineSnapshot(`
       [
         "entry.png",
-        "index.mjs",
         "index.css",
-        "lazy-component.mjs",
+        "index.mjs",
         "lazy-component.css",
+        "lazy-component.mjs",
       ]
     `)
     expect(Object.values(preload).map(i => i.file)).toMatchInlineSnapshot(`
@@ -68,7 +68,6 @@ describe('dependencies', () => {
     expect(Object.values(scripts).map(i => i.file)).toMatchInlineSnapshot(`
       [
         "entry.mjs",
-        "about.mjs",
       ]
     `)
     expect(Object.values(styles).map(i => i.file)).toMatchInlineSnapshot(`

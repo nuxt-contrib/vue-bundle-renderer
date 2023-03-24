@@ -27,7 +27,6 @@ describe('renderer', () => {
     expect(result).toMatchInlineSnapshot(`
       [
         "<script type=\\"module\\" src=\\"/assets/entry.mjs\\" crossorigin></script>",
-        "<script type=\\"module\\" src=\\"/assets/index.mjs\\" crossorigin></script>",
       ]
     `)
   })

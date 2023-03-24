@@ -64,12 +64,14 @@ describe('webpack manifest', () => {
         resourceType: 'script',
         file: 'pages/another.js',
         isDynamicEntry: true,
+        sideEffects: true,
         module: true
       },
       '_pages/index.js': {
         resourceType: 'script',
         file: 'pages/index.js',
         isDynamicEntry: true,
+        sideEffects: true,
         module: true
       },
       '_runtime.js': {
