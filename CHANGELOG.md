@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v1.0.3
+
+[compare changes](https://undefined/undefined/compare/v1.0.2...v1.0.3)
+
+
+### 🩹 Fixes
+
+  - Eagerly initialise dependencies  cache (#47)
+  - Only inject entry scripts as `<script>` (#46)
+
+### 📦 Build
+
+  - Reorder export conditions (d6c5b0c)
+
+### 🏡 Chore
+
+  - Switch to changelogen for releases (18c9675)
+  - Update dependencies (69e6062)
+  - Add prettierrc (2e606da)
+
+### ❤️  Contributors
+
+- Pooya Parsa ([@pi0](http://github.com/pi0))
+- Daniel Roe <daniel@roe.dev>
+
 ### [1.0.2](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v1.0.1...v1.0.2) (2023-02-16)
 
 ### [1.0.1](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v1.0.0...v1.0.1) (2023-02-08)
