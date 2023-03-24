@@ -6,14 +6,14 @@
   "license": "MIT",
   "exports": {
     ".": {
-      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     },
     "./runtime": {
-      "require": "./dist/runtime.cjs",
+      "types": "./dist/runtime.d.ts",
       "import": "./dist/runtime.mjs",
-      "types": "./dist/runtime.d.ts"
+      "require": "./dist/runtime.cjs"
     }
   },
   "main": "./dist/index.cjs",
