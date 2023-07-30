@@ -31,20 +31,20 @@
     "test": "pnpm lint && pnpm vitest run --coverage && tsc --noEmit"
   },
   "dependencies": {
-    "ufo": "^1.1.1"
+    "ufo": "^1.2.0"
   },
   "devDependencies": {
     "@nuxtjs/eslint-config-typescript": "^12.0.0",
-    "@types/node": "^18.15.7",
-    "@vitest/coverage-c8": "^0.29.7",
-    "changelogen": "^0.5.1",
-    "eslint": "^8.36.0",
-    "expect-type": "^0.15.0",
-    "typescript": "^5.0.2",
-    "unbuild": "^1.1.2",
-    "vite": "^4.2.1",
-    "vitest": "0.29.7",
-    "vue": "3.2.47"
+    "@types/node": "^18.17.1",
+    "@vitest/coverage-v8": "^0.33.0",
+    "changelogen": "^0.5.4",
+    "eslint": "^8.46.0",
+    "expect-type": "^0.16.0",
+    "typescript": "^5.1.6",
+    "unbuild": "^1.2.1",
+    "vite": "^4.4.7",
+    "vitest": "0.33.0",
+    "vue": "3.3.4"
   },
-  "packageManager": "pnpm@7.8.0"
+  "packageManager": "pnpm@8.6.11"
 }
