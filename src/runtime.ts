@@ -216,7 +216,7 @@ export function getPreloadLinks (ssrContext: SSRContext, rendererContext: Render
       rel: resource.module ? 'modulepreload' : 'preload',
       as: resource.resourceType,
       type: resource.mimeType ?? null,
-      crossorigin: resource.resourceType === 'font' || resource.module ? '' : null,
+      crossorigin: resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module ? '' : null,
       href: rendererContext.buildAssetsURL(resource.file)
     }))
 }
@@ -227,7 +227,7 @@ export function getPrefetchLinks (ssrContext: SSRContext, rendererContext: Rende
     rel: 'prefetch',
     as: resource.resourceType,
     type: resource.mimeType ?? null,
-    crossorigin: resource.resourceType === 'font' || resource.module ? '' : null,
+    crossorigin: resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module ? '' : null,
     href: rendererContext.buildAssetsURL(resource.file)
   }))
 }
