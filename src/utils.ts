@@ -63,6 +63,14 @@ export const parseResource = (path: string) => {
     }
   }
 
+  if (chunk.resourceType !== 'font') {
+    chunk.prefetch = true
+  }
+
+  if (chunk.resourceType && ['module', 'script', 'style'].includes(chunk.resourceType)) {
+    chunk.preload = true
+  }
+
   const contentType = getContentType(asType, extension)
   if (contentType) {
     chunk.mimeType = contentType

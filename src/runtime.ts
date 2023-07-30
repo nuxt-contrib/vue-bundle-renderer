@@ -28,7 +28,7 @@ export interface RenderOptions {
   manifest: Manifest
 }
 
-export interface RendererContext extends Required<RenderOptions> {
+export interface RendererContext extends Pick<RenderOptions, 'shouldPrefetch' | 'shouldPreload'>, Required<Pick<RenderOptions, 'buildAssetsURL' | 'manifest'>> {
   _dependencies: Record<string, ModuleDependencies>
   _dependencySets: Record<string, ModuleDependencies>
   _entrypoints: string[]
@@ -43,14 +43,11 @@ interface LinkAttributes {
   crossorigin?: '' | null
 }
 
-const defaultShouldPrefetch = (resource: ResourceMeta) => resource.resourceType !== 'font'
-const defaultShouldPreload = (resource: ResourceMeta) => ['module', 'script', 'style'].includes(resource.resourceType || '')
-
 export function createRendererContext ({ manifest, buildAssetsURL, shouldPrefetch, shouldPreload }: RenderOptions): RendererContext {
   const ctx: RendererContext = {
     // User customisation of output
-    shouldPrefetch: shouldPrefetch || defaultShouldPrefetch,
-    shouldPreload: shouldPreload || defaultShouldPreload,
+    shouldPrefetch,
+    shouldPreload,
     // Manifest
     buildAssetsURL: buildAssetsURL || withLeadingSlash,
     manifest: undefined!,
@@ -118,7 +115,7 @@ export function getModuleDependencies (id: string, rendererContext: RendererCont
   const filteredPreload: ModuleDependencies['preload'] = {}
   for (const id in dependencies.preload) {
     const dep = dependencies.preload[id]
-    if (rendererContext.shouldPreload(dep)) {
+    if (rendererContext.shouldPreload ? rendererContext.shouldPreload(dep) : dep.preload) {
       filteredPreload[id] = dep
     }
   }
@@ -158,7 +155,7 @@ export function getAllDependencies (ids: Set<string>, rendererContext: RendererC
   const filteredPrefetch: ModuleDependencies['prefetch'] = {}
   for (const id in allDeps.prefetch) {
     const dep = allDeps.prefetch[id]
-    if (rendererContext.shouldPrefetch(dep)) {
+    if (rendererContext.shouldPrefetch ? rendererContext.shouldPrefetch(dep) : dep.prefetch) {
       filteredPrefetch[id] = dep
     }
   }
