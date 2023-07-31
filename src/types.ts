@@ -9,8 +9,10 @@ export interface ResourceMeta {
   sideEffects?: boolean
   imports?: string[]
   dynamicImports?: string[]
-  // Augmentation for vue-bundle-renderer
+  // Augmentations for vue-bundle-renderer
   module?: boolean
+  prefetch?: boolean
+  preload?: boolean
   // https://developer.mozilla.org/en-US/docs/Web/HTML/Link_types/preload#what_types_of_content_can_be_preloaded
   resourceType?: 'audio' | 'document' | 'embed' | 'fetch' | 'font' | 'image' | 'object' | 'script' | 'style' | 'track' | 'worker' | 'video'
   mimeType?: string
