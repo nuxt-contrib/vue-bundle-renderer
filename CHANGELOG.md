@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v2.0.0
+
+[compare changes](https://undefined/undefined/compare/v1.0.3...v2.0.0)
+
+### 🚀 Enhancements
+
+- ⚠️  Add `preload` and `prefetch` attributes to manifest (#50)
+
+### 🩹 Fixes
+
+- Add crossorigin tag for script preload/prefetch (c05fe93)
+- Don't hint to preload/prefetch styles loaded on page (#51)
+
+### 🏡 Chore
+
+- Update renovate config (b682845)
+- Bump all dependencies (e9c6408)
+
+### ✅ Tests
+
+- Update tests (ad2e20e)
+
+#### ⚠️  Breaking Changes
+
+- ⚠️  Add `preload` and `prefetch` attributes to manifest (#50)
+
+### ❤️  Contributors
+
+- Daniel Roe <daniel@roe.dev>
+
 ## v1.0.3
 
 [compare changes](https://undefined/undefined/compare/v1.0.2...v1.0.3)
