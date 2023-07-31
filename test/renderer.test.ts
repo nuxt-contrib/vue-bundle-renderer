@@ -53,8 +53,6 @@ describe('renderer', () => {
         "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/index.mjs\\">",
         "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/vendor.mjs\\">",
         "<link rel=\\"prefetch\\" as=\\"image\\" type=\\"image/png\\" href=\\"/assets/entry.png\\">",
-        "<link rel=\\"preload\\" as=\\"style\\" href=\\"/assets/index.css\\">",
-        "<link rel=\\"preload\\" as=\\"style\\" href=\\"/assets/test.css\\">",
       ]
     `)
   })
@@ -64,7 +62,7 @@ describe('renderer', () => {
     const result = renderResourceHeaders()
     expect(result).toMatchInlineSnapshot(`
       {
-        "link": "</assets/entry.mjs>; rel=\\"modulepreload\\"; as=\\"script\\"; crossorigin, </assets/test.css>; rel=\\"preload\\"; as=\\"style\\", </assets/vendor.mjs>; rel=\\"modulepreload\\"; as=\\"script\\"; crossorigin, </assets/index.mjs>; rel=\\"modulepreload\\"; as=\\"script\\"; crossorigin, </assets/index.css>; rel=\\"preload\\"; as=\\"style\\", </assets/entry.png>; rel=\\"prefetch\\"; as=\\"image\\"; type=\\"image/png\\"",
+        "link": "</assets/entry.mjs>; rel=\\"modulepreload\\"; as=\\"script\\"; crossorigin, </assets/vendor.mjs>; rel=\\"modulepreload\\"; as=\\"script\\"; crossorigin, </assets/index.mjs>; rel=\\"modulepreload\\"; as=\\"script\\"; crossorigin, </assets/entry.png>; rel=\\"prefetch\\"; as=\\"image\\"; type=\\"image/png\\"",
       }
     `)
   })
@@ -84,17 +82,22 @@ describe('renderer', () => {
         "<link rel=\\"prefetch\\" as=\\"script\\" crossorigin href=\\"/assets/lazy-component.mjs\\">",
         "<link rel=\\"prefetch\\" as=\\"style\\" href=\\"/assets/index.css\\">",
         "<link rel=\\"prefetch\\" as=\\"style\\" href=\\"/assets/lazy-component.css\\">",
-        "<link rel=\\"preload\\" as=\\"style\\" href=\\"/assets/about.css\\">",
-        "<link rel=\\"preload\\" as=\\"style\\" href=\\"/assets/test.css\\">",
       ]
     `)
   })
 
   it('uses correct content types', async () => {
-    const { renderResourceHints } = await getRenderer([
+    const { renderResourceHints, renderStyles } = await getRenderer([
       'pages/about.vue',
       'components/LazyComponent.vue'
     ])
+    expect(renderStyles().split('>').slice(0, -1).map(s => `${s}>`).sort()).toMatchInlineSnapshot(`
+      [
+        "<link rel=\\"stylesheet\\" href=\\"/assets/about.css\\">",
+        "<link rel=\\"stylesheet\\" href=\\"/assets/lazy-component.css\\">",
+        "<link rel=\\"stylesheet\\" href=\\"/assets/test.css\\">",
+      ]
+    `)
     const result = renderResourceHints().split('>').slice(0, -1).map(s => `${s}>`).sort()
     expect(result).toMatchInlineSnapshot(`
       [
@@ -111,9 +114,6 @@ describe('renderer', () => {
         "<link rel=\\"prefetch\\" as=\\"script\\" crossorigin href=\\"/assets/index.mjs\\">",
         "<link rel=\\"prefetch\\" as=\\"style\\" href=\\"/assets/index.css\\">",
         "<link rel=\\"prefetch\\" as=\\"video\\" href=\\"/assets/lazy-component.mp4\\">",
-        "<link rel=\\"preload\\" as=\\"style\\" href=\\"/assets/about.css\\">",
-        "<link rel=\\"preload\\" as=\\"style\\" href=\\"/assets/lazy-component.css\\">",
-        "<link rel=\\"preload\\" as=\\"style\\" href=\\"/assets/test.css\\">",
       ]
     `)
   })

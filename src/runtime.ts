@@ -157,10 +157,13 @@ export function getAllDependencies (ids: Set<string>, rendererContext: RendererC
   allDeps.prefetch = filteredPrefetch
 
   // Don't render prefetch links if we're preloading them
-  for (const id in allDeps.prefetch) {
-    if (id in allDeps.preload) {
-      delete allDeps.prefetch[id]
-    }
+  for (const id in allDeps.preload) {
+    delete allDeps.prefetch[id]
+  }
+  // Don't preload/prefetch styles if we are synchronously loading them
+  for (const style in allDeps.styles) {
+    delete allDeps.preload[style]
+    delete allDeps.prefetch[style]
   }
 
   rendererContext._dependencySets[cacheKey] = allDeps
