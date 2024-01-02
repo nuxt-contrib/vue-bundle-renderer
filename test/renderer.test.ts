@@ -26,7 +26,7 @@ describe('renderer', () => {
     const result = renderScripts().split('</script>').slice(0, -1).map(s => `${s}</script>`)
     expect(result).toMatchInlineSnapshot(`
       [
-        "<script type=\\"module\\" src=\\"/assets/entry.mjs\\" crossorigin></script>",
+        "<script type="module" src="/assets/entry.mjs" crossorigin></script>",
       ]
     `)
   })
@@ -36,8 +36,8 @@ describe('renderer', () => {
     expect(renderStyles().split('>').slice(0, -1).map(s => `${s}>`).sort()).toMatchInlineSnapshot(
       `
       [
-        "<link rel=\\"stylesheet\\" href=\\"/assets/index.css\\">",
-        "<link rel=\\"stylesheet\\" href=\\"/assets/test.css\\">",
+        "<link rel="stylesheet" href="/assets/index.css">",
+        "<link rel="stylesheet" href="/assets/test.css">",
       ]
     `
     )
@@ -49,10 +49,10 @@ describe('renderer', () => {
     expect(result).toMatchInlineSnapshot(
     `
       [
-        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/entry.mjs\\">",
-        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/index.mjs\\">",
-        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/vendor.mjs\\">",
-        "<link rel=\\"prefetch\\" as=\\"image\\" type=\\"image/png\\" href=\\"/assets/entry.png\\">",
+        "<link rel="modulepreload" as="script" crossorigin href="/assets/entry.mjs">",
+        "<link rel="modulepreload" as="script" crossorigin href="/assets/index.mjs">",
+        "<link rel="modulepreload" as="script" crossorigin href="/assets/vendor.mjs">",
+        "<link rel="prefetch" as="image" type="image/png" href="/assets/entry.png">",
       ]
     `)
   })
@@ -62,7 +62,7 @@ describe('renderer', () => {
     const result = renderResourceHeaders()
     expect(result).toMatchInlineSnapshot(`
       {
-        "link": "</assets/entry.mjs>; rel=\\"modulepreload\\"; as=\\"script\\"; crossorigin, </assets/vendor.mjs>; rel=\\"modulepreload\\"; as=\\"script\\"; crossorigin, </assets/index.mjs>; rel=\\"modulepreload\\"; as=\\"script\\"; crossorigin, </assets/entry.png>; rel=\\"prefetch\\"; as=\\"image\\"; type=\\"image/png\\"",
+        "link": "</assets/entry.mjs>; rel="modulepreload"; as="script"; crossorigin, </assets/vendor.mjs>; rel="modulepreload"; as="script"; crossorigin, </assets/index.mjs>; rel="modulepreload"; as="script"; crossorigin, </assets/entry.png>; rel="prefetch"; as="image"; type="image/png"",
       }
     `)
   })
@@ -74,14 +74,14 @@ describe('renderer', () => {
     const result = renderResourceHints().split('>').slice(0, -1).map(s => `${s}>`).sort()
     expect(result).toMatchInlineSnapshot(`
       [
-        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/about.mjs\\">",
-        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/entry.mjs\\">",
-        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/vendor.mjs\\">",
-        "<link rel=\\"prefetch\\" as=\\"image\\" type=\\"image/png\\" href=\\"/assets/entry.png\\">",
-        "<link rel=\\"prefetch\\" as=\\"script\\" crossorigin href=\\"/assets/index.mjs\\">",
-        "<link rel=\\"prefetch\\" as=\\"script\\" crossorigin href=\\"/assets/lazy-component.mjs\\">",
-        "<link rel=\\"prefetch\\" as=\\"style\\" href=\\"/assets/index.css\\">",
-        "<link rel=\\"prefetch\\" as=\\"style\\" href=\\"/assets/lazy-component.css\\">",
+        "<link rel="modulepreload" as="script" crossorigin href="/assets/about.mjs">",
+        "<link rel="modulepreload" as="script" crossorigin href="/assets/entry.mjs">",
+        "<link rel="modulepreload" as="script" crossorigin href="/assets/vendor.mjs">",
+        "<link rel="prefetch" as="image" type="image/png" href="/assets/entry.png">",
+        "<link rel="prefetch" as="script" crossorigin href="/assets/index.mjs">",
+        "<link rel="prefetch" as="script" crossorigin href="/assets/lazy-component.mjs">",
+        "<link rel="prefetch" as="style" href="/assets/index.css">",
+        "<link rel="prefetch" as="style" href="/assets/lazy-component.css">",
       ]
     `)
   })
@@ -93,27 +93,27 @@ describe('renderer', () => {
     ])
     expect(renderStyles().split('>').slice(0, -1).map(s => `${s}>`).sort()).toMatchInlineSnapshot(`
       [
-        "<link rel=\\"stylesheet\\" href=\\"/assets/about.css\\">",
-        "<link rel=\\"stylesheet\\" href=\\"/assets/lazy-component.css\\">",
-        "<link rel=\\"stylesheet\\" href=\\"/assets/test.css\\">",
+        "<link rel="stylesheet" href="/assets/about.css">",
+        "<link rel="stylesheet" href="/assets/lazy-component.css">",
+        "<link rel="stylesheet" href="/assets/test.css">",
       ]
     `)
     const result = renderResourceHints().split('>').slice(0, -1).map(s => `${s}>`).sort()
     expect(result).toMatchInlineSnapshot(`
       [
-        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/about.mjs\\">",
-        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/entry.mjs\\">",
-        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/lazy-component.mjs\\">",
-        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/assets/vendor.mjs\\">",
-        "<link rel=\\"prefetch\\" as=\\"audio\\" href=\\"/assets/lazy-component.mp3\\">",
-        "<link rel=\\"prefetch\\" as=\\"image\\" type=\\"image/jpeg\\" href=\\"/assets/lazy-component.jpg\\">",
-        "<link rel=\\"prefetch\\" as=\\"image\\" type=\\"image/png\\" href=\\"/assets/entry.png\\">",
-        "<link rel=\\"prefetch\\" as=\\"image\\" type=\\"image/png\\" href=\\"/assets/lazy-component.png\\">",
-        "<link rel=\\"prefetch\\" as=\\"image\\" type=\\"image/svg+xml\\" href=\\"/assets/lazy-component.svg\\">",
-        "<link rel=\\"prefetch\\" as=\\"image\\" type=\\"image/x-icon\\" href=\\"/assets/lazy-component.ico\\">",
-        "<link rel=\\"prefetch\\" as=\\"script\\" crossorigin href=\\"/assets/index.mjs\\">",
-        "<link rel=\\"prefetch\\" as=\\"style\\" href=\\"/assets/index.css\\">",
-        "<link rel=\\"prefetch\\" as=\\"video\\" href=\\"/assets/lazy-component.mp4\\">",
+        "<link rel="modulepreload" as="script" crossorigin href="/assets/about.mjs">",
+        "<link rel="modulepreload" as="script" crossorigin href="/assets/entry.mjs">",
+        "<link rel="modulepreload" as="script" crossorigin href="/assets/lazy-component.mjs">",
+        "<link rel="modulepreload" as="script" crossorigin href="/assets/vendor.mjs">",
+        "<link rel="prefetch" as="audio" href="/assets/lazy-component.mp3">",
+        "<link rel="prefetch" as="image" type="image/jpeg" href="/assets/lazy-component.jpg">",
+        "<link rel="prefetch" as="image" type="image/png" href="/assets/entry.png">",
+        "<link rel="prefetch" as="image" type="image/png" href="/assets/lazy-component.png">",
+        "<link rel="prefetch" as="image" type="image/svg+xml" href="/assets/lazy-component.svg">",
+        "<link rel="prefetch" as="image" type="image/x-icon" href="/assets/lazy-component.ico">",
+        "<link rel="prefetch" as="script" crossorigin href="/assets/index.mjs">",
+        "<link rel="prefetch" as="style" href="/assets/index.css">",
+        "<link rel="prefetch" as="video" href="/assets/lazy-component.mp4">",
       ]
     `)
   })
