@@ -24,7 +24,7 @@ describe('renderer with vite manifest', () => {
     const result = renderScripts().split('</script>').slice(0, -1).map(s => `${s}</script>`).sort()
     expect(result).toMatchInlineSnapshot(`
       [
-        "<script type=\\"module\\" src=\\"/entry.mjs\\" crossorigin></script>",
+        "<script type="module" src="/entry.mjs" crossorigin></script>",
       ]
     `)
   })
@@ -39,10 +39,10 @@ describe('renderer with vite manifest', () => {
     const result = renderResourceHints().split('>').slice(0, -1).map(s => `${s}>`).sort()
     expect(result).toMatchInlineSnapshot(`
       [
-        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/entry.mjs\\">",
-        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/index.mjs\\">",
-        "<link rel=\\"modulepreload\\" as=\\"script\\" crossorigin href=\\"/vendor.mjs\\">",
-        "<link rel=\\"prefetch\\" as=\\"image\\" type=\\"image/png\\" href=\\"/entry.png\\">",
+        "<link rel="modulepreload" as="script" crossorigin href="/entry.mjs">",
+        "<link rel="modulepreload" as="script" crossorigin href="/index.mjs">",
+        "<link rel="modulepreload" as="script" crossorigin href="/vendor.mjs">",
+        "<link rel="prefetch" as="image" type="image/png" href="/entry.png">",
       ]
     `)
   })
@@ -69,9 +69,9 @@ describe('renderer with webpack manifest', () => {
     const result = renderScripts().split('</script>').slice(0, -1).map(s => `${s}</script>`).sort()
     expect(result).toMatchInlineSnapshot(`
       [
-        "<script src=\\"/_nuxt/app.js\\" defer crossorigin></script>",
-        "<script src=\\"/_nuxt/commons/app.js\\" defer crossorigin></script>",
-        "<script src=\\"/_nuxt/runtime.js\\" defer crossorigin></script>",
+        "<script src="/_nuxt/app.js" defer crossorigin></script>",
+        "<script src="/_nuxt/commons/app.js" defer crossorigin></script>",
+        "<script src="/_nuxt/runtime.js" defer crossorigin></script>",
       ]
     `)
   })
