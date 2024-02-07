@@ -2,7 +2,7 @@ import type { ResourceMeta } from './types'
 
 const IS_JS_RE = /\.[cm]?js(\?[^.]+)?$/
 const HAS_EXT_RE = /[^./]+\.[^./]+$/
-const IS_CSS_RE = /\.(css|postcss|sass|scss|less|stylus|styl)(\?[^.]+)?$/
+const IS_CSS_RE = /\.(css|postcss|pcss|sass|scss|less|stylus|styl)(\?[^.]+)?$/
 
 export function isJS (file: string) {
   return IS_JS_RE.test(file) || !HAS_EXT_RE.test(file)
