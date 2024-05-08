@@ -9,16 +9,16 @@ export interface ModuleDependencies {
 }
 
 export interface SSRContext {
-  renderResourceHints?: Function
-  renderScripts?: Function
-  renderStyles?: Function
+  renderResourceHints?: (...args: unknown[]) => unknown
+  renderScripts?: (...args: unknown[]) => unknown
+  renderStyles?: (...args: unknown[]) => unknown
   // @vitejs/plugin-vue: https://vitejs.dev/guide/ssr.html#generating-preload-directives
   modules?: Set<string>
   // vue-loader (webpack)
   _registeredComponents?: Set<string>
   // Cache
   _requestDependencies?: ModuleDependencies
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export interface RenderOptions {
@@ -237,9 +237,14 @@ export function renderScripts (ssrContext: SSRContext, rendererContext: Renderer
   })).join('')
 }
 
-export type RenderFunction = (ssrContext: SSRContext, rendererContext: RendererContext) => any
+export type RenderFunction = (ssrContext: SSRContext, rendererContext: RendererContext) => unknown
 
-export function createRenderer (createApp: any, renderOptions: RenderOptions & { renderToString: Function }) {
+type CreateApp<App> = (ssrContext: SSRContext) => App | Promise<App>
+type ImportOf<T> = T | { default: T } | Promise<T> | Promise<{ default: T }>
+
+type RenderToString<App> = (app: App, ssrContext: SSRContext) => string | Promise<string>
+
+export function createRenderer<App> (createApp: ImportOf<CreateApp<App>>, renderOptions: RenderOptions & { renderToString: RenderToString<App> }) {
   const rendererContext = createRendererContext(renderOptions)
 
   return {
@@ -247,7 +252,7 @@ export function createRenderer (createApp: any, renderOptions: RenderOptions & {
     async renderToString (ssrContext: SSRContext) {
       ssrContext._registeredComponents = ssrContext._registeredComponents || new Set()
 
-      const _createApp = await Promise.resolve(createApp).then(r => r.default || r)
+      const _createApp = await Promise.resolve(createApp).then(r => 'default' in r ? r.default : r)
       const app = await _createApp(ssrContext)
       const html = await renderOptions.renderToString(app, ssrContext)
 
