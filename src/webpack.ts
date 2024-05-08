@@ -17,7 +17,7 @@ export interface WebpackClientManifest {
   hasNoCssVersion?: { [file: string]: boolean }
 }
 
-export function normalizeWebpackManifest (manifest: WebpackClientManifest): Manifest {
+export function normalizeWebpackManifest(manifest: WebpackClientManifest): Manifest {
   // Upgrade webpack manifest
   // https://github.com/nuxt-contrib/vue-bundle-renderer/issues/12
   const clientManifest: Manifest = {}
@@ -27,7 +27,7 @@ export function normalizeWebpackManifest (manifest: WebpackClientManifest): Mani
     if (isJS(outfile)) {
       clientManifest[getIdentifier(outfile)] = {
         file: outfile,
-        ...parseResource(outfile)
+        ...parseResource(outfile),
       }
     }
   }
@@ -37,7 +37,7 @@ export function normalizeWebpackManifest (manifest: WebpackClientManifest): Mani
   if (first) {
     if (!(first in clientManifest)) {
       throw new Error(
-        `Invalid manifest - initial entrypoint not in \`all\`: ${manifest.initial.find(isJS)}`
+        `Invalid manifest - initial entrypoint not in \`all\`: ${manifest.initial.find(isJS)}`,
       )
     }
     clientManifest[first].css = []
@@ -48,10 +48,12 @@ export function normalizeWebpackManifest (manifest: WebpackClientManifest): Mani
   for (const outfile of manifest.initial) {
     if (isJS(outfile)) {
       clientManifest[getIdentifier(outfile)].isEntry = true
-    } else if (isCSS(outfile) && first) {
+    }
+    else if (isCSS(outfile) && first) {
       clientManifest[first].css!.push(outfile)
       clientManifest[outfile] = { file: outfile, ...parseResource(outfile) }
-    } else if (first) {
+    }
+    else if (first) {
       clientManifest[first].assets!.push(outfile)
       clientManifest[outfile] = { file: outfile, ...parseResource(outfile) }
     }
@@ -66,18 +68,19 @@ export function normalizeWebpackManifest (manifest: WebpackClientManifest): Mani
       clientManifest[identifier].isDynamicEntry = true
       clientManifest[identifier].sideEffects = true
       clientManifest[first].dynamicImports!.push(identifier)
-    } else if (first) {
+    }
+    else if (first) {
       // Add assets (CSS/JS) as dynamic imports to first entrypoints
       // as a workaround so can be prefetched.
       const key = isCSS(outfile) ? 'css' : 'assets'
       const identifier = getIdentifier(outfile)
       clientManifest[identifier] = {
         file: '' as OutputPath,
-        [key]: [outfile]
+        [key]: [outfile],
       }
       clientManifest[outfile] = {
         file: outfile,
-        ...parseResource(outfile)
+        ...parseResource(outfile),
       }
       clientManifest[first].dynamicImports!.push(identifier)
     }
@@ -90,7 +93,7 @@ export function normalizeWebpackManifest (manifest: WebpackClientManifest): Mani
       const identifier = getIdentifier(file)
       clientManifest[identifier] = {
         ...clientManifest[identifier],
-        file
+        file,
       }
     })
 
@@ -100,7 +103,7 @@ export function normalizeWebpackManifest (manifest: WebpackClientManifest): Mani
       ...parseResource(moduleId),
       imports: jsFiles.map(id => getIdentifier(id)),
       css: mappedIndexes.filter(isCSS),
-      assets: mappedIndexes.filter(i => !isJS(i) && !isCSS(i))
+      assets: mappedIndexes.filter(i => !isJS(i) && !isCSS(i)),
     }
 
     for (const key of ['css', 'assets'] as const) {
@@ -113,8 +116,8 @@ export function normalizeWebpackManifest (manifest: WebpackClientManifest): Mani
   return clientManifest
 }
 
-function getIdentifier (output: OutputPath): Identifier
-function getIdentifier (output?: undefined): null
-function getIdentifier (output?: OutputPath): null | Identifier {
+function getIdentifier(output: OutputPath): Identifier
+function getIdentifier(output?: undefined): null
+function getIdentifier(output?: OutputPath): null | Identifier {
   return output ? `_${output}` as Identifier : null
 }

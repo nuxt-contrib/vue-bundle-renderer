@@ -26,7 +26,7 @@
   "scripts": {
     "build": "unbuild",
     "dev": "vitest",
-    "lint": "eslint --ext .ts src",
+    "lint": "eslint src",
     "release": "pnpm test && pnpm build && changelogen --release --push && pnpm publish",
     "test": "pnpm lint && pnpm vitest run --coverage && tsc --noEmit"
   },
@@ -34,17 +34,17 @@
     "ufo": "^1.3.2"
   },
   "devDependencies": {
-    "@nuxtjs/eslint-config-typescript": "^12.1.0",
     "@types/node": "^20.10.6",
     "@vitest/coverage-v8": "^1.1.1",
     "changelogen": "^0.5.5",
-    "eslint": "^8.56.0",
+    "eslint": "^9.2.0",
     "expect-type": "^0.17.3",
     "typescript": "^5.3.3",
     "unbuild": "^2.0.0",
     "vite": "^5.0.10",
     "vitest": "1.1.1",
-    "vue": "3.4.3"
+    "vue": "3.4.3",
+    "@nuxt/eslint-config": "^0.3.10"
   },
   "packageManager": "pnpm@8.13.1"
 }

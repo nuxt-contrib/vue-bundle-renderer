@@ -9,7 +9,7 @@ describe('dependencies', () => {
   const getContext = () => {
     return createRendererContext({
       manifest: normalizeViteManifest(viteManifest),
-      buildAssetsURL: id => joinURL('/assets', id)
+      buildAssetsURL: id => joinURL('/assets', id),
     })
   }
 
@@ -44,7 +44,7 @@ describe('dependencies', () => {
   it('gets all dependencies for a request with dynamic imports', () => {
     const context = getContext()
     const { prefetch, preload, scripts, styles } = getRequestDependencies({
-      modules: new Set(['pages/about.vue'])
+      modules: new Set(['pages/about.vue']),
     }, context)
     expect(Object.values(prefetch).map(i => i.file)).toMatchInlineSnapshot(`
       [

@@ -4,11 +4,11 @@ const IS_JS_RE = /\.[cm]?js(\?[^.]+)?$/
 const HAS_EXT_RE = /[^./]+\.[^./]+$/
 const IS_CSS_RE = /\.(css|postcss|pcss|sass|scss|less|stylus|styl)(\?[^.]+)?$/
 
-export function isJS (file: string) {
+export function isJS(file: string) {
   return IS_JS_RE.test(file) || !HAS_EXT_RE.test(file)
 }
 
-export function isCSS (file: string) {
+export function isCSS(file: string) {
   return IS_CSS_RE.test(file)
 }
 
@@ -20,10 +20,10 @@ const VIDEO_RE = /^mp4|webm|ogv|mkv|avi|mov|flv|wmv|mpg|mpeg|m4v|3gp|3g2|mxf|rm|
 const contentTypeMap: Record<string, string> = {
   ico: 'image/x-icon',
   jpg: 'image/jpeg',
-  svg: 'image/svg+xml'
+  svg: 'image/svg+xml',
 }
 
-export function getContentType (asType: ResourceMeta['resourceType'], extension: string) {
+export function getContentType(asType: ResourceMeta['resourceType'], extension: string) {
   if (asType === 'font') {
     return `font/${extension}`
   }
@@ -32,18 +32,23 @@ export function getContentType (asType: ResourceMeta['resourceType'], extension:
   }
 }
 
-export function getAsType (ext: string): ResourceMeta['resourceType'] {
+export function getAsType(ext: string): ResourceMeta['resourceType'] {
   if (ext === 'js' || ext === 'cjs' || ext === 'mjs') {
     return 'script'
-  } else if (ext === 'css') {
+  }
+  else if (ext === 'css') {
     return 'style'
-  } else if (IMAGE_RE.test(ext)) {
+  }
+  else if (IMAGE_RE.test(ext)) {
     return 'image'
-  } else if (FONT_RE.test(ext)) {
+  }
+  else if (FONT_RE.test(ext)) {
     return 'font'
-  } else if (AUDIO_RE.test(ext)) {
+  }
+  else if (AUDIO_RE.test(ext)) {
     return 'audio'
-  } else if (VIDEO_RE.test(ext)) {
+  }
+  else if (VIDEO_RE.test(ext)) {
     return 'video'
   }
   // not exhausting all possibilities here, but above covers common cases

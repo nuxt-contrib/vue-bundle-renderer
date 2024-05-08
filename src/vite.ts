@@ -2,7 +2,7 @@ import type { Manifest as ViteManifest } from 'vite'
 import type { Manifest } from './types'
 import { parseResource } from './utils'
 
-export function normalizeViteManifest (manifest: ViteManifest | Manifest): Manifest {
+export function normalizeViteManifest(manifest: ViteManifest | Manifest): Manifest {
   const _manifest: Manifest = {}
 
   for (const file in manifest) {

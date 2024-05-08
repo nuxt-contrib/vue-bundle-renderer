@@ -9,15 +9,15 @@ describe('renderer', () => {
   const getRenderer = async (modules = [
     'app.vue',
     '../packages/nuxt3/src/pages/runtime/page.vue',
-    'pages/index.vue'
+    'pages/index.vue',
   ]) => {
     const renderer = createRenderer(() => { }, {
       manifest: normalizeViteManifest(viteManifest),
       renderToString: () => '',
-      buildAssetsURL: id => joinURL('/assets', id)
+      buildAssetsURL: id => joinURL('/assets', id),
     })
     return await renderer.renderToString({
-      modules: new Set(modules)
+      modules: new Set(modules),
     })
   }
 
@@ -39,7 +39,7 @@ describe('renderer', () => {
         "<link rel="stylesheet" href="/assets/index.css">",
         "<link rel="stylesheet" href="/assets/test.css">",
       ]
-    `
+    `,
     )
   })
 
@@ -69,7 +69,7 @@ describe('renderer', () => {
 
   it('prefetches dynamic imports minimally', async () => {
     const { renderResourceHints } = await getRenderer([
-      'pages/about.vue'
+      'pages/about.vue',
     ])
     const result = renderResourceHints().split('>').slice(0, -1).map(s => `${s}>`).sort()
     expect(result).toMatchInlineSnapshot(`
@@ -89,7 +89,7 @@ describe('renderer', () => {
   it('uses correct content types', async () => {
     const { renderResourceHints, renderStyles } = await getRenderer([
       'pages/about.vue',
-      'components/LazyComponent.vue'
+      'components/LazyComponent.vue',
     ])
     expect(renderStyles().split('>').slice(0, -1).map(s => `${s}>`).sort()).toMatchInlineSnapshot(`
       [
