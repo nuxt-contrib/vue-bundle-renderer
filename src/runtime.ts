@@ -41,7 +41,7 @@ interface LinkAttributes {
   crossorigin?: '' | null
 }
 
-export function createRendererContext ({ manifest, buildAssetsURL }: RenderOptions): RendererContext {
+export function createRendererContext({ manifest, buildAssetsURL }: RenderOptions): RendererContext {
   const ctx: RendererContext = {
     // Manifest
     buildAssetsURL: buildAssetsURL || withLeadingSlash,
@@ -50,10 +50,10 @@ export function createRendererContext ({ manifest, buildAssetsURL }: RenderOptio
     // Internal cache
     _dependencies: undefined!,
     _dependencySets: undefined!,
-    _entrypoints: undefined!
+    _entrypoints: undefined!,
   }
 
-  function updateManifest (manifest: Manifest) {
+  function updateManifest(manifest: Manifest) {
     const manifestEntries = Object.entries(manifest) as [string, ResourceMeta][]
     ctx.manifest = manifest
     ctx._dependencies = {}
@@ -66,7 +66,7 @@ export function createRendererContext ({ manifest, buildAssetsURL }: RenderOptio
   return ctx
 }
 
-export function getModuleDependencies (id: string, rendererContext: RendererContext): ModuleDependencies {
+export function getModuleDependencies(id: string, rendererContext: RendererContext): ModuleDependencies {
   if (rendererContext._dependencies[id]) {
     return rendererContext._dependencies[id]
   }
@@ -75,7 +75,7 @@ export function getModuleDependencies (id: string, rendererContext: RendererCont
     scripts: {},
     styles: {},
     preload: {},
-    prefetch: {}
+    prefetch: {},
   }
 
   const meta = rendererContext.manifest[id]
@@ -119,7 +119,7 @@ export function getModuleDependencies (id: string, rendererContext: RendererCont
   return dependencies
 }
 
-export function getAllDependencies (ids: Set<string>, rendererContext: RendererContext): ModuleDependencies {
+export function getAllDependencies(ids: Set<string>, rendererContext: RendererContext): ModuleDependencies {
   const cacheKey = Array.from(ids).sort().join(',')
   if (rendererContext._dependencySets[cacheKey]) {
     return rendererContext._dependencySets[cacheKey]
@@ -129,7 +129,7 @@ export function getAllDependencies (ids: Set<string>, rendererContext: RendererC
     scripts: {},
     styles: {},
     preload: {},
-    prefetch: {}
+    prefetch: {},
   }
 
   for (const id of ids) {
@@ -158,11 +158,14 @@ export function getAllDependencies (ids: Set<string>, rendererContext: RendererC
 
   // Don't render prefetch links if we're preloading them
   for (const id in allDeps.preload) {
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete allDeps.prefetch[id]
   }
   // Don't preload/prefetch styles if we are synchronously loading them
   for (const style in allDeps.styles) {
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete allDeps.preload[style]
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete allDeps.prefetch[style]
   }
 
@@ -170,41 +173,41 @@ export function getAllDependencies (ids: Set<string>, rendererContext: RendererC
   return allDeps
 }
 
-export function getRequestDependencies (ssrContext: SSRContext, rendererContext: RendererContext): ModuleDependencies {
+export function getRequestDependencies(ssrContext: SSRContext, rendererContext: RendererContext): ModuleDependencies {
   if (ssrContext._requestDependencies) {
     return ssrContext._requestDependencies
   }
   const ids = new Set<string>(Array.from([
     ...rendererContext._entrypoints,
-    ...ssrContext.modules /* vite */ || ssrContext._registeredComponents /* webpack */ || []
+    ...ssrContext.modules /* vite */ || ssrContext._registeredComponents /* webpack */ || [],
   ]))
   const deps = getAllDependencies(ids, rendererContext)
   ssrContext._requestDependencies = deps
   return deps
 }
 
-export function renderStyles (ssrContext: SSRContext, rendererContext: RendererContext): string {
+export function renderStyles(ssrContext: SSRContext, rendererContext: RendererContext): string {
   const { styles } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(styles).map(resource =>
-    renderLinkToString({ rel: 'stylesheet', href: rendererContext.buildAssetsURL(resource.file) })
+    renderLinkToString({ rel: 'stylesheet', href: rendererContext.buildAssetsURL(resource.file) }),
   ).join('')
 }
 
-export function getResources (ssrContext: SSRContext, rendererContext: RendererContext): LinkAttributes[] {
+export function getResources(ssrContext: SSRContext, rendererContext: RendererContext): LinkAttributes[] {
   return [...getPreloadLinks(ssrContext, rendererContext), ...getPrefetchLinks(ssrContext, rendererContext)]
 }
 
-export function renderResourceHints (ssrContext: SSRContext, rendererContext: RendererContext): string {
+export function renderResourceHints(ssrContext: SSRContext, rendererContext: RendererContext): string {
   return getResources(ssrContext, rendererContext).map(renderLinkToString).join('')
 }
 
-export function renderResourceHeaders (ssrContext: SSRContext, rendererContext: RendererContext): Record<string, string> {
+export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: RendererContext): Record<string, string> {
   return {
-    link: getResources(ssrContext, rendererContext).map(renderLinkToHeader).join(', ')
+    link: getResources(ssrContext, rendererContext).map(renderLinkToHeader).join(', '),
   }
 }
 
-export function getPreloadLinks (ssrContext: SSRContext, rendererContext: RendererContext): LinkAttributes[] {
+export function getPreloadLinks(ssrContext: SSRContext, rendererContext: RendererContext): LinkAttributes[] {
   const { preload } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(preload)
     .map(resource => ({
@@ -212,28 +215,28 @@ export function getPreloadLinks (ssrContext: SSRContext, rendererContext: Render
       as: resource.resourceType,
       type: resource.mimeType ?? null,
       crossorigin: resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module ? '' : null,
-      href: rendererContext.buildAssetsURL(resource.file)
+      href: rendererContext.buildAssetsURL(resource.file),
     }))
 }
 
-export function getPrefetchLinks (ssrContext: SSRContext, rendererContext: RendererContext): LinkAttributes[] {
+export function getPrefetchLinks(ssrContext: SSRContext, rendererContext: RendererContext): LinkAttributes[] {
   const { prefetch } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(prefetch).map(resource => ({
     rel: 'prefetch',
     as: resource.resourceType,
     type: resource.mimeType ?? null,
     crossorigin: resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module ? '' : null,
-    href: rendererContext.buildAssetsURL(resource.file)
+    href: rendererContext.buildAssetsURL(resource.file),
   }))
 }
 
-export function renderScripts (ssrContext: SSRContext, rendererContext: RendererContext): string {
+export function renderScripts(ssrContext: SSRContext, rendererContext: RendererContext): string {
   const { scripts } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(scripts).map(resource => renderScriptToString({
     type: resource.module ? 'module' : null,
     src: rendererContext.buildAssetsURL(resource.file),
     defer: resource.module ? null : '',
-    crossorigin: ''
+    crossorigin: '',
   })).join('')
 }
 
@@ -244,12 +247,12 @@ type ImportOf<T> = T | { default: T } | Promise<T> | Promise<{ default: T }>
 
 type RenderToString<App> = (app: App, ssrContext: SSRContext) => string | Promise<string>
 
-export function createRenderer<App> (createApp: ImportOf<CreateApp<App>>, renderOptions: RenderOptions & { renderToString: RenderToString<App> }) {
+export function createRenderer<App>(createApp: ImportOf<CreateApp<App>>, renderOptions: RenderOptions & { renderToString: RenderToString<App> }) {
   const rendererContext = createRendererContext(renderOptions)
 
   return {
     rendererContext,
-    async renderToString (ssrContext: SSRContext) {
+    async renderToString(ssrContext: SSRContext) {
       ssrContext._registeredComponents = ssrContext._registeredComponents || new Set()
 
       const _createApp = await Promise.resolve(createApp).then(r => 'default' in r ? r.default : r)
@@ -263,23 +266,23 @@ export function createRenderer<App> (createApp: ImportOf<CreateApp<App>>, render
         renderResourceHeaders: wrap(renderResourceHeaders),
         renderResourceHints: wrap(renderResourceHints),
         renderStyles: wrap(renderStyles),
-        renderScripts: wrap(renderScripts)
+        renderScripts: wrap(renderScripts),
       }
-    }
+    },
   }
 }
 
 // --- Internal ---
 
 // Utilities to render script and link tags, and link headers
-function renderScriptToString (attrs: Record<string, string | null>) {
+function renderScriptToString(attrs: Record<string, string | null>) {
   return `<script${Object.entries(attrs).map(([key, value]) => value === null ? '' : value ? ` ${key}="${value}"` : ' ' + key).join('')}></script>`
 }
 
-function renderLinkToString (attrs: LinkAttributes) {
+function renderLinkToString(attrs: LinkAttributes) {
   return `<link${Object.entries(attrs).map(([key, value]) => value === null ? '' : value ? ` ${key}="${value}"` : ' ' + key).join('')}>`
 }
 
-function renderLinkToHeader (attrs: LinkAttributes) {
+function renderLinkToHeader(attrs: LinkAttributes) {
   return `<${attrs.href}>${Object.entries(attrs).map(([key, value]) => key === 'href' || value === null ? '' : value ? `; ${key}="${value}"` : `; ${key}`).join('')}`
 }

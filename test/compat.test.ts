@@ -14,8 +14,8 @@ describe('renderer with vite manifest', () => {
       modules: new Set([
         'app.vue',
         '../packages/nuxt3/src/pages/runtime/page.vue',
-        'pages/index.vue'
-      ])
+        'pages/index.vue',
+      ]),
     })
   }
 
@@ -31,7 +31,7 @@ describe('renderer with vite manifest', () => {
   it('renders styles correctly', async () => {
     const { renderStyles } = await getRenderer()
     expect(renderStyles()).to.equal(
-      '<link rel="stylesheet" href="/test.css"><link rel="stylesheet" href="/index.css">'
+      '<link rel="stylesheet" href="/test.css"><link rel="stylesheet" href="/index.css">',
     )
   })
   it('renders resource hints correctly', async () => {
@@ -59,8 +59,8 @@ describe('renderer with webpack manifest', () => {
       _registeredComponents: new Set([
         '4d87aad8',
         '630f1d84',
-        '56940b2e'
-      ])
+        '56940b2e',
+      ]),
     })
   }
 
@@ -78,7 +78,7 @@ describe('renderer with webpack manifest', () => {
   it('renders styles correctly', async () => {
     const { renderStyles } = await getRenderer()
     expect(renderStyles()).to.equal(
-      '<link rel="stylesheet" href="/_nuxt/app.css"><link rel="stylesheet" href="/_nuxt/some.css">'
+      '<link rel="stylesheet" href="/_nuxt/app.css"><link rel="stylesheet" href="/_nuxt/some.css">',
     )
   })
   it('renders resource hints correctly', async () => {
@@ -92,8 +92,8 @@ describe('renderer with webpack manifest', () => {
         '<link rel="preload" as="script" crossorigin href="/_nuxt/app.js">',
         '<link rel="preload" as="script" crossorigin href="/_nuxt/commons/app.js">',
         '<link rel="preload" as="script" crossorigin href="/_nuxt/pages/index.js">', // dynamic entrypoint
-        '<link rel="preload" as="script" crossorigin href="/_nuxt/runtime.js">'
-      ]
+        '<link rel="preload" as="script" crossorigin href="/_nuxt/runtime.js">',
+      ],
     )
   })
 })
