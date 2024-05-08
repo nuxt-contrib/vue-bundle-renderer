@@ -158,14 +158,11 @@ export function getAllDependencies (ids: Set<string>, rendererContext: RendererC
 
   // Don't render prefetch links if we're preloading them
   for (const id in allDeps.preload) {
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete allDeps.prefetch[id]
   }
   // Don't preload/prefetch styles if we are synchronously loading them
   for (const style in allDeps.styles) {
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete allDeps.preload[style]
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete allDeps.prefetch[style]
   }
 
@@ -247,7 +244,7 @@ type ImportOf<T> = T | { default: T } | Promise<T> | Promise<{ default: T }>
 
 type RenderToString<App> = (app: App, ssrContext: SSRContext) => string | Promise<string>
 
-export function createRenderer<App>(createApp: ImportOf<CreateApp<App>>, renderOptions: RenderOptions & { renderToString: RenderToString<App> }) {
+export function createRenderer<App> (createApp: ImportOf<CreateApp<App>>, renderOptions: RenderOptions & { renderToString: RenderToString<App> }) {
   const rendererContext = createRendererContext(renderOptions)
 
   return {
