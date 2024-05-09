@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v2.1.0
+
+[compare changes](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v2.0.0...v2.1.0)
+
+### 🩹 Fixes
+
+- Treat `.pcss` extension as a CSS extension ([#69](https://github.com/nuxt-contrib/vue-bundle-renderer/pull/69))
+- Improve type safety of `ssrContext` and `createRenderer` ([#73](https://github.com/nuxt-contrib/vue-bundle-renderer/pull/73))
+
+### 🏡 Chore
+
+- Migrate to eslint v9 ([#74](https://github.com/nuxt-contrib/vue-bundle-renderer/pull/74))
+- Remove explicit dev dependency on `expect-type` ([bc09fa9](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/bc09fa9))
+- Add prepack step ([7ec1ec8](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/7ec1ec8))
+
+### 🤖 CI
+
+- Test against node v18 ([f080973](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/f080973))
+
+### ❤️ Contributors
+
+- Daniel Roe ([@danielroe](http://github.com/danielroe))
+- Aman Desai ([@amandesai01](http://github.com/amandesai01))
+
 ## v2.0.0
 
 [compare changes](https://undefined/undefined/compare/v1.0.3...v2.0.0)
