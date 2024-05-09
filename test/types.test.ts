@@ -1,5 +1,4 @@
-import { expectTypeOf } from 'expect-type'
-import { describe, it } from 'vitest'
+import { expectTypeOf, describe, it } from 'vitest'
 
 import type { Manifest as ViteManifest } from 'vite'
 import type { Manifest, ResourceMeta } from '../src/types'
