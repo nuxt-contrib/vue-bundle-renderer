@@ -31,7 +31,7 @@ describe('renderer with vite manifest', () => {
   it('renders styles correctly', async () => {
     const { renderStyles } = await getRenderer()
     expect(renderStyles()).to.equal(
-      '<link rel="stylesheet" href="/test.css"><link rel="stylesheet" href="/index.css">',
+      '<link rel="stylesheet" href="/test.css" crossorigin><link rel="stylesheet" href="/index.css" crossorigin>',
     )
   })
   it('renders resource hints correctly', async () => {
@@ -78,7 +78,7 @@ describe('renderer with webpack manifest', () => {
   it('renders styles correctly', async () => {
     const { renderStyles } = await getRenderer()
     expect(renderStyles()).to.equal(
-      '<link rel="stylesheet" href="/_nuxt/app.css"><link rel="stylesheet" href="/_nuxt/some.css">',
+      '<link rel="stylesheet" href="/_nuxt/app.css" crossorigin><link rel="stylesheet" href="/_nuxt/some.css" crossorigin>',
     )
   })
   it('renders resource hints correctly', async () => {
@@ -88,7 +88,7 @@ describe('renderer with webpack manifest', () => {
       [
         '<link rel="prefetch" as="image" type="image/svg+xml" href="/_nuxt/img/logo.41f2f89.svg">',
         '<link rel="prefetch" as="script" crossorigin href="/_nuxt/pages/another.js">', // dynamic import
-        '<link rel="prefetch" as="style" href="/_nuxt/pages/another.css">', // dynamic import CSS
+        '<link rel="prefetch" as="style" crossorigin href="/_nuxt/pages/another.css">', // dynamic import CSS
         '<link rel="preload" as="script" crossorigin href="/_nuxt/app.js">',
         '<link rel="preload" as="script" crossorigin href="/_nuxt/commons/app.js">',
         '<link rel="preload" as="script" crossorigin href="/_nuxt/pages/index.js">', // dynamic entrypoint

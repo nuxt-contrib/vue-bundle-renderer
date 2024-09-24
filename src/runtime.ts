@@ -189,7 +189,7 @@ export function getRequestDependencies(ssrContext: SSRContext, rendererContext: 
 export function renderStyles(ssrContext: SSRContext, rendererContext: RendererContext): string {
   const { styles } = getRequestDependencies(ssrContext, rendererContext)
   return Object.values(styles).map(resource =>
-    renderLinkToString({ rel: 'stylesheet', href: rendererContext.buildAssetsURL(resource.file) }),
+    renderLinkToString({ rel: 'stylesheet', href: rendererContext.buildAssetsURL(resource.file), crossorigin: '' }),
   ).join('')
 }
 
@@ -214,7 +214,7 @@ export function getPreloadLinks(ssrContext: SSRContext, rendererContext: Rendere
       rel: resource.module ? 'modulepreload' : 'preload',
       as: resource.resourceType,
       type: resource.mimeType ?? null,
-      crossorigin: resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module ? '' : null,
+      crossorigin: resource.resourceType === 'style' || resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module ? '' : null,
       href: rendererContext.buildAssetsURL(resource.file),
     }))
 }
@@ -225,7 +225,7 @@ export function getPrefetchLinks(ssrContext: SSRContext, rendererContext: Render
     rel: 'prefetch',
     as: resource.resourceType,
     type: resource.mimeType ?? null,
-    crossorigin: resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module ? '' : null,
+    crossorigin: resource.resourceType === 'style' || resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module ? '' : null,
     href: rendererContext.buildAssetsURL(resource.file),
   }))
 }
