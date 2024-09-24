@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v2.1.1
+
+[compare changes](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v2.1.0...v2.1.1)
+
+### 🩹 Fixes
+
+- Add `crossorigin` attribute for stylesheets ([#77](https://github.com/nuxt-contrib/vue-bundle-renderer/pull/77))
+
+### 🏡 Chore
+
+- Add CODEOWNERS ([cad3b5b](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/cad3b5b))
+- Use npm publish ([1ccc0f9](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/1ccc0f9))
+
+### ❤️ Contributors
+
+- Daniel Roe ([@danielroe](http://github.com/danielroe))
+
 ## v2.1.0
 
 [compare changes](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v2.0.0...v2.1.0)
