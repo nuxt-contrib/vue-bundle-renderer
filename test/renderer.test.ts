@@ -36,8 +36,8 @@ describe('renderer', () => {
     expect(renderStyles().split('>').slice(0, -1).map(s => `${s}>`).sort()).toMatchInlineSnapshot(
       `
       [
-        "<link rel="stylesheet" href="/assets/index.css">",
-        "<link rel="stylesheet" href="/assets/test.css">",
+        "<link rel="stylesheet" href="/assets/index.css" crossorigin>",
+        "<link rel="stylesheet" href="/assets/test.css" crossorigin>",
       ]
     `,
     )
@@ -80,8 +80,8 @@ describe('renderer', () => {
         "<link rel="prefetch" as="image" type="image/png" href="/assets/entry.png">",
         "<link rel="prefetch" as="script" crossorigin href="/assets/index.mjs">",
         "<link rel="prefetch" as="script" crossorigin href="/assets/lazy-component.mjs">",
-        "<link rel="prefetch" as="style" href="/assets/index.css">",
-        "<link rel="prefetch" as="style" href="/assets/lazy-component.css">",
+        "<link rel="prefetch" as="style" crossorigin href="/assets/index.css">",
+        "<link rel="prefetch" as="style" crossorigin href="/assets/lazy-component.css">",
       ]
     `)
   })
@@ -93,9 +93,9 @@ describe('renderer', () => {
     ])
     expect(renderStyles().split('>').slice(0, -1).map(s => `${s}>`).sort()).toMatchInlineSnapshot(`
       [
-        "<link rel="stylesheet" href="/assets/about.css">",
-        "<link rel="stylesheet" href="/assets/lazy-component.css">",
-        "<link rel="stylesheet" href="/assets/test.css">",
+        "<link rel="stylesheet" href="/assets/about.css" crossorigin>",
+        "<link rel="stylesheet" href="/assets/lazy-component.css" crossorigin>",
+        "<link rel="stylesheet" href="/assets/test.css" crossorigin>",
       ]
     `)
     const result = renderResourceHints().split('>').slice(0, -1).map(s => `${s}>`).sort()
@@ -112,7 +112,7 @@ describe('renderer', () => {
         "<link rel="prefetch" as="image" type="image/svg+xml" href="/assets/lazy-component.svg">",
         "<link rel="prefetch" as="image" type="image/x-icon" href="/assets/lazy-component.ico">",
         "<link rel="prefetch" as="script" crossorigin href="/assets/index.mjs">",
-        "<link rel="prefetch" as="style" href="/assets/index.css">",
+        "<link rel="prefetch" as="style" crossorigin href="/assets/index.css">",
         "<link rel="prefetch" as="video" href="/assets/lazy-component.mp4">",
       ]
     `)
