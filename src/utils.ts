@@ -1,8 +1,8 @@
 import type { ResourceMeta } from './types'
 
-const IS_JS_RE = /\.[cm]?js(\?[^.]+)?$/
+const IS_JS_RE = /\.[cm]?js(?:\?[^.]+)?$/
 const HAS_EXT_RE = /[^./]+\.[^./]+$/
-const IS_CSS_RE = /\.(css|postcss|pcss|sass|scss|less|stylus|styl)(\?[^.]+)?$/
+const IS_CSS_RE = /\.(?:css|postcss|pcss|sass|scss|less|stylus|styl)(?:\?[^.]+)?$/
 
 export function isJS(file: string) {
   return IS_JS_RE.test(file) || !HAS_EXT_RE.test(file)
@@ -12,10 +12,10 @@ export function isCSS(file: string) {
   return IS_CSS_RE.test(file)
 }
 
-const IMAGE_RE = /^jpe?g|png|svg|gif|webp|ico$/
-const FONT_RE = /^woff2?|ttf|otf|eot$/
-const AUDIO_RE = /^mp3|wav|ogg|flac|aac|m4a|wma|aiff|aif|au|raw|vox|opus$/
-const VIDEO_RE = /^mp4|webm|ogv|mkv|avi|mov|flv|wmv|mpg|mpeg|m4v|3gp|3g2|mxf|rm|rmvb|asf|asx|m3u8|m3u|pls|cue|m3u8$/
+const IMAGE_RE = /^(?:jpe?g|png|svg|gif|webp|ico)$/
+const FONT_RE = /^(?:woff2?|ttf|otf|eot)$/
+const AUDIO_RE = /^(?:mp3|wav|ogg|flac|aac|m4a|wma|aiff|aif|au|raw|vox|opus)$/
+const VIDEO_RE = /^(?:mp4|webm|ogv|mkv|avi|mov|flv|wmv|mpg|mpeg|m4v|3gp|3g2|mxf|rm|rmvb|asf|asx|m3u8|m3u|pls|cue)$/
 
 const contentTypeMap: Record<string, string> = {
   ico: 'image/x-icon',
