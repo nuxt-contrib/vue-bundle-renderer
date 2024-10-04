@@ -59,7 +59,7 @@ MIT
 [npm-downloads-href]: https://npm.chart.dev/vue-bundle-renderer
 
 [github-actions-src]: https://img.shields.io/github/actions/workflow/status/nuxt-contrib/vue-bundle-renderer/ci.yml?branch=main&style=flat-square
-[github-actions-href]: https://github.com/nuxt-contrib/vue-bundle-renderer/actions?query=workflow%3Atest
+[github-actions-href]: https://github.com/nuxt-contrib/vue-bundle-renderer/actions/workflows/ci.yml
 
 [codecov-src]: https://img.shields.io/codecov/c/gh/nuxt-contrib/vue-bundle-renderer/master?style=flat-square
 [codecov-href]: https://codecov.io/gh/nuxt-contrib/vue-bundle-renderer
