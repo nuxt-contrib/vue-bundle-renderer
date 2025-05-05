@@ -25,7 +25,7 @@ importers:
         specifier: ^0.6.1
         version: 0.6.1(magicast@0.3.5)
       eslint:
-        specifier: ^9.25.1
+        specifier: ^9.26.0
         version: 9.26.0(jiti@2.4.2)
       typescript:
         specifier: ^5.8.3
@@ -34,7 +34,7 @@ importers:
         specifier: ^3.5.0
         version: 3.5.0(typescript@5.8.3)(vue@3.5.13(typescript@5.8.3))
       vite:
-        specifier: ^6.3.3
+        specifier: ^6.3.4
         version: 6.3.4(@types/node@22.15.3)(jiti@2.4.2)
       vitest:
         specifier: 3.1.2
