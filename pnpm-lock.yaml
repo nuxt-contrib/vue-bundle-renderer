@@ -16,11 +16,11 @@ importers:
         specifier: ^1.4.1
         version: 1.4.1(@typescript-eslint/utils@8.34.0(eslint@9.29.0(jiti@2.4.2))(typescript@5.8.3))(@vue/compiler-sfc@3.5.16)(eslint@9.29.0(jiti@2.4.2))(typescript@5.8.3)
       '@types/node':
-        specifier: ^22.15.31
-        version: 22.15.31
+        specifier: ^22.15.32
+        version: 22.15.32
       '@vitest/coverage-v8':
         specifier: ^3.2.3
-        version: 3.2.3(vitest@3.2.3(@types/node@22.15.31)(jiti@2.4.2))
+        version: 3.2.3(vitest@3.2.3(@types/node@22.15.32)(jiti@2.4.2))
       changelogen:
         specifier: ^0.6.1
         version: 0.6.1(magicast@0.3.5)
@@ -35,10 +35,10 @@ importers:
         version: 3.5.0(typescript@5.8.3)(vue@3.5.16(typescript@5.8.3))
       vite:
         specifier: ^6.3.5
-        version: 6.3.5(@types/node@22.15.31)(jiti@2.4.2)
+        version: 6.3.5(@types/node@22.15.32)(jiti@2.4.2)
       vitest:
         specifier: 3.2.3
-        version: 3.2.3(@types/node@22.15.31)(jiti@2.4.2)
+        version: 3.2.3(@types/node@22.15.32)(jiti@2.4.2)
       vue:
         specifier: 3.5.16
         version: 3.5.16(typescript@5.8.3)
@@ -574,8 +574,8 @@ packages:
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
 
-  '@types/node@22.15.31':
-    resolution: {integrity: sha512-jnVe5ULKl6tijxUhvQeNbQG/84fHfg+yMak02cT8QVhBx/F05rAVxCGBYYTh2EKz22D6JF5ktXuNwdx7b9iEGw==}
+  '@types/node@22.15.32':
+    resolution: {integrity: sha512-3jigKqgSjsH6gYZv2nEsqdXfZqIFGAV36XYYjf9KGZ3PSG+IhLecqPnI310RvjutyMwifE2hhhNEklOUrvx/wA==}
 
   '@types/resolve@1.20.2':
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
@@ -2716,7 +2716,7 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
-  '@types/node@22.15.31':
+  '@types/node@22.15.32':
     dependencies:
       undici-types: 6.21.0
 
@@ -2873,7 +2873,7 @@ snapshots:
   '@unrs/resolver-binding-win32-x64-msvc@1.9.0':
     optional: true
 
-  '@vitest/coverage-v8@3.2.3(vitest@3.2.3(@types/node@22.15.31)(jiti@2.4.2))':
+  '@vitest/coverage-v8@3.2.3(vitest@3.2.3(@types/node@22.15.32)(jiti@2.4.2))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 1.0.2
@@ -2888,7 +2888,7 @@ snapshots:
       std-env: 3.9.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.3(@types/node@22.15.31)(jiti@2.4.2)
+      vitest: 3.2.3(@types/node@22.15.32)(jiti@2.4.2)
     transitivePeerDependencies:
       - supports-color
 
@@ -2900,13 +2900,13 @@ snapshots:
       chai: 5.2.0
       tinyrainbow: 2.0.0
 
-  '@vitest/mocker@3.2.3(vite@6.3.5(@types/node@22.15.31)(jiti@2.4.2))':
+  '@vitest/mocker@3.2.3(vite@6.3.5(@types/node@22.15.32)(jiti@2.4.2))':
     dependencies:
       '@vitest/spy': 3.2.3
       estree-walker: 3.0.3
       magic-string: 0.30.17
     optionalDependencies:
-      vite: 6.3.5(@types/node@22.15.31)(jiti@2.4.2)
+      vite: 6.3.5(@types/node@22.15.32)(jiti@2.4.2)
 
   '@vitest/pretty-format@3.2.3':
     dependencies:
@@ -4410,13 +4410,13 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  vite-node@3.2.3(@types/node@22.15.31)(jiti@2.4.2):
+  vite-node@3.2.3(@types/node@22.15.32)(jiti@2.4.2):
     dependencies:
       cac: 6.7.14
       debug: 4.4.1
       es-module-lexer: 1.7.0
       pathe: 2.0.3
-      vite: 6.3.5(@types/node@22.15.31)(jiti@2.4.2)
+      vite: 6.3.5(@types/node@22.15.32)(jiti@2.4.2)
     transitivePeerDependencies:
       - '@types/node'
       - jiti
@@ -4431,7 +4431,7 @@ snapshots:
       - tsx
       - yaml
 
-  vite@6.3.5(@types/node@22.15.31)(jiti@2.4.2):
+  vite@6.3.5(@types/node@22.15.32)(jiti@2.4.2):
     dependencies:
       esbuild: 0.25.5
       fdir: 6.4.6(picomatch@4.0.2)
@@ -4440,15 +4440,15 @@ snapshots:
       rollup: 4.43.0
       tinyglobby: 0.2.14
     optionalDependencies:
-      '@types/node': 22.15.31
+      '@types/node': 22.15.32
       fsevents: 2.3.3
       jiti: 2.4.2
 
-  vitest@3.2.3(@types/node@22.15.31)(jiti@2.4.2):
+  vitest@3.2.3(@types/node@22.15.32)(jiti@2.4.2):
     dependencies:
       '@types/chai': 5.2.2
       '@vitest/expect': 3.2.3
-      '@vitest/mocker': 3.2.3(vite@6.3.5(@types/node@22.15.31)(jiti@2.4.2))
+      '@vitest/mocker': 3.2.3(vite@6.3.5(@types/node@22.15.32)(jiti@2.4.2))
       '@vitest/pretty-format': 3.2.3
       '@vitest/runner': 3.2.3
       '@vitest/snapshot': 3.2.3
@@ -4466,11 +4466,11 @@ snapshots:
       tinyglobby: 0.2.14
       tinypool: 1.1.0
       tinyrainbow: 2.0.0
-      vite: 6.3.5(@types/node@22.15.31)(jiti@2.4.2)
-      vite-node: 3.2.3(@types/node@22.15.31)(jiti@2.4.2)
+      vite: 6.3.5(@types/node@22.15.32)(jiti@2.4.2)
+      vite-node: 3.2.3(@types/node@22.15.32)(jiti@2.4.2)
       why-is-node-running: 2.3.0
     optionalDependencies:
-      '@types/node': 22.15.31
+      '@types/node': 22.15.32
     transitivePeerDependencies:
       - jiti
       - less
