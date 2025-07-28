@@ -1,11 +1,12 @@
 export interface ResourceMeta {
   // https://github.com/vitejs/vite/blob/main/packages/vite/src/node/plugins/manifest.ts#L8-L19
   src?: string
-  name?: string
   file: string
   css?: string[]
   assets?: string[]
   isEntry?: boolean
+  name?: string
+  names?: string[]
   isDynamicEntry?: boolean
   sideEffects?: boolean
   imports?: string[]
