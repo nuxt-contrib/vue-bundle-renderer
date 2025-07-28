@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## v2.1.2
+
+[compare changes](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v2.1.1...v2.1.2)
+
+### 🩹 Fixes
+
+- **deps:** Support vite v7 manifest type ([#239](https://github.com/nuxt-contrib/vue-bundle-renderer/pull/239))
+
+### 📖 Documentation
+
+- Update link to downloads count badge ([2761abc](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/2761abc))
+
+### 🏡 Chore
+
+- Fix link ([ec7538c](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/ec7538c))
+- Update actions status badge link ([1375a04](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/1375a04))
+- Update workflow link also ([6bfb400](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/6bfb400))
+- Move `useFlatConfig` out of `experimental` ([c81fd40](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/c81fd40))
+
+### 🤖 CI
+
+- Run test suite on windows ([#90](https://github.com/nuxt-contrib/vue-bundle-renderer/pull/90))
+- Force latest corepack ([00d97d8](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/00d97d8))
+- Remove forced corepack installation ([c94e6ae](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/c94e6ae))
+- Run tests on node 20 ([4e725e3](https://github.com/nuxt-contrib/vue-bundle-renderer/commit/4e725e3))
+
+### ❤️ Contributors
+
+- Daniel Roe ([@danielroe](https://github.com/danielroe))
+
 ## v2.1.1
 
 [compare changes](https://github.com/nuxt-contrib/vue-bundle-renderer/compare/v2.1.0...v2.1.1)
