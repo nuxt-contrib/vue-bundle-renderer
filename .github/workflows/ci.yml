@@ -31,5 +31,4 @@ jobs:
         uses: CodSpeedHQ/action@v3
         with:
           run: pnpm bench
-          token: ${{ secrets.CODSPEED_TOKEN }}
       - uses: codecov/codecov-action@v5

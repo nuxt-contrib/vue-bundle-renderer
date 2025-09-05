@@ -1,5 +1,6 @@
 import { bench, describe } from 'vitest'
 import { isJS, isCSS, getAsType, parseResource } from '../src/utils'
+import { extname } from 'node:path'
 
 // Sample file names for testing
 const jsFiles = [
@@ -59,7 +60,8 @@ describe('File Type Detection Benchmarks', () => {
 describe('Asset Type Detection Benchmarks', () => {
   bench('getAsType on mixed files', () => {
     for (const file of mixedFiles) {
-      const ext = file.replace(/\?.*/, '').split('.').pop() || ''
+      const base = file.split('?', 1)[0]
+      const ext = extname(base).slice(1)
       getAsType(ext)
     }
   })
