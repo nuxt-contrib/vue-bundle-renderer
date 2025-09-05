@@ -1,0 +1,151 @@
+{
+  "entry-client.ts": {
+    "file": "assets/entry-client.js",
+    "src": "entry-client.ts",
+    "isEntry": true,
+    "imports": [
+      "_vendor.js"
+    ],
+    "css": ["assets/main.css", "assets/components.css"],
+    "dynamicImports": [
+      "pages/home.vue",
+      "pages/about.vue",
+      "pages/contact.vue",
+      "pages/blog.vue",
+      "pages/profile.vue"
+    ],
+    "assets": [
+      "assets/logo.svg",
+      "assets/banner.jpg"
+    ]
+  },
+  "_vendor.js": {
+    "file": "assets/vendor.js"
+  },
+  "pages/home.vue": {
+    "file": "assets/home.js",
+    "src": "pages/home.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor.js",
+      "entry-client.ts"
+    ],
+    "css": [
+      "assets/home.css"
+    ],
+    "assets": [
+      "assets/hero-bg.jpg"
+    ]
+  },
+  "pages/about.vue": {
+    "file": "assets/about.js",
+    "src": "pages/about.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "entry-client.ts"
+    ],
+    "dynamicImports": [
+      "components/Timeline.vue",
+      "components/TeamMember.vue"
+    ],
+    "css": [
+      "assets/about.css"
+    ]
+  },
+  "pages/contact.vue": {
+    "file": "assets/contact.js",
+    "src": "pages/contact.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor.js",
+      "entry-client.ts"
+    ],
+    "css": [
+      "assets/contact.css",
+      "assets/forms.css"
+    ]
+  },
+  "pages/blog.vue": {
+    "file": "assets/blog.js",
+    "src": "pages/blog.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor.js"
+    ],
+    "dynamicImports": [
+      "components/BlogPost.vue",
+      "components/Pagination.vue",
+      "components/SearchBox.vue"
+    ],
+    "css": [
+      "assets/blog.css"
+    ]
+  },
+  "pages/profile.vue": {
+    "file": "assets/profile.js",
+    "src": "pages/profile.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor.js",
+      "entry-client.ts"
+    ],
+    "css": [
+      "assets/profile.css"
+    ]
+  },
+  "components/Timeline.vue": {
+    "file": "assets/timeline.js",
+    "src": "components/Timeline.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor.js"
+    ],
+    "css": [
+      "assets/timeline.css"
+    ]
+  },
+  "components/TeamMember.vue": {
+    "file": "assets/team-member.js",
+    "src": "components/TeamMember.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor.js"
+    ],
+    "css": [
+      "assets/team-member.css"
+    ]
+  },
+  "components/BlogPost.vue": {
+    "file": "assets/blog-post.js",
+    "src": "components/BlogPost.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor.js"
+    ],
+    "css": [
+      "assets/blog-post.css"
+    ]
+  },
+  "components/Pagination.vue": {
+    "file": "assets/pagination.js",
+    "src": "components/Pagination.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor.js"
+    ],
+    "css": [
+      "assets/pagination.css"
+    ]
+  },
+  "components/SearchBox.vue": {
+    "file": "assets/search-box.js",
+    "src": "components/SearchBox.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "_vendor.js"
+    ],
+    "css": [
+      "assets/search-box.css"
+    ]
+  }
+}
