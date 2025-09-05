@@ -1,24 +1,16 @@
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { bench, describe } from 'vitest'
 import { normalizeViteManifest } from '../src/vite'
 import type { Manifest as ViteManifest } from 'vite'
 
-// Load test fixtures
-const smallViteManifest = JSON.parse(
-  readFileSync(resolve(__dirname, '../test/fixtures/vite-manifest.json'), 'utf-8'),
-) as ViteManifest
+import smallViteManifest from '../test/fixtures/vite-manifest.json'
+import largeViteManifest from './fixtures/large-vite-manifest.json'
 
-const largeViteManifest = JSON.parse(
-  readFileSync(resolve(__dirname, 'fixtures/large-vite-manifest.json'), 'utf-8'),
-) as ViteManifest
-
-describe('Vite Manifest Normalization Benchmarks', () => {
-  bench('normalize small Vite manifest', () => {
+describe('normalizeViteManifest', () => {
+  bench('small', () => {
     normalizeViteManifest(smallViteManifest)
   })
 
-  bench('normalize large Vite manifest', () => {
+  bench('large', () => {
     normalizeViteManifest(largeViteManifest)
   })
 
@@ -70,14 +62,12 @@ describe('Vite Manifest Normalization Benchmarks', () => {
 
   const complexViteManifest = createComplexViteManifest()
 
-  bench('normalize complex nested Vite manifest', () => {
+  bench('complex', () => {
     normalizeViteManifest(complexViteManifest)
   })
 })
 
-// Benchmark with different manifest sizes
-describe('Vite Manifest Size Scaling', () => {
-  // Generate manifests of different sizes
+describe('normalizeViteManifest scaling', () => {
   const generateManifest = (entryCount: number): ViteManifest => {
     const manifest: ViteManifest = {}
 
@@ -110,22 +100,22 @@ describe('Vite Manifest Size Scaling', () => {
   }
 
   const manifest5 = generateManifest(5)
-  bench('normalize 5 entries', () => {
+  bench('5 entries', () => {
     normalizeViteManifest(manifest5)
   })
 
   const manifest25 = generateManifest(25)
-  bench('normalize 25 entries', () => {
+  bench('25 entries', () => {
     normalizeViteManifest(manifest25)
   })
 
   const manifest50 = generateManifest(50)
-  bench('normalize 50 entries', () => {
+  bench('50 entries', () => {
     normalizeViteManifest(manifest50)
   })
 
   const manifest100 = generateManifest(100)
-  bench('normalize 100 entries', () => {
+  bench('100 entries', () => {
     normalizeViteManifest(manifest100)
   })
 })

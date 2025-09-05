@@ -31,7 +31,7 @@ const assetFiles = [
 
 const mixedFiles = [...jsFiles, ...cssFiles, ...assetFiles]
 
-describe('File Type Detection Benchmarks', () => {
+describe('file type detection', () => {
   bench('isJS detection on JS files', () => {
     for (const file of jsFiles) {
       isJS(file)
@@ -57,7 +57,7 @@ describe('File Type Detection Benchmarks', () => {
   })
 })
 
-describe('Asset Type Detection Benchmarks', () => {
+describe('asset type detection', () => {
   bench('getAsType on mixed files', () => {
     for (const file of mixedFiles) {
       const base = file.split('?', 1)[0]
@@ -81,7 +81,7 @@ describe('Asset Type Detection Benchmarks', () => {
   })
 })
 
-describe('Resource Parsing Benchmarks', () => {
+describe('resource parsing', () => {
   bench('parseResource on JS files', () => {
     for (const file of jsFiles) {
       parseResource(file)
@@ -116,7 +116,7 @@ describe('Resource Parsing Benchmarks', () => {
 })
 
 // Test with dynamically generated file names
-describe('Dynamic File Generation Benchmarks', () => {
+describe('dynamic file generation', () => {
   bench('parseResource on generated JS files', () => {
     for (let i = 0; i < 100; i++) {
       parseResource(`chunk-${i}.js`)

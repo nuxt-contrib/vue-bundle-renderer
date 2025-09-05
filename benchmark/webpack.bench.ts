@@ -1,41 +1,21 @@
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { bench, describe } from 'vitest'
 import { normalizeWebpackManifest, type WebpackClientManifest } from '../src/webpack'
 
-// Load test fixtures
-const smallWebpackManifest = JSON.parse(
-  readFileSync(resolve(__dirname, '../test/fixtures/webpack-manifest.json'), 'utf-8'),
-) as WebpackClientManifest
+import smallWebpackManifest from '../test/fixtures/webpack-manifest.json'
+import largeWebpackManifest from './fixtures/large-webpack-manifest.json'
 
-const largeWebpackManifest = JSON.parse(
-  readFileSync(resolve(__dirname, 'fixtures/large-webpack-manifest.json'), 'utf-8'),
-) as WebpackClientManifest
-
-describe('Webpack Manifest Normalization Benchmarks', () => {
-  bench('normalize small Webpack manifest', () => {
+describe('normalizeWebpackManifest', () => {
+  bench('small', () => {
     normalizeWebpackManifest(smallWebpackManifest)
   })
 
-  bench('normalize large Webpack manifest', () => {
+  bench('large', () => {
     normalizeWebpackManifest(largeWebpackManifest)
-  })
-
-  bench('normalize small Webpack manifest (100 iterations)', () => {
-    for (let i = 0; i < 100; i++) {
-      normalizeWebpackManifest(smallWebpackManifest)
-    }
-  })
-
-  bench('normalize large Webpack manifest (10 iterations)', () => {
-    for (let i = 0; i < 10; i++) {
-      normalizeWebpackManifest(largeWebpackManifest)
-    }
   })
 })
 
 // Benchmark with different manifest sizes
-describe('Webpack Manifest Size Scaling', () => {
+describe('normalizeWebpackManifest scaling', () => {
   // Generate manifests of different sizes
   const generateManifest = (entryCount: number): WebpackClientManifest => {
     const all: string[] = ['runtime.js', 'commons/app.js', 'app.css', 'app.js']
@@ -65,22 +45,22 @@ describe('Webpack Manifest Size Scaling', () => {
   }
 
   const manifest5 = generateManifest(5)
-  bench('normalize 5 entries', () => {
+  bench('5 entries', () => {
     normalizeWebpackManifest(manifest5)
   })
 
   const manifest25 = generateManifest(25)
-  bench('normalize 25 entries', () => {
+  bench('25 entries', () => {
     normalizeWebpackManifest(manifest25)
   })
 
   const manifest50 = generateManifest(50)
-  bench('normalize 50 entries', () => {
+  bench('50 entries', () => {
     normalizeWebpackManifest(manifest50)
   })
 
   const manifest100 = generateManifest(100)
-  bench('normalize 100 entries', () => {
+  bench('100 entries', () => {
     normalizeWebpackManifest(manifest100)
   })
 })
