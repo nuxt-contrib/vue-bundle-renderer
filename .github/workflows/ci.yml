@@ -26,4 +26,9 @@ jobs:
       - run: pnpm build
       - run: pnpm vitest --coverage
       - run: pnpm tsc --noEmit
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@v3
+        with:
+          run: pnpm bench
+          token: ${{ secrets.CODSPEED_TOKEN }}
       - uses: codecov/codecov-action@v5
