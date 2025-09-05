@@ -27,6 +27,7 @@ jobs:
       - run: pnpm vitest --coverage
       - run: pnpm tsc --noEmit
       - name: Run benchmarks
+        if: matrix.os == 'ubuntu-latest'
         uses: CodSpeedHQ/action@v3
         with:
           run: pnpm bench
