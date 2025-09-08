@@ -28,7 +28,7 @@ jobs:
       - run: pnpm tsc --noEmit
       - name: Run benchmarks
         if: matrix.os == 'ubuntu-latest'
-        uses: CodSpeedHQ/action@v3
+        uses: CodSpeedHQ/action@v4
         with:
           run: pnpm bench
       - uses: codecov/codecov-action@v5
