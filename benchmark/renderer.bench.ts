@@ -13,6 +13,13 @@ describe('createRenderer', () => {
   const webpackPrecomputed = precomputeDependencies(normalizeWebpackManifest(webpackManifest))
   const largeVitePrecomputed = precomputeDependencies(normalizeViteManifest(largeViteManifest))
 
+  bench('vite', () => {
+    createRenderer(() => ({}), {
+      precomputed: vitePrecomputed,
+      renderToString: () => '<div>test</div>',
+    })
+  })
+
   bench('vite (manifest)', () => {
     createRenderer(() => ({}), {
       manifest: normalizeViteManifest(viteManifest),
@@ -20,9 +27,9 @@ describe('createRenderer', () => {
     })
   })
 
-  bench('vite (precomputed)', () => {
+  bench('webpack', () => {
     createRenderer(() => ({}), {
-      precomputed: vitePrecomputed,
+      precomputed: webpackPrecomputed,
       renderToString: () => '<div>test</div>',
     })
   })
@@ -34,23 +41,16 @@ describe('createRenderer', () => {
     })
   })
 
-  bench('webpack (precomputed)', () => {
-    createRenderer(() => ({}), {
-      precomputed: webpackPrecomputed,
-      renderToString: () => '<div>test</div>',
-    })
-  })
-
-  bench('vite large (manifest)', () => {
-    createRenderer(() => ({}), {
-      manifest: normalizeViteManifest(largeViteManifest),
-      renderToString: () => '<div>test</div>',
-    })
-  })
-
-  bench('vite large (precomputed)', () => {
+  bench('vite (large)', () => {
     createRenderer(() => ({}), {
       precomputed: largeVitePrecomputed,
+      renderToString: () => '<div>test</div>',
+    })
+  })
+
+  bench('vite (large) (manifest)', () => {
+    createRenderer(() => ({}), {
+      manifest: normalizeViteManifest(largeViteManifest),
       renderToString: () => '<div>test</div>',
     })
   })
@@ -107,99 +107,99 @@ describe('rendering', () => {
   const largeViteSet = new Set(viteModules)
   const largeLargeViteSet = new Set(largeViteModules.slice(0, 50))
 
+  bench('renderStyles - vite (small)', () => {
+    renderStyles({ modules: smallViteSet }, vitePrecomputedRenderer.rendererContext)
+  })
+
   bench('renderStyles - vite small (manifest)', () => {
     renderStyles({ modules: smallViteSet }, viteRenderer.rendererContext)
   })
 
-  bench('renderStyles - vite small (precomputed)', () => {
-    renderStyles({ modules: smallViteSet }, vitePrecomputedRenderer.rendererContext)
+  bench('renderStyles - vite (large)', () => {
+    renderStyles({ modules: largeViteSet }, vitePrecomputedRenderer.rendererContext)
   })
 
   bench('renderStyles - vite large (manifest)', () => {
     renderStyles({ modules: largeViteSet }, viteRenderer.rendererContext)
   })
 
-  bench('renderStyles - vite large (precomputed)', () => {
-    renderStyles({ modules: largeViteSet }, vitePrecomputedRenderer.rendererContext)
+  bench('renderStyles - vite (very large)', () => {
+    renderStyles({ modules: largeLargeViteSet }, largeVitePrecomputedRenderer.rendererContext)
   })
 
   bench('renderStyles - vite very large (manifest)', () => {
     renderStyles({ modules: largeLargeViteSet }, largeViteRenderer.rendererContext)
   })
 
-  bench('renderStyles - vite very large (precomputed)', () => {
-    renderStyles({ modules: largeLargeViteSet }, largeVitePrecomputedRenderer.rendererContext)
+  bench('renderScripts - vite (small)', () => {
+    renderScripts({ modules: smallViteSet }, vitePrecomputedRenderer.rendererContext)
   })
 
   bench('renderScripts - vite small (manifest)', () => {
     renderScripts({ modules: smallViteSet }, viteRenderer.rendererContext)
   })
 
-  bench('renderScripts - vite small (precomputed)', () => {
-    renderScripts({ modules: smallViteSet }, vitePrecomputedRenderer.rendererContext)
+  bench('renderScripts - vite (large)', () => {
+    renderScripts({ modules: largeViteSet }, vitePrecomputedRenderer.rendererContext)
   })
 
   bench('renderScripts - vite large (manifest)', () => {
     renderScripts({ modules: largeViteSet }, viteRenderer.rendererContext)
   })
 
-  bench('renderScripts - vite large (precomputed)', () => {
-    renderScripts({ modules: largeViteSet }, vitePrecomputedRenderer.rendererContext)
+  bench('renderScripts - vite (very large)', () => {
+    renderScripts({ modules: largeLargeViteSet }, largeVitePrecomputedRenderer.rendererContext)
   })
 
   bench('renderScripts - vite very large (manifest)', () => {
     renderScripts({ modules: largeLargeViteSet }, largeViteRenderer.rendererContext)
   })
 
-  bench('renderScripts - vite very large (precomputed)', () => {
-    renderScripts({ modules: largeLargeViteSet }, largeVitePrecomputedRenderer.rendererContext)
+  bench('renderResourceHints - vite (small)', () => {
+    renderResourceHints({ modules: smallViteSet }, vitePrecomputedRenderer.rendererContext)
   })
 
   bench('renderResourceHints - vite small (manifest)', () => {
     renderResourceHints({ modules: smallViteSet }, viteRenderer.rendererContext)
   })
 
-  bench('renderResourceHints - vite small (precomputed)', () => {
-    renderResourceHints({ modules: smallViteSet }, vitePrecomputedRenderer.rendererContext)
+  bench('renderResourceHints - vite (large)', () => {
+    renderResourceHints({ modules: largeViteSet }, vitePrecomputedRenderer.rendererContext)
   })
 
   bench('renderResourceHints - vite large (manifest)', () => {
     renderResourceHints({ modules: largeViteSet }, viteRenderer.rendererContext)
   })
 
-  bench('renderResourceHints - vite large (precomputed)', () => {
-    renderResourceHints({ modules: largeViteSet }, vitePrecomputedRenderer.rendererContext)
+  bench('renderResourceHints - vite (very large)', () => {
+    renderResourceHints({ modules: largeLargeViteSet }, largeVitePrecomputedRenderer.rendererContext)
   })
 
   bench('renderResourceHints - vite very large (manifest)', () => {
     renderResourceHints({ modules: largeLargeViteSet }, largeViteRenderer.rendererContext)
   })
 
-  bench('renderResourceHints - vite very large (precomputed)', () => {
-    renderResourceHints({ modules: largeLargeViteSet }, largeVitePrecomputedRenderer.rendererContext)
+  bench('renderStyles - webpack', () => {
+    renderStyles({ modules: smallWebpackSet }, webpackPrecomputedRenderer.rendererContext)
   })
 
   bench('renderStyles - webpack (manifest)', () => {
     renderStyles({ modules: smallWebpackSet }, webpackRenderer.rendererContext)
   })
 
-  bench('renderStyles - webpack (precomputed)', () => {
-    renderStyles({ modules: smallWebpackSet }, webpackPrecomputedRenderer.rendererContext)
+  bench('renderScripts - webpack', () => {
+    renderScripts({ modules: smallWebpackSet }, webpackPrecomputedRenderer.rendererContext)
   })
 
   bench('renderScripts - webpack (manifest)', () => {
     renderScripts({ modules: smallWebpackSet }, webpackRenderer.rendererContext)
   })
 
-  bench('renderScripts - webpack (precomputed)', () => {
-    renderScripts({ modules: smallWebpackSet }, webpackPrecomputedRenderer.rendererContext)
+  bench('renderResourceHints - webpack', () => {
+    renderResourceHints({ modules: smallWebpackSet }, webpackPrecomputedRenderer.rendererContext)
   })
 
   bench('renderResourceHints - webpack (manifest)', () => {
     renderResourceHints({ modules: smallWebpackSet }, webpackRenderer.rendererContext)
-  })
-
-  bench('renderResourceHints - webpack (precomputed)', () => {
-    renderResourceHints({ modules: smallWebpackSet }, webpackPrecomputedRenderer.rendererContext)
   })
 })
