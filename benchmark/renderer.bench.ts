@@ -111,7 +111,7 @@ describe('rendering', () => {
     renderStyles({ modules: smallViteSet }, vitePrecomputedRenderer.rendererContext)
   })
 
-  bench('renderStyles - vite small (manifest)', () => {
+  bench('renderStyles - vite (small) (manifest)', () => {
     renderStyles({ modules: smallViteSet }, viteRenderer.rendererContext)
   })
 
@@ -119,7 +119,7 @@ describe('rendering', () => {
     renderStyles({ modules: largeViteSet }, vitePrecomputedRenderer.rendererContext)
   })
 
-  bench('renderStyles - vite large (manifest)', () => {
+  bench('renderStyles - vite (large) (manifest)', () => {
     renderStyles({ modules: largeViteSet }, viteRenderer.rendererContext)
   })
 
@@ -127,7 +127,7 @@ describe('rendering', () => {
     renderStyles({ modules: largeLargeViteSet }, largeVitePrecomputedRenderer.rendererContext)
   })
 
-  bench('renderStyles - vite very large (manifest)', () => {
+  bench('renderStyles - vite (very large) (manifest)', () => {
     renderStyles({ modules: largeLargeViteSet }, largeViteRenderer.rendererContext)
   })
 
@@ -135,7 +135,7 @@ describe('rendering', () => {
     renderScripts({ modules: smallViteSet }, vitePrecomputedRenderer.rendererContext)
   })
 
-  bench('renderScripts - vite small (manifest)', () => {
+  bench('renderScripts - vite (small) (manifest)', () => {
     renderScripts({ modules: smallViteSet }, viteRenderer.rendererContext)
   })
 
@@ -143,7 +143,7 @@ describe('rendering', () => {
     renderScripts({ modules: largeViteSet }, vitePrecomputedRenderer.rendererContext)
   })
 
-  bench('renderScripts - vite large (manifest)', () => {
+  bench('renderScripts - vite (large) (manifest)', () => {
     renderScripts({ modules: largeViteSet }, viteRenderer.rendererContext)
   })
 
@@ -151,7 +151,7 @@ describe('rendering', () => {
     renderScripts({ modules: largeLargeViteSet }, largeVitePrecomputedRenderer.rendererContext)
   })
 
-  bench('renderScripts - vite very large (manifest)', () => {
+  bench('renderScripts - vite (very large) (manifest)', () => {
     renderScripts({ modules: largeLargeViteSet }, largeViteRenderer.rendererContext)
   })
 
@@ -159,7 +159,7 @@ describe('rendering', () => {
     renderResourceHints({ modules: smallViteSet }, vitePrecomputedRenderer.rendererContext)
   })
 
-  bench('renderResourceHints - vite small (manifest)', () => {
+  bench('renderResourceHints - vite (small) (manifest)', () => {
     renderResourceHints({ modules: smallViteSet }, viteRenderer.rendererContext)
   })
 
@@ -167,7 +167,7 @@ describe('rendering', () => {
     renderResourceHints({ modules: largeViteSet }, vitePrecomputedRenderer.rendererContext)
   })
 
-  bench('renderResourceHints - vite large (manifest)', () => {
+  bench('renderResourceHints - vite (large) (manifest)', () => {
     renderResourceHints({ modules: largeViteSet }, viteRenderer.rendererContext)
   })
 
@@ -175,7 +175,7 @@ describe('rendering', () => {
     renderResourceHints({ modules: largeLargeViteSet }, largeVitePrecomputedRenderer.rendererContext)
   })
 
-  bench('renderResourceHints - vite very large (manifest)', () => {
+  bench('renderResourceHints - vite (very large) (manifest)', () => {
     renderResourceHints({ modules: largeLargeViteSet }, largeViteRenderer.rendererContext)
   })
 
