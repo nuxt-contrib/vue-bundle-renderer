@@ -125,9 +125,15 @@ export function getModuleDependencies(id: string, rendererContext: RendererConte
   // Resolve nested dependencies and merge
   for (const depId of meta.imports || []) {
     const depDeps = getModuleDependencies(depId, rendererContext)
-    Object.assign(dependencies.styles, depDeps.styles)
-    Object.assign(dependencies.preload, depDeps.preload)
-    Object.assign(dependencies.prefetch, depDeps.prefetch)
+    for (const key in depDeps.styles) {
+      dependencies.styles[key] = depDeps.styles[key]
+    }
+    for (const key in depDeps.preload) {
+      dependencies.preload[key] = depDeps.preload[key]
+    }
+    for (const key in depDeps.prefetch) {
+      dependencies.prefetch[key] = depDeps.prefetch[key]
+    }
   }
   const filteredPreload: ModuleDependencies['preload'] = {}
   for (const id in dependencies.preload) {
@@ -142,7 +148,13 @@ export function getModuleDependencies(id: string, rendererContext: RendererConte
 }
 
 export function getAllDependencies(ids: Set<string>, rendererContext: RendererContext): ModuleDependencies {
-  const cacheKey = Array.from(ids).sort().join(',')
+  let cacheKey = ''
+  const sortedIds = [...ids].sort()
+  for (let i = 0; i < sortedIds.length; i++) {
+    if (i > 0) cacheKey += ','
+    cacheKey += sortedIds[i]
+  }
+
   if (rendererContext._dependencySets[cacheKey]) {
     return rendererContext._dependencySets[cacheKey]
   }
@@ -156,16 +168,30 @@ export function getAllDependencies(ids: Set<string>, rendererContext: RendererCo
 
   for (const id of ids) {
     const deps = getModuleDependencies(id, rendererContext)
-    Object.assign(allDeps.scripts, deps.scripts)
-    Object.assign(allDeps.styles, deps.styles)
-    Object.assign(allDeps.preload, deps.preload)
-    Object.assign(allDeps.prefetch, deps.prefetch)
+    for (const key in deps.scripts) {
+      allDeps.scripts[key] = deps.scripts[key]
+    }
+    for (const key in deps.styles) {
+      allDeps.styles[key] = deps.styles[key]
+    }
+    for (const key in deps.preload) {
+      allDeps.preload[key] = deps.preload[key]
+    }
+    for (const key in deps.prefetch) {
+      allDeps.prefetch[key] = deps.prefetch[key]
+    }
 
     for (const dynamicDepId of rendererContext.manifest?.[id]?.dynamicImports || []) {
       const dynamicDeps = getModuleDependencies(dynamicDepId, rendererContext)
-      Object.assign(allDeps.prefetch, dynamicDeps.scripts)
-      Object.assign(allDeps.prefetch, dynamicDeps.styles)
-      Object.assign(allDeps.prefetch, dynamicDeps.preload)
+      for (const key in dynamicDeps.scripts) {
+        allDeps.prefetch[key] = dynamicDeps.scripts[key]
+      }
+      for (const key in dynamicDeps.styles) {
+        allDeps.prefetch[key] = dynamicDeps.styles[key]
+      }
+      for (const key in dynamicDeps.preload) {
+        allDeps.prefetch[key] = dynamicDeps.preload[key]
+      }
     }
   }
 
