@@ -289,7 +289,7 @@ export function renderResourceHints(ssrContext: SSRContext, rendererContext: Ren
   return result
 }
 
-function renderResourceHeaders(ssrContext: SSRContext, rendererContext: RendererContext): Record<string, string> {
+export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: RendererContext): Record<string, string> {
   const { preload, prefetch } = getRequestDependencies(ssrContext, rendererContext)
   const links: string[] = []
 
