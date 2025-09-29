@@ -222,7 +222,7 @@ export function getResources(ssrContext: SSRContext, rendererContext: RendererCo
   return [...getPreloadLinks(ssrContext, rendererContext), ...getPrefetchLinks(ssrContext, rendererContext)]
 }
 
-function renderResourceHints(ssrContext: SSRContext, rendererContext: RendererContext): string {
+export function renderResourceHints(ssrContext: SSRContext, rendererContext: RendererContext): string {
   const { preload, prefetch } = getRequestDependencies(ssrContext, rendererContext)
   let result = ''
 
