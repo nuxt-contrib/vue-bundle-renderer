@@ -24,9 +24,6 @@ jobs:
       - name: 📦 install dependencies
         run: pnpm install
 
-      - name: 🚧 prepare build environment
-        run: pnpm dev:prepare
-
       - name: 🛠 build project
         run: pnpm build
 
