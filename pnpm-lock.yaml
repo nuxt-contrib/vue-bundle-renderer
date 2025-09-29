@@ -13,8 +13,8 @@ importers:
         version: 1.6.1
     devDependencies:
       '@codspeed/vitest-plugin':
-        specifier: ^3.1.1
-        version: 3.1.1(vite@7.1.7(@types/node@22.18.6)(jiti@2.5.1))(vitest@3.2.4(@types/node@22.18.6)(jiti@2.5.1))
+        specifier: ^5.0.0
+        version: 5.0.0(tinybench@2.9.0)(vite@7.1.7(@types/node@22.18.6)(jiti@2.5.1))(vitest@3.2.4(@types/node@22.18.6)(jiti@2.5.1))
       '@nuxt/eslint-config':
         specifier: ^1.9.0
         version: 1.9.0(@typescript-eslint/utils@8.44.0(eslint@9.36.0(jiti@2.5.1))(typescript@5.9.2))(@vue/compiler-sfc@3.5.21)(eslint@9.36.0(jiti@2.5.1))(typescript@5.9.2)
@@ -89,14 +89,15 @@ packages:
   '@clack/prompts@0.11.0':
     resolution: {integrity: sha512-pMN5FcrEw9hUkZA4f+zLlzivQSeQf5dRGJjSUbvVYDLvpKCdQx5OaknvKzgbtXOizhP+SJJJjqEbOe55uKKfAw==}
 
-  '@codspeed/core@3.1.1':
-    resolution: {integrity: sha512-ONhERVDAtkm0nc+FYPivDozoMOlNUP2BWRBFDJYATGA18Iap5Kd2mZ1/Lwz54RB5+g+3YDOpsvotHa4hd3Q+7Q==}
+  '@codspeed/core@5.0.0':
+    resolution: {integrity: sha512-XlxFwMyYqY/7ndmzWouWLTF/zOlciUcjkjVk4GhJ+m47e1A0wTYsLYU9reY1iHc1gPyJBBTfa41oqCjgcdJs8Q==}
 
-  '@codspeed/vitest-plugin@3.1.1':
-    resolution: {integrity: sha512-/PJUgxIfuRqpBSbaD8bgWXtbXxCqgnW89dzr3220fMkx/LA6z6oUb4tJGjeVsOWAzAgu0VBdSA+8hC+7D9BIuQ==}
+  '@codspeed/vitest-plugin@5.0.0':
+    resolution: {integrity: sha512-p1ptYHqPOfZE6mBJlagGRk1i8M3SHZw6K+2JH8rcUWIwbLkiNozpI9KyTRRsyvKbTxnx3T28jzGJXeFp8+7itA==}
     peerDependencies:
-      vite: ^4.2.0 || ^5.0.0
-      vitest: '>=1.2.2'
+      tinybench: ^2.9.0
+      vite: ^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
+      vitest: '>=3.2'
 
   '@emnapi/core@1.5.0':
     resolution: {integrity: sha512-sbP8GzB1WDzacS8fgNPpHlp6C9VZe+SJP3F90W9rLemaQj2PzIuTEl1qDOYQf58YIpyjViI24y9aPWCjEzY2cg==}
@@ -2456,7 +2457,7 @@ snapshots:
       picocolors: 1.1.1
       sisteransi: 1.0.5
 
-  '@codspeed/core@3.1.1':
+  '@codspeed/core@5.0.0':
     dependencies:
       axios: 1.12.2
       find-up: 6.3.0
@@ -2465,9 +2466,10 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  '@codspeed/vitest-plugin@3.1.1(vite@7.1.7(@types/node@22.18.6)(jiti@2.5.1))(vitest@3.2.4(@types/node@22.18.6)(jiti@2.5.1))':
+  '@codspeed/vitest-plugin@5.0.0(tinybench@2.9.0)(vite@7.1.7(@types/node@22.18.6)(jiti@2.5.1))(vitest@3.2.4(@types/node@22.18.6)(jiti@2.5.1))':
     dependencies:
-      '@codspeed/core': 3.1.1
+      '@codspeed/core': 5.0.0
+      tinybench: 2.9.0
       vite: 7.1.7(@types/node@22.18.6)(jiti@2.5.1)
       vitest: 3.2.4(@types/node@22.18.6)(jiti@2.5.1)
     transitivePeerDependencies:
