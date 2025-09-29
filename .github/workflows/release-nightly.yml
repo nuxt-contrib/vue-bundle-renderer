@@ -1,0 +1,34 @@
+name: release
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions: {}
+
+jobs:
+  pkg-pr-new:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - run: corepack enable
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: lts/*
+          cache: "pnpm"
+
+      - name: 📦 install dependencies
+        run: pnpm install
+
+      - name: 🚧 prepare build environment
+        run: pnpm dev:prepare
+
+      - name: 🛠 build project
+        run: pnpm build
+
+      - name: 📦 publish nightly release
+        run: pnpm pkg-pr-new publish --compact
