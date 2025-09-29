@@ -1,5 +1,6 @@
 import { withLeadingSlash } from 'ufo'
 import type { Manifest, ResourceMeta } from './types'
+import type { PrecomputedData } from './precompute'
 
 export interface ModuleDependencies {
   scripts: Record<string, ResourceMeta>
@@ -23,10 +24,16 @@ export interface SSRContext {
 
 export interface RenderOptions {
   buildAssetsURL?: (id: string) => string
-  manifest: Manifest
+  /** @deprecated Use `precomputed` instead for better performance */
+  manifest?: Manifest
+  /** Precomputed dependency data */
+  precomputed?: PrecomputedData
 }
 
-export interface RendererContext extends Required<RenderOptions> {
+export interface RendererContext {
+  buildAssetsURL: (id: string) => string
+  manifest?: Manifest
+  precomputed?: PrecomputedData
   _dependencies: Record<string, ModuleDependencies>
   _dependencySets: Record<string, ModuleDependencies>
   _entrypoints: string[]
@@ -41,16 +48,21 @@ interface LinkAttributes {
   crossorigin?: '' | null
 }
 
-export function createRendererContext({ manifest, buildAssetsURL }: RenderOptions): RendererContext {
+export function createRendererContext({ manifest, precomputed, buildAssetsURL }: RenderOptions): RendererContext {
+  if (!manifest && !precomputed) {
+    throw new Error('Either manifest or precomputed data must be provided')
+  }
+
   const ctx: RendererContext = {
-    // Manifest
+    // Options
     buildAssetsURL: buildAssetsURL || withLeadingSlash,
-    manifest: undefined!,
+    manifest,
+    precomputed,
     updateManifest,
     // Internal cache
-    _dependencies: undefined!,
-    _dependencySets: undefined!,
-    _entrypoints: undefined!,
+    _dependencies: {},
+    _dependencySets: {},
+    _entrypoints: [],
   }
 
   function updateManifest(manifest: Manifest) {
@@ -61,7 +73,13 @@ export function createRendererContext({ manifest, buildAssetsURL }: RenderOption
     ctx._entrypoints = manifestEntries.filter(e => e[1].isEntry).map(([module]) => module)
   }
 
-  updateManifest(manifest)
+  if (precomputed) {
+    ctx._dependencies = precomputed.dependencies
+    ctx._entrypoints = precomputed.entrypoints
+  }
+  else if (manifest) {
+    updateManifest(manifest)
+  }
 
   return ctx
 }
@@ -76,6 +94,10 @@ export function getModuleDependencies(id: string, rendererContext: RendererConte
     styles: {},
     preload: {},
     prefetch: {},
+  }
+
+  if (!rendererContext.manifest) {
+    return dependencies
   }
 
   const meta = rendererContext.manifest[id]
@@ -139,7 +161,7 @@ export function getAllDependencies(ids: Set<string>, rendererContext: RendererCo
     Object.assign(allDeps.preload, deps.preload)
     Object.assign(allDeps.prefetch, deps.prefetch)
 
-    for (const dynamicDepId of rendererContext.manifest[id]?.dynamicImports || []) {
+    for (const dynamicDepId of rendererContext.manifest?.[id]?.dynamicImports || []) {
       const dynamicDeps = getModuleDependencies(dynamicDepId, rendererContext)
       Object.assign(allDeps.prefetch, dynamicDeps.scripts)
       Object.assign(allDeps.prefetch, dynamicDeps.styles)
