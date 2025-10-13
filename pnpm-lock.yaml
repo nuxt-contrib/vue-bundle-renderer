@@ -19,7 +19,7 @@ importers:
         specifier: ^1.9.0
         version: 1.9.0(@typescript-eslint/utils@8.46.0(eslint@9.37.0(jiti@2.6.1))(typescript@5.9.3))(@vue/compiler-sfc@3.5.22)(eslint@9.37.0(jiti@2.6.1))(typescript@5.9.3)
       '@types/node':
-        specifier: ^22.18.8
+        specifier: ^22.18.10
         version: 22.18.10
       '@types/semver':
         specifier: ^7.7.1
@@ -37,7 +37,7 @@ importers:
         specifier: ^0.0.60
         version: 0.0.60
       semver:
-        specifier: ^7.7.2
+        specifier: ^7.7.3
         version: 7.7.3
       std-env:
         specifier: ^3.9.0
