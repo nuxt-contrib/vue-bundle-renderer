@@ -36,12 +36,12 @@
   },
   "devDependencies": {
     "@codspeed/vitest-plugin": "^5.0.1",
-    "@nuxt/eslint-config": "^1.9.0",
+    "@nuxt/eslint-config": "^1.10.0",
     "@types/node": "^24.10.0",
     "@types/semver": "^7.7.1",
     "@vitest/coverage-v8": "^3.2.4",
     "changelogen": "^0.6.2",
-    "eslint": "^9.38.0",
+    "eslint": "^9.39.1",
     "pkg-pr-new": "^0.0.60",
     "semver": "^7.7.3",
     "std-env": "^3.10.0",
@@ -51,5 +51,5 @@
     "vitest": "3.2.4",
     "vue": "3.5.22"
   },
-  "packageManager": "pnpm@10.19.0"
+  "packageManager": "pnpm@10.20.0"
 }
