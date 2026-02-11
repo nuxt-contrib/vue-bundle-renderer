@@ -41,7 +41,7 @@
     "@types/semver": "^7.7.1",
     "@vitest/coverage-v8": "^4.0.18",
     "changelogen": "^0.6.2",
-    "eslint": "^9.39.2",
+    "eslint": "^10.0.0",
     "pkg-pr-new": "^0.0.60",
     "semver": "^7.7.4",
     "std-env": "^3.10.0",
