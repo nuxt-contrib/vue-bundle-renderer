@@ -6,7 +6,6 @@ export interface ResourceMeta {
   assets?: string[]
   isEntry?: boolean
   name?: string
-  names?: string[]
   isDynamicEntry?: boolean
   sideEffects?: boolean
   imports?: string[]
