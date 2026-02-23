@@ -31,7 +31,7 @@ importers:
         specifier: ^0.6.2
         version: 0.6.2(magicast@0.5.2)
       eslint:
-        specifier: ^10.0.0
+        specifier: ^10.0.1
         version: 10.0.1(jiti@2.6.1)
       pkg-pr-new:
         specifier: ^0.0.63
