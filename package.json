@@ -36,20 +36,20 @@
   },
   "devDependencies": {
     "@codspeed/vitest-plugin": "^5.2.0",
-    "@nuxt/eslint-config": "^1.15.1",
-    "@types/node": "^24.10.13",
+    "@nuxt/eslint-config": "^1.15.2",
+    "@types/node": "^24.11.0",
     "@types/semver": "^7.7.1",
     "@vitest/coverage-v8": "^4.0.18",
     "changelogen": "^0.6.2",
     "eslint": "^10.0.2",
-    "pkg-pr-new": "^0.0.63",
+    "pkg-pr-new": "^0.0.65",
     "semver": "^7.7.4",
     "std-env": "^3.10.0",
     "typescript": "^5.9.3",
     "unbuild": "^3.6.1",
     "vite": "^7.3.1",
     "vitest": "4.0.18",
-    "vue": "3.5.28"
+    "vue": "3.5.29"
   },
-  "packageManager": "pnpm@10.30.2"
+  "packageManager": "pnpm@10.30.3"
 }
