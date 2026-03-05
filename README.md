@@ -45,17 +45,17 @@ declare function normalizeWebpackManifest(manifest: ViteManifest)
 
 ## Credits
 
-Based on [vue-server-renderer](https://www.npmjs.com/package/vue-server-renderer) made by [Evan You](https://github.com/yyx990803).
+Based on [vue-server-renderer](https://npmx.dev/package/vue-server-renderer) made by [Evan You](https://github.com/yyx990803).
 
 ## License
 
 MIT
 
 <!-- Badges -->
-[npm-version-src]: https://img.shields.io/npm/v/vue-bundle-renderer?style=flat-square
-[npm-version-href]: https://npmjs.com/package/vue-bundle-renderer
+[npm-version-src]: https://npmx.dev/api/registry/badge/version/vue-bundle-renderer
+[npm-version-href]: https://npmx.dev/package/vue-bundle-renderer
 
-[npm-downloads-src]: https://img.shields.io/npm/dm/vue-bundle-renderer?style=flat-square
+[npm-downloads-src]: https://npmx.dev/api/registry/badge/downloads/vue-bundle-renderer
 [npm-downloads-href]: https://npm.chart.dev/vue-bundle-renderer
 
 [github-actions-src]: https://img.shields.io/github/actions/workflow/status/nuxt-contrib/vue-bundle-renderer/ci.yml?branch=main&style=flat-square
