@@ -45,7 +45,7 @@
     "pkg-pr-new": "^0.0.66",
     "semver": "^7.7.4",
     "std-env": "^4.0.0",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.2",
     "unbuild": "^3.6.1",
     "vite": "^8.0.2",
     "vitest": "4.1.1",
