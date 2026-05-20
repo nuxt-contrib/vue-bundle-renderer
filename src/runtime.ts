@@ -28,6 +28,20 @@ export interface RenderOptions {
   manifest?: Manifest
   /** Precomputed dependency data */
   precomputed?: PrecomputedData
+  /**
+   * Maximum number of entries kept in the per-request module-set cache
+   * (`_dependencySets`). The cache is keyed by the sorted module ids of a
+   * request; on high-cardinality sites it can grow without bound and pin
+   * manifest references for the lifetime of the renderer. A bounded LRU
+   * keeps a hot working set without unbounded growth.
+   *
+   * Set to `0` (or any non-positive / non-finite value) to disable the
+   * cache entirely; useful for prerender runs or for sites whose request
+   * variation makes the cache pure overhead.
+   *
+   * @default 1000
+   */
+  dependencySetsCacheSize?: number
 }
 
 export interface RendererContext {
@@ -35,7 +49,8 @@ export interface RendererContext {
   manifest?: Manifest
   precomputed?: PrecomputedData
   _dependencies: Record<string, ModuleDependencies>
-  _dependencySets: Record<string, ModuleDependencies>
+  _dependencySets: Map<string, ModuleDependencies>
+  _dependencySetsCacheSize: number
   _entrypoints: string[]
   updateManifest: (manifest: Manifest) => void
 }
@@ -48,10 +63,16 @@ interface LinkAttributes {
   crossorigin?: '' | null
 }
 
-export function createRendererContext({ manifest, precomputed, buildAssetsURL }: RenderOptions): RendererContext {
+export function createRendererContext({ manifest, precomputed, buildAssetsURL, dependencySetsCacheSize }: RenderOptions): RendererContext {
   if (!manifest && !precomputed) {
     throw new Error('Either manifest or precomputed data must be provided')
   }
+
+  const cacheSize = typeof dependencySetsCacheSize === 'number' && Number.isFinite(dependencySetsCacheSize) && dependencySetsCacheSize > 0
+    ? Math.floor(dependencySetsCacheSize)
+    : dependencySetsCacheSize === undefined
+      ? 1000
+      : 0
 
   const ctx: RendererContext = {
     // Options
@@ -61,7 +82,8 @@ export function createRendererContext({ manifest, precomputed, buildAssetsURL }:
     updateManifest,
     // Internal cache
     _dependencies: {},
-    _dependencySets: {},
+    _dependencySets: new Map(),
+    _dependencySetsCacheSize: cacheSize,
     _entrypoints: [],
   }
 
@@ -69,7 +91,7 @@ export function createRendererContext({ manifest, precomputed, buildAssetsURL }:
     const manifestEntries = Object.entries(manifest) as [string, ResourceMeta][]
     ctx.manifest = manifest
     ctx._dependencies = {}
-    ctx._dependencySets = {}
+    ctx._dependencySets.clear()
     ctx._entrypoints = manifestEntries.filter(e => e[1].isEntry).map(([module]) => module)
   }
 
@@ -148,15 +170,28 @@ export function getModuleDependencies(id: string, rendererContext: RendererConte
 }
 
 export function getAllDependencies(ids: Set<string>, rendererContext: RendererContext): ModuleDependencies {
-  let cacheKey = ''
-  const sortedIds = [...ids].sort()
-  for (let i = 0; i < sortedIds.length; i++) {
-    if (i > 0) cacheKey += ','
-    cacheKey += sortedIds[i]
-  }
+  const cacheSize = rendererContext._dependencySetsCacheSize
+  const useCache = cacheSize > 0
 
-  if (rendererContext._dependencySets[cacheKey]) {
-    return rendererContext._dependencySets[cacheKey]
+  let cacheKey = ''
+  if (useCache) {
+    const sortedIds = [...ids].sort()
+    for (let i = 0; i < sortedIds.length; i++) {
+      if (i > 0) cacheKey += ','
+      cacheKey += sortedIds[i]
+    }
+
+    const cached = rendererContext._dependencySets.get(cacheKey)
+    if (cached !== undefined) {
+      // Below capacity nothing can be evicted, so skip the MRU promotion
+      // to keep the hot path cheap. At or above capacity we promote so
+      // the next eviction drops the genuinely least-recently-used key.
+      if (rendererContext._dependencySets.size >= cacheSize) {
+        rendererContext._dependencySets.delete(cacheKey)
+        rendererContext._dependencySets.set(cacheKey, cached)
+      }
+      return cached
+    }
   }
 
   const allDeps: ModuleDependencies = {
@@ -217,7 +252,16 @@ export function getAllDependencies(ids: Set<string>, rendererContext: RendererCo
     delete allDeps.prefetch[style]
   }
 
-  rendererContext._dependencySets[cacheKey] = allDeps
+  if (useCache) {
+    rendererContext._dependencySets.set(cacheKey, allDeps)
+    if (rendererContext._dependencySets.size > cacheSize) {
+      // Map preserves insertion order; the first key is the oldest entry.
+      const oldest = rendererContext._dependencySets.keys().next().value
+      if (oldest !== undefined) {
+        rendererContext._dependencySets.delete(oldest)
+      }
+    }
+  }
   return allDeps
 }
 

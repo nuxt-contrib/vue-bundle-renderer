@@ -105,4 +105,23 @@ describe('getRequestDependencies', () => {
       getRequestDependencies({ modules: highCardinalityPool[i]! }, ctx)
     }
   })
+
+  // Smaller cap, same pool: pool/cap ratio is much larger, so most lookups
+  // are misses and eviction runs on every other call. Tracks the cost of
+  // the eviction policy itself.
+  bench('high cardinality, cache size=100', () => {
+    const ctx = createRendererContext({ manifest, dependencySetsCacheSize: 100 })
+    for (let i = 0; i < highCardinalityPool.length; i++) {
+      getRequestDependencies({ modules: highCardinalityPool[i]! }, ctx)
+    }
+  })
+
+  // Cache disabled: short-circuits the cache lookup entirely. Documents the
+  // option's behaviour and catches regressions in the disabled path.
+  bench('high cardinality, cache disabled', () => {
+    const ctx = createRendererContext({ manifest, dependencySetsCacheSize: 0 })
+    for (let i = 0; i < highCardinalityPool.length; i++) {
+      getRequestDependencies({ modules: highCardinalityPool[i]! }, ctx)
+    }
+  })
 })
