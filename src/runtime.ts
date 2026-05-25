@@ -175,10 +175,14 @@ export function getAllDependencies(ids: Set<string>, rendererContext: RendererCo
 
   let cacheKey = ''
   if (useCache) {
-    const sortedIds = [...ids].sort()
-    for (let i = 0; i < sortedIds.length; i++) {
-      if (i > 0) cacheKey += ','
-      cacheKey += sortedIds[i]
+    if (ids.size <= 1) {
+      // Fast path for the common single-entrypoint request: skip the
+      // [...ids].sort() allocation entirely. A one-element set is already
+      // sorted, so the only entry is the cache key.
+      for (const id of ids) cacheKey = id
+    }
+    else {
+      cacheKey = [...ids].sort().join(',')
     }
 
     const cached = rendererContext._dependencySets.get(cacheKey)
