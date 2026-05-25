@@ -282,18 +282,27 @@ export function getRequestDependencies(ssrContext: SSRContext, rendererContext: 
   if (!hasExcluded && ssrContext._requestDependencies) {
     return ssrContext._requestDependencies
   }
-  const ids = new Set<string>()
-  for (const id of rendererContext._entrypoints) {
-    if (!hasExcluded || !excluded!.has(id)) {
-      ids.add(id)
-    }
-  }
+  let ids: Set<string>
   const requestIds = ssrContext.modules /* vite */ || ssrContext._registeredComponents /* webpack */
-  if (requestIds) {
-    for (const id of requestIds) {
-      if (!hasExcluded || !excluded!.has(id)) {
+  if (hasExcluded) {
+    ids = new Set<string>()
+    for (const id of rendererContext._entrypoints) {
+      if (!excluded!.has(id)) {
         ids.add(id)
       }
+    }
+    if (requestIds) {
+      for (const id of requestIds) {
+        if (!excluded!.has(id)) {
+          ids.add(id)
+        }
+      }
+    }
+  }
+  else {
+    ids = new Set<string>(rendererContext._entrypoints)
+    if (requestIds) {
+      for (const id of requestIds) ids.add(id)
     }
   }
   const deps = getAllDependencies(ids, rendererContext)
