@@ -57,7 +57,13 @@ export function getAsType(ext: string): ResourceMeta['resourceType'] {
 export const parseResource = (path: string) => {
   const chunk: Omit<ResourceMeta, 'file'> = {}
 
-  const extension = path.replace(/\?.*/, '').split('.').pop() || ''
+  const qIndex = path.indexOf('?')
+  const end = qIndex === -1 ? path.length : qIndex
+  // lastIndexOf(searchValue, fromIndex) searches backwards starting at fromIndex inclusive
+  const dotIndex = path.lastIndexOf('.', end - 1)
+  const extension = dotIndex === -1 || dotIndex < path.lastIndexOf('/', end - 1)
+    ? ''
+    : path.slice(dotIndex + 1, end)
 
   const asType = getAsType(extension)
   if (asType) {
@@ -72,7 +78,7 @@ export const parseResource = (path: string) => {
     chunk.prefetch = true
   }
 
-  if (chunk.resourceType && ['module', 'script', 'style'].includes(chunk.resourceType)) {
+  if (chunk.resourceType === 'script' || chunk.resourceType === 'style') {
     chunk.preload = true
   }
 
