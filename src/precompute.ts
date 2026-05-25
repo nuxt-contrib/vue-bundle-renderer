@@ -92,6 +92,15 @@ export function precomputeDependencies(manifest: Manifest): PrecomputedData {
     }
     deps.preload = filteredPreload
 
+    // Dynamically imported modules and their static deps are prefetch hints
+    // for the parent.
+    for (const dynamicDepId of meta.dynamicImports || []) {
+      const dynamicDeps = computeDependencies(dynamicDepId)
+      Object.assign(deps.prefetch, dynamicDeps.scripts)
+      Object.assign(deps.prefetch, dynamicDeps.styles)
+      Object.assign(deps.prefetch, dynamicDeps.preload)
+    }
+
     dependencies[id] = deps
     computing.delete(id)
     return deps
