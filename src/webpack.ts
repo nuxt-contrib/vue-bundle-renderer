@@ -88,22 +88,33 @@ export function normalizeWebpackManifest(manifest: WebpackClientManifest): Manif
 
   // Map modules to virtual entries
   for (const [moduleId, importIndexes] of Object.entries(manifest.modules)) {
-    const jsFiles = importIndexes.map(index => manifest.all[index]).filter(isJS)
-    jsFiles.forEach((file) => {
-      const identifier = getIdentifier(file)
-      clientManifest[identifier] = {
-        ...clientManifest[identifier],
-        file,
+    const cssFiles: OutputPath[] = []
+    const assetFiles: OutputPath[] = []
+    const imports: Identifier[] = []
+    for (const index of importIndexes) {
+      const file = manifest.all[index]
+      if (isJS(file)) {
+        const identifier = getIdentifier(file)
+        imports.push(identifier)
+        clientManifest[identifier] = {
+          ...clientManifest[identifier],
+          file,
+        }
       }
-    })
+      else if (isCSS(file)) {
+        cssFiles.push(file)
+      }
+      else {
+        assetFiles.push(file)
+      }
+    }
 
-    const mappedIndexes = importIndexes.map(index => manifest.all[index])
     clientManifest[moduleId as Identifier] = {
       file: '' as OutputPath,
       ...parseResource(moduleId),
-      imports: jsFiles.map(id => getIdentifier(id)),
-      css: mappedIndexes.filter(isCSS),
-      assets: mappedIndexes.filter(i => !isJS(i) && !isCSS(i)),
+      imports,
+      css: cssFiles,
+      assets: assetFiles,
     }
 
     for (const key of ['css', 'assets'] as const) {
