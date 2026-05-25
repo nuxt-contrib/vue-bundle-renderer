@@ -30,6 +30,6 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         uses: CodSpeedHQ/action@3194d9a39c4d46684cb44bf7207fc56626aad8fd # v4
         with:
-          mode: instrumentation
+          mode: simulation
           run: pnpm bench
       - uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6
