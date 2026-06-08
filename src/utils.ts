@@ -4,11 +4,11 @@ const IS_JS_RE = /\.[cm]?js(?:\?[^.]+)?$/
 const HAS_EXT_RE = /[^./]+\.[^./]+$/
 const IS_CSS_RE = /\.(?:css|postcss|pcss|sass|scss|less|stylus|styl)(?:\?[^.]+)?$/
 
-export function isJS(file: string) {
+export function isJS(file: string): boolean {
   return IS_JS_RE.test(file) || !HAS_EXT_RE.test(file)
 }
 
-export function isCSS(file: string) {
+export function isCSS(file: string): boolean {
   return IS_CSS_RE.test(file)
 }
 
@@ -23,7 +23,7 @@ const contentTypeMap: Record<string, string> = {
   svg: 'image/svg+xml',
 }
 
-export function getContentType(asType: ResourceMeta['resourceType'], extension: string) {
+export function getContentType(asType: ResourceMeta['resourceType'], extension: string): string | undefined {
   if (asType === 'font') {
     return `font/${extension}`
   }
@@ -54,7 +54,7 @@ export function getAsType(ext: string): ResourceMeta['resourceType'] {
   // not exhausting all possibilities here, but above covers common cases
 }
 
-export const parseResource = (path: string) => {
+export const parseResource = (path: string): Omit<ResourceMeta, 'file'> => {
   const chunk: Omit<ResourceMeta, 'file'> = {}
 
   const qIndex = path.indexOf('?')

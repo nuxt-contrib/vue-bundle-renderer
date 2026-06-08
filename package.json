@@ -6,28 +6,29 @@
   "license": "MIT",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     },
     "./runtime": {
-      "types": "./dist/runtime.d.ts",
+      "types": "./dist/runtime.d.mts",
       "import": "./dist/runtime.mjs",
       "require": "./dist/runtime.cjs"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/index.d.mts",
   "files": [
     "dist",
     "runtime.d.ts"
   ],
   "scripts": {
-    "build": "unbuild",
+    "build": "tsdown",
     "dev": "vitest",
     "lint": "eslint src",
-    "prepack": "unbuild",
+    "prepack": "tsdown",
     "test": "pnpm lint && pnpm vitest run --coverage && tsc --noEmit",
     "bench": "vitest bench"
   },
@@ -45,8 +46,8 @@
     "pkg-pr-new": "^0.0.75",
     "semver": "^7.8.2",
     "std-env": "^4.1.0",
+    "tsdown": "0.22.0",
     "typescript": "^6.0.3",
-    "unbuild": "^3.6.1",
     "vite": "^8.0.16",
     "vitest": "4.1.8",
     "vue": "3.5.35"

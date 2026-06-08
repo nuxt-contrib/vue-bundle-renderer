@@ -435,7 +435,18 @@ type ImportOf<T> = T | { default: T } | Promise<T> | Promise<{ default: T }>
 
 type RenderToString<App> = (app: App, ssrContext: SSRContext) => string | Promise<string>
 
-export function createRenderer<App>(createApp: ImportOf<CreateApp<App>>, renderOptions: RenderOptions & { renderToString: RenderToString<App> }) {
+export interface Renderer {
+  rendererContext: RendererContext
+  renderToString: (ssrContext: SSRContext) => Promise<{
+    html: string
+    renderResourceHeaders: () => Record<string, string>
+    renderResourceHints: () => string
+    renderStyles: () => string
+    renderScripts: () => string
+  }>
+}
+
+export function createRenderer<App>(createApp: ImportOf<CreateApp<App>>, renderOptions: RenderOptions & { renderToString: RenderToString<App> }): Renderer {
   const rendererContext = createRendererContext(renderOptions)
 
   return {
