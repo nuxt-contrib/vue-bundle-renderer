@@ -265,16 +265,41 @@ export function getAllDependencies(ids: Set<string>, rendererContext: RendererCo
   return allDeps
 }
 
-export function getRequestDependencies(ssrContext: SSRContext, rendererContext: RendererContext): ModuleDependencies {
-  if (ssrContext._requestDependencies) {
+export interface RequestDependenciesOptions {
+  /**
+   * Module ids to exclude from dependency resolution. Excluded ids are
+   * subtracted from the merged id set before resolution, so chunks reachable
+   * only through them are also dropped. Has no effect on `renderStyles`,
+   * `renderScripts`, or `getResources`, which deliberately ignore this option.
+   */
+  exclude?: Iterable<string>
+}
+
+export function getRequestDependencies(ssrContext: SSRContext, rendererContext: RendererContext, options?: RequestDependenciesOptions): ModuleDependencies {
+  const excluded = options?.exclude ? new Set(options.exclude) : undefined
+  const hasExcluded = excluded && excluded.size > 0
+
+  if (!hasExcluded && ssrContext._requestDependencies) {
     return ssrContext._requestDependencies
   }
-  const ids = new Set<string>(Array.from([
-    ...rendererContext._entrypoints,
-    ...ssrContext.modules /* vite */ || ssrContext._registeredComponents /* webpack */ || [],
-  ]))
+  const ids = new Set<string>()
+  for (const id of rendererContext._entrypoints) {
+    if (!hasExcluded || !excluded!.has(id)) {
+      ids.add(id)
+    }
+  }
+  const requestIds = ssrContext.modules /* vite */ || ssrContext._registeredComponents /* webpack */
+  if (requestIds) {
+    for (const id of requestIds) {
+      if (!hasExcluded || !excluded!.has(id)) {
+        ids.add(id)
+      }
+    }
+  }
   const deps = getAllDependencies(ids, rendererContext)
-  ssrContext._requestDependencies = deps
+  if (!hasExcluded) {
+    ssrContext._requestDependencies = deps
+  }
   return deps
 }
 
@@ -292,8 +317,8 @@ export function getResources(ssrContext: SSRContext, rendererContext: RendererCo
   return [...getPreloadLinks(ssrContext, rendererContext), ...getPrefetchLinks(ssrContext, rendererContext)]
 }
 
-export function renderResourceHints(ssrContext: SSRContext, rendererContext: RendererContext): string {
-  const { preload, prefetch } = getRequestDependencies(ssrContext, rendererContext)
+export function renderResourceHints(ssrContext: SSRContext, rendererContext: RendererContext, options?: RequestDependenciesOptions): string {
+  const { preload, prefetch } = getRequestDependencies(ssrContext, rendererContext, options)
   let result = ''
 
   // Render preload links
@@ -333,8 +358,8 @@ export function renderResourceHints(ssrContext: SSRContext, rendererContext: Ren
   return result
 }
 
-export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: RendererContext): Record<string, string> {
-  const { preload, prefetch } = getRequestDependencies(ssrContext, rendererContext)
+export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: RendererContext, options?: RequestDependenciesOptions): Record<string, string> {
+  const { preload, prefetch } = getRequestDependencies(ssrContext, rendererContext, options)
   const links: string[] = []
 
   // Render preload headers
@@ -381,8 +406,8 @@ export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: R
   }
 }
 
-export function getPreloadLinks(ssrContext: SSRContext, rendererContext: RendererContext): LinkAttributes[] {
-  const { preload } = getRequestDependencies(ssrContext, rendererContext)
+export function getPreloadLinks(ssrContext: SSRContext, rendererContext: RendererContext, options?: RequestDependenciesOptions): LinkAttributes[] {
+  const { preload } = getRequestDependencies(ssrContext, rendererContext, options)
   const result: LinkAttributes[] = []
   for (const key in preload) {
     const resource = preload[key]!
@@ -397,8 +422,8 @@ export function getPreloadLinks(ssrContext: SSRContext, rendererContext: Rendere
   return result
 }
 
-export function getPrefetchLinks(ssrContext: SSRContext, rendererContext: RendererContext): LinkAttributes[] {
-  const { prefetch } = getRequestDependencies(ssrContext, rendererContext)
+export function getPrefetchLinks(ssrContext: SSRContext, rendererContext: RendererContext, options?: RequestDependenciesOptions): LinkAttributes[] {
+  const { prefetch } = getRequestDependencies(ssrContext, rendererContext, options)
   const result: LinkAttributes[] = []
   for (const key in prefetch) {
     const resource = prefetch[key]!
