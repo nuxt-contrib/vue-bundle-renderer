@@ -175,10 +175,14 @@ export function getAllDependencies(ids: Set<string>, rendererContext: RendererCo
 
   let cacheKey = ''
   if (useCache) {
-    const sortedIds = [...ids].sort()
-    for (let i = 0; i < sortedIds.length; i++) {
-      if (i > 0) cacheKey += ','
-      cacheKey += sortedIds[i]
+    if (ids.size <= 1) {
+      // Fast path for the common single-entrypoint request: skip the
+      // [...ids].sort() allocation entirely. A one-element set is already
+      // sorted, so the only entry is the cache key.
+      for (const id of ids) cacheKey = id
+    }
+    else {
+      cacheKey = [...ids].sort().join(',')
     }
 
     const cached = rendererContext._dependencySets.get(cacheKey)
@@ -282,18 +286,27 @@ export function getRequestDependencies(ssrContext: SSRContext, rendererContext: 
   if (!hasExcluded && ssrContext._requestDependencies) {
     return ssrContext._requestDependencies
   }
-  const ids = new Set<string>()
-  for (const id of rendererContext._entrypoints) {
-    if (!hasExcluded || !excluded!.has(id)) {
-      ids.add(id)
-    }
-  }
+  let ids: Set<string>
   const requestIds = ssrContext.modules /* vite */ || ssrContext._registeredComponents /* webpack */
-  if (requestIds) {
-    for (const id of requestIds) {
-      if (!hasExcluded || !excluded!.has(id)) {
+  if (hasExcluded) {
+    ids = new Set<string>()
+    for (const id of rendererContext._entrypoints) {
+      if (!excluded!.has(id)) {
         ids.add(id)
       }
+    }
+    if (requestIds) {
+      for (const id of requestIds) {
+        if (!excluded!.has(id)) {
+          ids.add(id)
+        }
+      }
+    }
+  }
+  else {
+    ids = new Set<string>(rendererContext._entrypoints)
+    if (requestIds) {
+      for (const id of requestIds) ids.add(id)
     }
   }
   const deps = getAllDependencies(ids, rendererContext)
