@@ -41,13 +41,13 @@
     "@types/node": "^24.13.3",
     "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^10.8.0",
-    "pkg-pr-new": "^0.0.80",
+    "pkg-pr-new": "^0.0.86",
     "std-env": "^4.2.0",
     "tsdown": "0.22.14",
     "typescript": "^6.0.3",
-    "vite": "^8.1.5",
+    "vite": "^8.2.0",
     "vitest": "4.1.10",
     "vue": "3.5.40"
   },
-  "packageManager": "pnpm@11.17.0"
+  "packageManager": "pnpm@11.18.0"
 }
