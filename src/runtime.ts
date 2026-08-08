@@ -220,7 +220,8 @@ export function getAllDependencies(ids: Set<string>, rendererContext: RendererCo
       allDeps.prefetch[key] = deps.prefetch[key]
     }
 
-    for (const dynamicDepId of rendererContext.manifest?.[id]?.dynamicImports || []) {
+    const dynamicImports = rendererContext.manifest?.[id]?.dynamicImports || rendererContext.precomputed?.modules[id]?.dynamicImports || []
+    for (const dynamicDepId of dynamicImports) {
       const dynamicDeps = getModuleDependencies(dynamicDepId, rendererContext)
       for (const key in dynamicDeps.scripts) {
         allDeps.prefetch[key] = dynamicDeps.scripts[key]

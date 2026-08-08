@@ -134,6 +134,42 @@ describe('precomputed dependencies', () => {
     expect(precomputedResult.renderResourceHints()).toBe(manifestResult.renderResourceHints())
   })
 
+  it('should not hoist nested dynamic imports into the entry prefetch set', async () => {
+    const chunk = (file: string, extra: Partial<Manifest[string]> = {}): Manifest[string] => ({
+      file,
+      resourceType: 'script',
+      module: true,
+      prefetch: true,
+      preload: true,
+      ...extra,
+    })
+
+    const manifest: Manifest = {
+      entry: chunk('entry.js', { isEntry: true, imports: ['app'] }),
+      app: chunk('app.js', { imports: ['loader'] }),
+      loader: chunk('loader.js', { dynamicImports: ['step'] }),
+      step: chunk('step.js'),
+    }
+
+    const manifestRenderer = createRenderer(() => ({}), {
+      manifest,
+      renderToString: () => '<div>test</div>',
+      buildAssetsURL: id => `/_nuxt/${id}`,
+    })
+
+    const precomputedRenderer = createRenderer(() => ({}), {
+      precomputed: precomputeDependencies(manifest),
+      renderToString: () => '<div>test</div>',
+      buildAssetsURL: id => `/_nuxt/${id}`,
+    })
+
+    const manifestResult = await manifestRenderer.renderToString({})
+    const precomputedResult = await precomputedRenderer.renderToString({})
+
+    expect(manifestResult.renderResourceHints()).not.toContain('step.js')
+    expect(precomputedResult.renderResourceHints()).toBe(manifestResult.renderResourceHints())
+  })
+
   it('should throw error when neither manifest nor precomputed provided', () => {
     expect(() => {
       createRenderer(() => ({}), {
