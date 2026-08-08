@@ -372,6 +372,8 @@ export function renderResourceHints(ssrContext: SSRContext, rendererContext: Ren
   return result
 }
 
+const NON_ASCII_RE = /[^\0-\u007F]+/g
+
 export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: RendererContext, options?: RequestDependenciesOptions): Record<string, string> {
   const { preload, prefetch } = getRequestDependencies(ssrContext, rendererContext, options)
   const links: string[] = []
@@ -379,7 +381,7 @@ export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: R
   // Render preload headers
   for (const key in preload) {
     const resource = preload[key]!
-    const href = rendererContext.buildAssetsURL(resource.file)
+    const href = rendererContext.buildAssetsURL(resource.file).replace(NON_ASCII_RE, encodeURIComponent)
     const rel = resource.module ? 'modulepreload' : 'preload'
     let header = `<${href}>; rel="${rel}"`
 
@@ -399,7 +401,7 @@ export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: R
   // Render prefetch headers
   for (const key in prefetch) {
     const resource = prefetch[key]!
-    const href = rendererContext.buildAssetsURL(resource.file)
+    const href = rendererContext.buildAssetsURL(resource.file).replace(NON_ASCII_RE, encodeURIComponent)
     let header = `<${href}>; rel="prefetch"`
 
     if (resource.resourceType) {
