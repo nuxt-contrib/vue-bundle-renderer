@@ -301,6 +301,25 @@ for (const { label, renderer } of URL_VARIANTS) {
   })
 }
 
+// With the dependency-set cache disabled every request resolves and renders
+// from scratch, so this keeps the uncached string-building path measured now
+// that repeated sets hit the rendered-output memoisation above.
+describe('render cold path - synthetic (cache disabled)', () => {
+  const coldRenderer = createRenderer(() => ({}), {
+    precomputed: syntheticPrecomputed,
+    renderToString: () => '<div>test</div>',
+    dependencySetsCacheSize: 0,
+  })
+  for (const size of SET_SIZES) {
+    const pool = moduleSetsBySize[size]!
+    bench(`renderResourceHints size ${size}`, () => {
+      for (let i = 0; i < pool.length; i++) {
+        renderResourceHints({ modules: pool[i]! }, coldRenderer.rendererContext)
+      }
+    })
+  }
+})
+
 describe('getResources - synthetic', () => {
   const pool = moduleSetsBySize[50]!
   bench('size 50 (default URL)', () => {

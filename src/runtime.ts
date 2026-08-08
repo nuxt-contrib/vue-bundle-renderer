@@ -44,6 +44,13 @@ export interface RenderOptions {
   dependencySetsCacheSize?: number
 }
 
+interface RenderedOutputs {
+  styles?: string
+  scripts?: string
+  hints?: string
+  headerLink?: string
+}
+
 export interface RendererContext {
   buildAssetsURL: (id: string) => string
   manifest?: Manifest
@@ -52,6 +59,7 @@ export interface RendererContext {
   _dependencySets: Map<string, ModuleDependencies>
   _dependencySetsCacheSize: number
   _entrypoints: string[]
+  _renderedCache: WeakMap<ModuleDependencies, RenderedOutputs>
   updateManifest: (manifest: Manifest) => void
 }
 
@@ -85,14 +93,21 @@ export function createRendererContext({ manifest, precomputed, buildAssetsURL, d
     _dependencySets: new Map(),
     _dependencySetsCacheSize: cacheSize,
     _entrypoints: [],
+    _renderedCache: new WeakMap(),
   }
 
   function updateManifest(manifest: Manifest) {
-    const manifestEntries = Object.entries(manifest) as [string, ResourceMeta][]
     ctx.manifest = manifest
     ctx._dependencies = {}
     ctx._dependencySets.clear()
-    ctx._entrypoints = manifestEntries.filter(e => e[1].isEntry).map(([module]) => module)
+    ctx._renderedCache = new WeakMap()
+    const entrypoints: string[] = []
+    for (const id in manifest) {
+      if (manifest[id].isEntry) {
+        entrypoints.push(id)
+      }
+    }
+    ctx._entrypoints = entrypoints
   }
 
   if (precomputed) {
@@ -145,16 +160,12 @@ export function getModuleDependencies(id: string, rendererContext: RendererConte
     dependencies.preload[asset] = dependencies.prefetch[asset] = rendererContext.manifest[asset]
   }
   // Resolve nested dependencies and merge
-  for (const depId of meta.imports || []) {
-    const depDeps = getModuleDependencies(depId, rendererContext)
-    for (const key in depDeps.styles) {
-      dependencies.styles[key] = depDeps.styles[key]
-    }
-    for (const key in depDeps.preload) {
-      dependencies.preload[key] = depDeps.preload[key]
-    }
-    for (const key in depDeps.prefetch) {
-      dependencies.prefetch[key] = depDeps.prefetch[key]
+  if (meta.imports) {
+    for (const depId of meta.imports) {
+      const depDeps = getModuleDependencies(depId, rendererContext)
+      Object.assign(dependencies.styles, depDeps.styles)
+      Object.assign(dependencies.preload, depDeps.preload)
+      Object.assign(dependencies.prefetch, depDeps.prefetch)
     }
   }
   const filteredPreload: ModuleDependencies['preload'] = {}
@@ -207,55 +218,43 @@ export function getAllDependencies(ids: Set<string>, rendererContext: RendererCo
 
   for (const id of ids) {
     const deps = getModuleDependencies(id, rendererContext)
-    for (const key in deps.scripts) {
-      allDeps.scripts[key] = deps.scripts[key]
-    }
-    for (const key in deps.styles) {
-      allDeps.styles[key] = deps.styles[key]
-    }
-    for (const key in deps.preload) {
-      allDeps.preload[key] = deps.preload[key]
-    }
-    for (const key in deps.prefetch) {
-      allDeps.prefetch[key] = deps.prefetch[key]
-    }
+    Object.assign(allDeps.scripts, deps.scripts)
+    Object.assign(allDeps.styles, deps.styles)
+    Object.assign(allDeps.preload, deps.preload)
+    Object.assign(allDeps.prefetch, deps.prefetch)
 
-    const dynamicImports = rendererContext.manifest?.[id]?.dynamicImports || rendererContext.precomputed?.modules[id]?.dynamicImports || []
-    for (const dynamicDepId of dynamicImports) {
-      const dynamicDeps = getModuleDependencies(dynamicDepId, rendererContext)
-      for (const key in dynamicDeps.scripts) {
-        allDeps.prefetch[key] = dynamicDeps.scripts[key]
-      }
-      for (const key in dynamicDeps.styles) {
-        allDeps.prefetch[key] = dynamicDeps.styles[key]
-      }
-      for (const key in dynamicDeps.preload) {
-        allDeps.prefetch[key] = dynamicDeps.preload[key]
+    const dynamicImports = rendererContext.manifest?.[id]?.dynamicImports || rendererContext.precomputed?.modules[id]?.dynamicImports
+    if (dynamicImports) {
+      for (const dynamicDepId of dynamicImports) {
+        const dynamicDeps = getModuleDependencies(dynamicDepId, rendererContext)
+        Object.assign(allDeps.prefetch, dynamicDeps.scripts)
+        Object.assign(allDeps.prefetch, dynamicDeps.styles)
+        Object.assign(allDeps.prefetch, dynamicDeps.preload)
       }
     }
   }
 
+  // Don't prefetch resources that are preloaded or synchronously loaded as
+  // styles, and don't preload styles that are synchronously loaded.
+  const mergedPreload = allDeps.preload
+  const styles = allDeps.styles
+
   const filteredPrefetch: ModuleDependencies['prefetch'] = {}
   for (const id in allDeps.prefetch) {
     const dep = allDeps.prefetch[id]
-    if (dep.prefetch) {
+    if (dep.prefetch && !(id in mergedPreload) && !(id in styles)) {
       filteredPrefetch[id] = dep
     }
   }
   allDeps.prefetch = filteredPrefetch
 
-  // Don't render prefetch links if we're preloading them
-  for (const id in allDeps.preload) {
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    delete allDeps.prefetch[id]
+  const filteredPreload: ModuleDependencies['preload'] = {}
+  for (const id in mergedPreload) {
+    if (!(id in styles)) {
+      filteredPreload[id] = mergedPreload[id]
+    }
   }
-  // Don't preload/prefetch styles if we are synchronously loading them
-  for (const style in allDeps.styles) {
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    delete allDeps.preload[style]
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    delete allDeps.prefetch[style]
-  }
+  allDeps.preload = filteredPreload
 
   if (useCache) {
     rendererContext._dependencySets.set(cacheKey, allDeps)
@@ -317,13 +316,28 @@ export function getRequestDependencies(ssrContext: SSRContext, rendererContext: 
   return deps
 }
 
+function getRenderedOutputs(rendererContext: RendererContext, deps: ModuleDependencies): RenderedOutputs {
+  let entry = rendererContext._renderedCache.get(deps)
+  if (!entry) {
+    entry = {}
+    rendererContext._renderedCache.set(deps, entry)
+  }
+  return entry
+}
+
 export function renderStyles(ssrContext: SSRContext, rendererContext: RendererContext): string {
-  const { styles } = getRequestDependencies(ssrContext, rendererContext)
+  const deps = getRequestDependencies(ssrContext, rendererContext)
+  const rendered = getRenderedOutputs(rendererContext, deps)
+  if (rendered.styles !== undefined) {
+    return rendered.styles
+  }
+  const { styles } = deps
   let result = ''
   for (const key in styles) {
     const resource = styles[key]!
     result += `<link rel="stylesheet" href="${rendererContext.buildAssetsURL(resource.file)}" crossorigin>`
   }
+  rendered.styles = result
   return result
 }
 
@@ -332,7 +346,12 @@ export function getResources(ssrContext: SSRContext, rendererContext: RendererCo
 }
 
 export function renderResourceHints(ssrContext: SSRContext, rendererContext: RendererContext, options?: RequestDependenciesOptions): string {
-  const { preload, prefetch } = getRequestDependencies(ssrContext, rendererContext, options)
+  const deps = getRequestDependencies(ssrContext, rendererContext, options)
+  const rendered = getRenderedOutputs(rendererContext, deps)
+  if (rendered.hints !== undefined) {
+    return rendered.hints
+  }
+  const { preload, prefetch } = deps
   let result = ''
 
   // Render preload links
@@ -369,13 +388,19 @@ export function renderResourceHints(ssrContext: SSRContext, rendererContext: Ren
     }
   }
 
+  rendered.hints = result
   return result
 }
 
 const NON_ASCII_RE = /[^\0-\u007F]+/g
 
 export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: RendererContext, options?: RequestDependenciesOptions): Record<string, string> {
-  const { preload, prefetch } = getRequestDependencies(ssrContext, rendererContext, options)
+  const deps = getRequestDependencies(ssrContext, rendererContext, options)
+  const rendered = getRenderedOutputs(rendererContext, deps)
+  if (rendered.headerLink !== undefined) {
+    return { link: rendered.headerLink }
+  }
+  const { preload, prefetch } = deps
   const links: string[] = []
 
   // Render preload headers
@@ -417,8 +442,9 @@ export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: R
     links.push(header)
   }
 
+  rendered.headerLink = links.join(', ')
   return {
-    link: links.join(', '),
+    link: rendered.headerLink,
   }
 }
 
@@ -455,7 +481,12 @@ export function getPrefetchLinks(ssrContext: SSRContext, rendererContext: Render
 }
 
 export function renderScripts(ssrContext: SSRContext, rendererContext: RendererContext): string {
-  const { scripts } = getRequestDependencies(ssrContext, rendererContext)
+  const deps = getRequestDependencies(ssrContext, rendererContext)
+  const rendered = getRenderedOutputs(rendererContext, deps)
+  if (rendered.scripts !== undefined) {
+    return rendered.scripts
+  }
+  const { scripts } = deps
   let result = ''
   for (const key in scripts) {
     const resource = scripts[key]!
@@ -466,6 +497,7 @@ export function renderScripts(ssrContext: SSRContext, rendererContext: RendererC
       result += `<script src="${rendererContext.buildAssetsURL(resource.file)}" defer crossorigin></script>`
     }
   }
+  rendered.scripts = result
   return result
 }
 
