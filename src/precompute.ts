@@ -7,7 +7,7 @@ export interface PrecomputedData {
   /** List of entry point module IDs */
   entrypoints: string[]
   /** Module metadata needed at runtime (file paths, etc.) */
-  modules: Record<string, Pick<ResourceMeta, 'file' | 'resourceType' | 'mimeType' | 'module'>>
+  modules: Record<string, Pick<ResourceMeta, 'file' | 'resourceType' | 'mimeType' | 'module' | 'dynamicImports'>>
 }
 
 /**
@@ -92,15 +92,6 @@ export function precomputeDependencies(manifest: Manifest): PrecomputedData {
     }
     deps.preload = filteredPreload
 
-    // Dynamically imported modules and their static deps are prefetch hints
-    // for the parent.
-    for (const dynamicDepId of meta.dynamicImports || []) {
-      const dynamicDeps = computeDependencies(dynamicDepId)
-      Object.assign(deps.prefetch, dynamicDeps.scripts)
-      Object.assign(deps.prefetch, dynamicDeps.styles)
-      Object.assign(deps.prefetch, dynamicDeps.preload)
-    }
-
     dependencies[id] = deps
     computing.delete(id)
     return deps
@@ -121,13 +112,16 @@ export function precomputeDependencies(manifest: Manifest): PrecomputedData {
   }
 
   // Extract minimal module metadata needed at runtime
-  const modules: Record<string, Pick<ResourceMeta, 'file' | 'resourceType' | 'mimeType' | 'module'>> = {}
+  const modules: PrecomputedData['modules'] = {}
   for (const [moduleId, meta] of Object.entries(manifest)) {
     modules[moduleId] = {
       file: meta.file,
       resourceType: meta.resourceType,
       mimeType: meta.mimeType,
       module: meta.module,
+    }
+    if (meta.dynamicImports?.length) {
+      modules[moduleId].dynamicImports = meta.dynamicImports
     }
   }
 
