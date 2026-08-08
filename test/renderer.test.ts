@@ -67,6 +67,21 @@ describe('renderer', () => {
     `)
   })
 
+  it('percent-encodes non-ASCII asset URLs in resource headers', async () => {
+    const renderer = createRenderer(() => { }, {
+      manifest: normalizeViteManifest(viteManifest),
+      renderToString: () => '',
+      buildAssetsURL: id => joinURL('/assets/@fs/Users/nuxt/тест', id),
+    })
+    const { renderResourceHeaders } = await renderer.renderToString({
+      modules: new Set(['app.vue']),
+    })
+    const { link } = renderResourceHeaders()
+    expect(link).toContain('/assets/@fs/Users/nuxt/%D1%82%D0%B5%D1%81%D1%82/entry.mjs')
+    expect(link).not.toMatch(/[^\0-\u007F]/)
+    expect(() => new Headers({ link: link! })).not.toThrow()
+  })
+
   it('prefetches dynamic imports minimally', async () => {
     const { renderResourceHints } = await getRenderer([
       'pages/about.vue',
