@@ -48,7 +48,9 @@ interface RenderedOutputs {
   styles?: string
   scripts?: string
   hints?: string
+  hintsWithoutScripts?: string
   headerLink?: string
+  headerLinkWithoutScripts?: string
 }
 
 export interface RendererContext {
@@ -345,11 +347,27 @@ export function getResources(ssrContext: SSRContext, rendererContext: RendererCo
   return [...getPreloadLinks(ssrContext, rendererContext), ...getPrefetchLinks(ssrContext, rendererContext)]
 }
 
-export function renderResourceHints(ssrContext: SSRContext, rendererContext: RendererContext, options?: RequestDependenciesOptions): string {
+export interface ResourceHintOptions extends RequestDependenciesOptions {
+  /**
+   * Whether to include hints for the client runtime, i.e. those rendered as
+   * `rel="modulepreload"` or `as="script"`.
+   *
+   * @default true
+   */
+  scripts?: boolean
+}
+
+function isScriptResource(resource: ResourceMeta): boolean {
+  return !!resource.module || resource.resourceType === 'script'
+}
+
+export function renderResourceHints(ssrContext: SSRContext, rendererContext: RendererContext, options?: ResourceHintOptions): string {
   const deps = getRequestDependencies(ssrContext, rendererContext, options)
   const rendered = getRenderedOutputs(rendererContext, deps)
-  if (rendered.hints !== undefined) {
-    return rendered.hints
+  const withScripts = options?.scripts !== false
+  const cached = withScripts ? rendered.hints : rendered.hintsWithoutScripts
+  if (cached !== undefined) {
+    return cached
   }
   const { preload, prefetch } = deps
   let result = ''
@@ -357,6 +375,9 @@ export function renderResourceHints(ssrContext: SSRContext, rendererContext: Ren
   // Render preload links
   for (const key in preload) {
     const resource = preload[key]!
+    if (!withScripts && isScriptResource(resource)) {
+      continue
+    }
     const href = rendererContext.buildAssetsURL(resource.file)
     const rel = resource.module ? 'modulepreload' : 'preload'
     const crossorigin = (resource.resourceType === 'style' || resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module) ? ' crossorigin' : ''
@@ -374,6 +395,9 @@ export function renderResourceHints(ssrContext: SSRContext, rendererContext: Ren
   // Render prefetch links
   for (const key in prefetch) {
     const resource = prefetch[key]!
+    if (!withScripts && isScriptResource(resource)) {
+      continue
+    }
     const href = rendererContext.buildAssetsURL(resource.file)
     const crossorigin = (resource.resourceType === 'style' || resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module) ? ' crossorigin' : ''
 
@@ -388,17 +412,24 @@ export function renderResourceHints(ssrContext: SSRContext, rendererContext: Ren
     }
   }
 
-  rendered.hints = result
+  if (withScripts) {
+    rendered.hints = result
+  }
+  else {
+    rendered.hintsWithoutScripts = result
+  }
   return result
 }
 
 const NON_ASCII_RE = /[^\0-\u007F]+/g
 
-export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: RendererContext, options?: RequestDependenciesOptions): Record<string, string> {
+export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: RendererContext, options?: ResourceHintOptions): Record<string, string> {
   const deps = getRequestDependencies(ssrContext, rendererContext, options)
   const rendered = getRenderedOutputs(rendererContext, deps)
-  if (rendered.headerLink !== undefined) {
-    return { link: rendered.headerLink }
+  const withScripts = options?.scripts !== false
+  const cached = withScripts ? rendered.headerLink : rendered.headerLinkWithoutScripts
+  if (cached !== undefined) {
+    return { link: cached }
   }
   const { preload, prefetch } = deps
   const links: string[] = []
@@ -406,6 +437,9 @@ export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: R
   // Render preload headers
   for (const key in preload) {
     const resource = preload[key]!
+    if (!withScripts && isScriptResource(resource)) {
+      continue
+    }
     const href = rendererContext.buildAssetsURL(resource.file).replace(NON_ASCII_RE, encodeURIComponent)
     const rel = resource.module ? 'modulepreload' : 'preload'
     let header = `<${href}>; rel="${rel}"`
@@ -426,6 +460,9 @@ export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: R
   // Render prefetch headers
   for (const key in prefetch) {
     const resource = prefetch[key]!
+    if (!withScripts && isScriptResource(resource)) {
+      continue
+    }
     const href = rendererContext.buildAssetsURL(resource.file).replace(NON_ASCII_RE, encodeURIComponent)
     let header = `<${href}>; rel="prefetch"`
 
@@ -442,17 +479,25 @@ export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: R
     links.push(header)
   }
 
-  rendered.headerLink = links.join(', ')
-  return {
-    link: rendered.headerLink,
+  const link = links.join(', ')
+  if (withScripts) {
+    rendered.headerLink = link
   }
+  else {
+    rendered.headerLinkWithoutScripts = link
+  }
+  return { link }
 }
 
-export function getPreloadLinks(ssrContext: SSRContext, rendererContext: RendererContext, options?: RequestDependenciesOptions): LinkAttributes[] {
+export function getPreloadLinks(ssrContext: SSRContext, rendererContext: RendererContext, options?: ResourceHintOptions): LinkAttributes[] {
   const { preload } = getRequestDependencies(ssrContext, rendererContext, options)
+  const withScripts = options?.scripts !== false
   const result: LinkAttributes[] = []
   for (const key in preload) {
     const resource = preload[key]!
+    if (!withScripts && isScriptResource(resource)) {
+      continue
+    }
     result.push({
       rel: resource.module ? 'modulepreload' : 'preload',
       as: resource.resourceType,
@@ -464,11 +509,15 @@ export function getPreloadLinks(ssrContext: SSRContext, rendererContext: Rendere
   return result
 }
 
-export function getPrefetchLinks(ssrContext: SSRContext, rendererContext: RendererContext, options?: RequestDependenciesOptions): LinkAttributes[] {
+export function getPrefetchLinks(ssrContext: SSRContext, rendererContext: RendererContext, options?: ResourceHintOptions): LinkAttributes[] {
   const { prefetch } = getRequestDependencies(ssrContext, rendererContext, options)
+  const withScripts = options?.scripts !== false
   const result: LinkAttributes[] = []
   for (const key in prefetch) {
     const resource = prefetch[key]!
+    if (!withScripts && isScriptResource(resource)) {
+      continue
+    }
     result.push({
       rel: 'prefetch',
       as: resource.resourceType,
