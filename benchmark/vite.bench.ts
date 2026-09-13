@@ -1,121 +1,64 @@
-import { bench, describe } from 'vitest'
-import { normalizeViteManifest } from '../src/vite'
+import { describe } from 'vitest'
 import type { Manifest as ViteManifest } from 'vite'
+import { normalizeViteManifest } from '../src/vite'
+import { bench, sink } from './_harness'
 
 import smallViteManifest from '../test/fixtures/vite-manifest.json'
 import largeViteManifest from './fixtures/large-vite-manifest.json'
 
-describe('normalizeViteManifest', () => {
-  bench('small', () => {
-    normalizeViteManifest(smallViteManifest)
-  })
-
-  bench('large', () => {
-    normalizeViteManifest(largeViteManifest)
-  })
-
-  // Create a very complex manifest with deep nesting
-  const createComplexViteManifest = (): ViteManifest => {
-    const manifest: ViteManifest = {
-      'main.ts': {
-        file: 'main.js',
-        src: 'main.ts',
-        isEntry: true,
-        imports: ['_vendor.js', '_polyfills.js'],
-        css: ['main.css', 'global.css'],
-        dynamicImports: [],
-        assets: ['logo.svg', 'favicon.ico'],
-      },
-    }
-
-    // Create nested structure
-    for (let i = 0; i < 20; i++) {
-      const pageKey = `pages/page-${i}.vue`
-      manifest[pageKey] = {
-        file: `pages/page-${i}.js`,
-        src: pageKey,
-        isDynamicEntry: true,
-        imports: ['_vendor.js'],
-        css: [`pages/page-${i}.css`],
-        dynamicImports: [],
-        assets: [`pages/assets/bg-${i}.jpg`],
-      }
-
-      // Add components for each page
-      for (let j = 0; j < 5; j++) {
-        const componentKey = `components/page-${i}/comp-${j}.vue`
-        manifest[componentKey] = {
-          file: `components/page-${i}/comp-${j}.js`,
-          src: componentKey,
-          isDynamicEntry: true,
-          imports: ['_vendor.js'],
-          css: [`components/page-${i}/comp-${j}.css`],
-        }
-        manifest[pageKey].dynamicImports!.push(componentKey)
-      }
-
-      manifest['main.ts'].dynamicImports!.push(pageKey)
-    }
-
-    return manifest
-  }
-
-  const complexViteManifest = createComplexViteManifest()
-
-  bench('complex', () => {
-    normalizeViteManifest(complexViteManifest)
-  })
-})
-
-describe('normalizeViteManifest scaling', () => {
-  const generateManifest = (entryCount: number): ViteManifest => {
-    const manifest: ViteManifest = {}
-
-    // Add main entry
-    manifest['main.ts'] = {
-      file: 'main.js',
-      src: 'main.ts',
+function buildViteManifest(pages: number, componentsPerPage: number): ViteManifest {
+  const manifest: ViteManifest = {
+    '_vendor.js': { file: '_vendor.js' },
+    'entry.ts': {
+      file: 'entry.js',
+      src: 'entry.ts',
       isEntry: true,
       imports: ['_vendor.js'],
-      css: ['main.css'],
+      css: ['entry.css'],
       dynamicImports: [],
-      assets: [],
+      assets: ['logo.svg', 'favicon.ico'],
+    },
+  }
+  for (let i = 0; i < pages; i++) {
+    const pageKey = `pages/page-${i}.vue`
+    manifest[pageKey] = {
+      file: `pages/page-${i}.js`,
+      src: pageKey,
+      isDynamicEntry: true,
+      imports: ['_vendor.js'],
+      css: [`pages/page-${i}.css`],
+      dynamicImports: [],
+      assets: [`assets/bg-${i}.jpg`],
     }
-
-    // Add entries
-    for (let i = 0; i < entryCount; i++) {
-      const key = `page-${i}.vue`
-      manifest[key] = {
-        file: `page-${i}.js`,
-        src: key,
+    for (let j = 0; j < componentsPerPage; j++) {
+      const componentKey = `components/page-${i}/comp-${j}.vue`
+      manifest[componentKey] = {
+        file: `components/page-${i}/comp-${j}.js`,
+        src: componentKey,
         isDynamicEntry: true,
         imports: ['_vendor.js'],
-        css: [`page-${i}.css`],
-        assets: [`asset-${i}.png`],
+        css: [`components/page-${i}/comp-${j}.css`],
       }
-      manifest['main.ts'].dynamicImports!.push(key)
+      manifest[pageKey]!.dynamicImports!.push(componentKey)
     }
-
-    return manifest
+    manifest['entry.ts']!.dynamicImports!.push(pageKey)
   }
+  return manifest
+}
 
-  const manifest5 = generateManifest(5)
-  bench('5 entries', () => {
-    normalizeViteManifest(manifest5)
+describe('normalizeViteManifest', () => {
+  bench(`fixture: small (${Object.keys(smallViteManifest).length} entries)`, () => {
+    sink(normalizeViteManifest(smallViteManifest))
   })
 
-  const manifest25 = generateManifest(25)
-  bench('25 entries', () => {
-    normalizeViteManifest(manifest25)
+  bench(`fixture: large (${Object.keys(largeViteManifest).length} entries)`, () => {
+    sink(normalizeViteManifest(largeViteManifest))
   })
 
-  const manifest50 = generateManifest(50)
-  bench('50 entries', () => {
-    normalizeViteManifest(manifest50)
-  })
-
-  const manifest100 = generateManifest(100)
-  bench('100 entries', () => {
-    normalizeViteManifest(manifest100)
-  })
+  for (const [pages, components] of [[20, 5], [200, 5], [1000, 5]] as const) {
+    const manifest = buildViteManifest(pages, components)
+    bench(`synthetic: ${pages} pages x ${components} components (${Object.keys(manifest).length} entries)`, () => {
+      sink(normalizeViteManifest(manifest))
+    })
+  }
 })

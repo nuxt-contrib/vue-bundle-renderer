@@ -47,7 +47,7 @@ export function buildSyntheticManifest({ components = 200, pages = 500 } = {}): 
   return m
 }
 
-export function mulberry32(seed: number) {
+function mulberry32(seed: number) {
   return () => {
     seed |= 0
     seed = seed + 0x6D2B79F5 | 0
@@ -58,9 +58,6 @@ export function mulberry32(seed: number) {
   }
 }
 
-// Builds `size` distinct module-key sets to feed into render / dependency
-// benches. Each set anchors on a random page and is padded with 3..6 random
-// components, matching what `dependencies.bench.ts` has always done.
 export function buildSetPool(manifest: Manifest, size: number, seed: number): Set<string>[] {
   const pageKeys = Object.keys(manifest).filter(k => k.startsWith('pages/'))
   const componentKeys = Object.keys(manifest).filter(k => k.startsWith('components/'))
@@ -77,9 +74,6 @@ export function buildSetPool(manifest: Manifest, size: number, seed: number): Se
   return pool
 }
 
-// Builds `poolSize` distinct module-key sets of exactly `setSize` modules
-// (one page key + components until the set reaches the requested size).
-// Used by render benches to keep the per-call work fixed across the pool.
 export function buildFixedSizeSetPool(
   manifest: Manifest,
   setSize: number,
@@ -97,6 +91,64 @@ export function buildFixedSizeSetPool(
       set.add(componentKeys[Math.floor(rng() * componentKeys.length)]!)
     }
     pool.push(set)
+  }
+  return pool
+}
+
+const SCRIPT_EXTS = ['js', 'mjs', 'cjs']
+const STYLE_EXTS = ['css', 'scss', 'less']
+const IMAGE_EXTS = ['png', 'svg', 'jpg', 'webp']
+const FONT_EXTS = ['woff2', 'woff', 'ttf']
+const MEDIA_EXTS = ['mp4', 'webm', 'mp3']
+const OTHER_EXTS = ['json', 'wasm', 'txt', 'pdf']
+
+type AssetKind = 'script' | 'style' | 'image' | 'font' | 'media' | 'other' | 'extensionless'
+
+const KIND_WEIGHTS: [AssetKind, number][] = [
+  ['script', 0.45],
+  ['style', 0.25],
+  ['image', 0.15],
+  ['font', 0.05],
+  ['media', 0.03],
+  ['other', 0.05],
+  ['extensionless', 0.02],
+]
+
+const EXTENSIONS_BY_KIND: Record<AssetKind, readonly string[]> = {
+  script: SCRIPT_EXTS,
+  style: STYLE_EXTS,
+  image: IMAGE_EXTS,
+  font: FONT_EXTS,
+  media: MEDIA_EXTS,
+  other: OTHER_EXTS,
+  extensionless: [''],
+}
+
+function pick<T>(rng: () => number, arr: readonly T[]): T {
+  return arr[Math.floor(rng() * arr.length)]!
+}
+
+// Bundler-shaped asset paths, weighted towards scripts and styles.
+export function buildAssetPathPool(size: number, seed: number, kind?: AssetKind): string[] {
+  const rng = mulberry32(seed)
+  const pool: string[] = []
+  for (let i = 0; i < size; i++) {
+    let k: AssetKind = kind || 'other'
+    if (!kind) {
+      let r = rng()
+      for (const [candidate, weight] of KIND_WEIGHTS) {
+        r -= weight
+        if (r <= 0) {
+          k = candidate
+          break
+        }
+      }
+    }
+    const hash = Math.floor(rng() * 0xFFFFFFFF).toString(16).padStart(8, '0')
+    const dir = rng() < 0.5 ? '' : rng() < 0.5 ? 'assets/' : `chunks/${Math.floor(rng() * 10)}/`
+    const query = rng() < 0.1 ? `?v=${Math.floor(rng() * 1000)}` : ''
+    const ext = pick(rng, EXTENSIONS_BY_KIND[k])
+    pool.push(`${dir}${k}-${i}.${hash}${ext ? `.${ext}` : ''}${query}`)
   }
   return pool
 }

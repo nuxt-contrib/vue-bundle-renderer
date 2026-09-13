@@ -1,143 +1,94 @@
-import { bench, describe } from 'vitest'
-import { isJS, isCSS, getAsType, parseResource } from '../src/utils'
-import { extname } from 'node:path'
+import { describe } from 'vitest'
+import { getAsType, isCSS, isJS, parseResource } from '../src/utils'
+import { bench, sink } from './_harness'
+import { buildAssetPathPool } from './_synthetic'
 
-// Sample file names for testing
-const jsFiles = [
-  'app.js',
-  'vendor.mjs',
-  'chunk.cjs',
-  'module.js?v=123',
-  'script',
-]
+const POOL_SIZE = 1000
 
-const cssFiles = [
-  'main.css',
-  'components.scss',
-  'styles.less',
-  'theme.stylus',
-  'layout.css?v=456',
-]
+const mixedPaths = buildAssetPathPool(POOL_SIZE, 1)
+const scriptPaths = buildAssetPathPool(POOL_SIZE, 2, 'script')
+const stylePaths = buildAssetPathPool(POOL_SIZE, 3, 'style')
+const imagePaths = buildAssetPathPool(POOL_SIZE, 4, 'image')
+const extensionlessPaths = buildAssetPathPool(POOL_SIZE, 5, 'extensionless')
 
-const assetFiles = [
-  'logo.svg',
-  'banner.jpg',
-  'icon.png',
-  'font.woff2',
-  'video.mp4',
-  'audio.mp3',
-  'document.pdf',
-]
+const mixedExtensions = mixedPaths.map((p) => {
+  const base = p.split('?', 1)[0]!
+  const dot = base.lastIndexOf('.')
+  return dot === -1 ? '' : base.slice(dot + 1)
+})
 
-const mixedFiles = [...jsFiles, ...cssFiles, ...assetFiles]
-
-describe('file type detection', () => {
-  bench('isJS detection on JS files', () => {
-    for (const file of jsFiles) {
-      isJS(file)
+describe(`isJS / isCSS (${POOL_SIZE} paths)`, () => {
+  bench('isJS on mixed paths', () => {
+    let hits = 0
+    for (let i = 0; i < mixedPaths.length; i++) {
+      if (isJS(mixedPaths[i]!)) hits++
     }
+    sink(hits)
   })
 
-  bench('isJS detection on mixed files', () => {
-    for (const file of mixedFiles) {
-      isJS(file)
+  bench('isJS on script paths', () => {
+    let hits = 0
+    for (let i = 0; i < scriptPaths.length; i++) {
+      if (isJS(scriptPaths[i]!)) hits++
     }
+    sink(hits)
   })
 
-  bench('isCSS detection on CSS files', () => {
-    for (const file of cssFiles) {
-      isCSS(file)
+  bench('isJS on extensionless paths', () => {
+    let hits = 0
+    for (let i = 0; i < extensionlessPaths.length; i++) {
+      if (isJS(extensionlessPaths[i]!)) hits++
     }
+    sink(hits)
   })
 
-  bench('isCSS detection on mixed files', () => {
-    for (const file of mixedFiles) {
-      isCSS(file)
+  bench('isCSS on mixed paths', () => {
+    let hits = 0
+    for (let i = 0; i < mixedPaths.length; i++) {
+      if (isCSS(mixedPaths[i]!)) hits++
+    }
+    sink(hits)
+  })
+
+  bench('isCSS on style paths', () => {
+    let hits = 0
+    for (let i = 0; i < stylePaths.length; i++) {
+      if (isCSS(stylePaths[i]!)) hits++
+    }
+    sink(hits)
+  })
+})
+
+describe(`getAsType (${POOL_SIZE} extensions)`, () => {
+  bench('mixed extensions', () => {
+    for (let i = 0; i < mixedExtensions.length; i++) {
+      sink(getAsType(mixedExtensions[i]!))
     }
   })
 })
 
-describe('asset type detection', () => {
-  bench('getAsType on mixed files', () => {
-    for (const file of mixedFiles) {
-      const base = file.split('?', 1)[0]
-      const ext = extname(base).slice(1)
-      getAsType(ext)
+describe(`parseResource (${POOL_SIZE} paths)`, () => {
+  bench('mixed paths', () => {
+    for (let i = 0; i < mixedPaths.length; i++) {
+      sink(parseResource(mixedPaths[i]!))
     }
   })
 
-  bench('getAsType on JS extensions', () => {
-    const extensions = ['js', 'mjs', 'cjs']
-    for (const ext of extensions) {
-      getAsType(ext)
+  bench('script paths', () => {
+    for (let i = 0; i < scriptPaths.length; i++) {
+      sink(parseResource(scriptPaths[i]!))
     }
   })
 
-  bench('getAsType on CSS extensions', () => {
-    const extensions = ['css', 'scss', 'less', 'stylus']
-    for (const ext of extensions) {
-      getAsType(ext)
-    }
-  })
-})
-
-describe('resource parsing', () => {
-  bench('parseResource on JS files', () => {
-    for (const file of jsFiles) {
-      parseResource(file)
+  bench('style paths', () => {
+    for (let i = 0; i < stylePaths.length; i++) {
+      sink(parseResource(stylePaths[i]!))
     }
   })
 
-  bench('parseResource on CSS files', () => {
-    for (const file of cssFiles) {
-      parseResource(file)
-    }
-  })
-
-  bench('parseResource on asset files', () => {
-    for (const file of assetFiles) {
-      parseResource(file)
-    }
-  })
-
-  bench('parseResource on mixed files', () => {
-    for (const file of mixedFiles) {
-      parseResource(file)
-    }
-  })
-
-  bench('parseResource on mixed files (1000 iterations)', () => {
-    for (let i = 0; i < 1000; i++) {
-      for (const file of mixedFiles) {
-        parseResource(file)
-      }
-    }
-  })
-})
-
-// Test with dynamically generated file names
-describe('dynamic file generation', () => {
-  bench('parseResource on generated JS files', () => {
-    for (let i = 0; i < 100; i++) {
-      parseResource(`chunk-${i}.js`)
-      parseResource(`module-${i}.mjs`)
-      parseResource(`bundle-${i}.cjs`)
-    }
-  })
-
-  bench('parseResource on generated CSS files', () => {
-    for (let i = 0; i < 100; i++) {
-      parseResource(`styles-${i}.css`)
-      parseResource(`theme-${i}.scss`)
-      parseResource(`layout-${i}.less`)
-    }
-  })
-
-  bench('parseResource on generated assets', () => {
-    for (let i = 0; i < 100; i++) {
-      parseResource(`image-${i}.png`)
-      parseResource(`icon-${i}.svg`)
-      parseResource(`font-${i}.woff2`)
+  bench('image paths', () => {
+    for (let i = 0; i < imagePaths.length; i++) {
+      sink(parseResource(imagePaths[i]!))
     }
   })
 })
