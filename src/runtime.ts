@@ -29,31 +29,30 @@ export interface RenderOptions {
   /** Precomputed dependency data */
   precomputed?: PrecomputedData
   /**
-   * Maximum number of entries kept in the per-request module-set cache
-   * (`_dependencySets`). The cache is keyed by the sorted module ids of a
-   * request; on high-cardinality sites it can grow without bound and pin
-   * manifest references for the lifetime of the renderer. A bounded LRU
-   * keeps a hot working set without unbounded growth.
+   * Maximum number of entries kept in each layer of the per-request
+   * module-set cache: one keyed by the sorted module ids of a request, one by
+   * a hash of the ids in their original order. Both are bounded LRUs of this
+   * size over the same dependency objects, so the working set stays bounded
+   * instead of pinning manifest references for the lifetime of the renderer.
    *
    * Set to `0` (or any non-positive / non-finite value) to disable the
    * cache entirely; useful for prerender runs or for sites whose request
-   * variation makes the cache pure overhead.
+   * variation makes the cache pure overhead. Per-resource caches of rendered
+   * markup are unaffected; those are bounded by the manifest, at roughly 1KB
+   * per entry rendered.
    *
    * @default 1000
    */
   dependencySetsCacheSize?: number
 }
 
-/**
- * The merged dependency records as parallel arrays, carried alongside the
- * rendered output so render loops can walk arrays and index fragment caches by
- * slot instead of walking dictionary objects and hashing ids.
- */
+/** A request's merged dependencies as slot arrays, held with its rendered output. */
 interface MergedOrder {
   styleSlots: number[]
   scriptSlots: number[]
   preloadSlots: number[]
   prefetchSlots: number[]
+  mergeSlots: MergeSlots
 }
 
 interface RenderedOutputs {
@@ -72,23 +71,20 @@ export interface RendererContext {
   precomputed?: PrecomputedData
   _dependencies: Record<string, ModuleDependencies>
   _dependencySets: Map<string, ModuleDependencies>
-  _dependencySetAliases: Map<string, DependencySetAlias>
-  _aliasIdHashes: Map<string, number>
+  _dependencySetAliases: Map<number, DependencySetAlias>
+  _aliasIdHashes: Record<string, number>
+  _aliasIdHashCount: number
   _dependencySetsCacheSize: number
   _entrypoints: string[]
   _renderedCache: WeakMap<ModuleDependencies, RenderedOutputs>
   _fragments: Record<FragmentKind, string[]>
-  _flatDependencies: Map<string, FlatDependencies>
+  _flatDependencies: Record<string, FlatDependencies>
   _mergeSlots: MergeSlots
   _idScratch: string[]
   updateManifest: (manifest: Manifest) => void
 }
 
-/**
- * A module's dependency contribution as parallel id/meta arrays, including the
- * prefetch entries pulled in through its dynamic imports. Merging requests is
- * then an indexed array walk rather than a `for..in` over dictionary objects.
- */
+/** A module's contribution as slot arrays, including prefetch via its dynamic imports. */
 interface FlatDependencies {
   scriptSlots: number[]
   styleSlots: number[]
@@ -98,7 +94,8 @@ interface FlatDependencies {
 
 /** Interned resource slots, plus the stamp lanes a merge marks to deduplicate. */
 interface MergeSlots {
-  slotOf: Map<string, number>
+  slotOf: Record<string, number>
+  count: number
   idOf: string[]
   metaOf: ResourceMeta[]
   scripts: Uint8Array
@@ -110,7 +107,8 @@ interface MergeSlots {
 
 function createMergeSlots(capacity = 16): MergeSlots {
   return {
-    slotOf: new Map(),
+    slotOf: Object.create(null),
+    count: 0,
     idOf: [],
     metaOf: [],
     scripts: new Uint8Array(capacity),
@@ -122,10 +120,10 @@ function createMergeSlots(capacity = 16): MergeSlots {
 }
 
 function slotFor(slots: MergeSlots, id: string, meta: ResourceMeta): number {
-  let slot = slots.slotOf.get(id)
+  let slot = slots.slotOf[id]
   if (slot === undefined) {
-    slot = slots.slotOf.size
-    slots.slotOf.set(id, slot)
+    slot = slots.count++
+    slots.slotOf[id] = slot
     slots.idOf.push(id)
     slots.metaOf.push(meta)
     if (slot >= slots.scripts.length) {
@@ -182,12 +180,13 @@ export function createRendererContext({ manifest, precomputed, buildAssetsURL, d
     _dependencies: {},
     _dependencySets: new Map(),
     _dependencySetAliases: new Map(),
-    _aliasIdHashes: new Map(),
+    _aliasIdHashes: Object.create(null),
+    _aliasIdHashCount: 0,
     _dependencySetsCacheSize: cacheSize,
     _entrypoints: [],
     _renderedCache: new WeakMap(),
     _fragments: createFragmentCaches(),
-    _flatDependencies: new Map(),
+    _flatDependencies: Object.create(null),
     _mergeSlots: createMergeSlots(),
     _idScratch: [],
   }
@@ -207,10 +206,11 @@ export function createRendererContext({ manifest, precomputed, buildAssetsURL, d
     ctx._dependencies = {}
     ctx._dependencySets.clear()
     ctx._dependencySetAliases.clear()
-    ctx._aliasIdHashes.clear()
+    ctx._aliasIdHashes = Object.create(null)
+    ctx._aliasIdHashCount = 0
     ctx._renderedCache = new WeakMap()
     ctx._fragments = createFragmentCaches()
-    ctx._flatDependencies.clear()
+    ctx._flatDependencies = Object.create(null)
     ctx._mergeSlots = createMergeSlots()
     collectEntrypoints(manifest)
   }
@@ -248,9 +248,11 @@ export function getModuleDependencies(id: string, rendererContext: RendererConte
     return dependencies
   }
 
-  // Add to scripts + preload
+  // Add to scripts + preload. Imports arrive already filtered.
   if (meta.file) {
-    dependencies.preload[id] = meta
+    if (meta.preload) {
+      dependencies.preload[id] = meta
+    }
     if (meta.isEntry || meta.sideEffects) {
       dependencies.scripts[id] = meta
     }
@@ -258,11 +260,19 @@ export function getModuleDependencies(id: string, rendererContext: RendererConte
 
   // Add styles + preload
   for (const css of meta.css || []) {
-    dependencies.styles[css] = dependencies.preload[css] = dependencies.prefetch[css] = rendererContext.manifest[css]
+    const cssResource = rendererContext.manifest[css]!
+    dependencies.styles[css] = dependencies.prefetch[css] = cssResource
+    if (cssResource.preload) {
+      dependencies.preload[css] = cssResource
+    }
   }
   // Add assets as preload
   for (const asset of meta.assets || []) {
-    dependencies.preload[asset] = dependencies.prefetch[asset] = rendererContext.manifest[asset]
+    const assetResource = rendererContext.manifest[asset]!
+    dependencies.prefetch[asset] = assetResource
+    if (assetResource.preload) {
+      dependencies.preload[asset] = assetResource
+    }
   }
   // Resolve nested dependencies and merge
   if (meta.imports) {
@@ -273,14 +283,6 @@ export function getModuleDependencies(id: string, rendererContext: RendererConte
       Object.assign(dependencies.prefetch, depDeps.prefetch)
     }
   }
-  const filteredPreload: ModuleDependencies['preload'] = {}
-  for (const id in dependencies.preload) {
-    const dep = dependencies.preload[id]
-    if (dep.preload) {
-      filteredPreload[id] = dep
-    }
-  }
-  dependencies.preload = filteredPreload
 
   return dependencies
 }
@@ -294,20 +296,21 @@ interface DependencySetAlias {
 /** Past this, the table is dropped wholesale; stale alias keys stop matching. */
 const MAX_ALIAS_ID_HASHES = 65536
 
-function aliasHash(rendererContext: RendererContext, entrypoints: string[], requestIds: Iterable<string> | undefined): string {
-  const hashes = rendererContext._aliasIdHashes
-  if (hashes.size > MAX_ALIAS_ID_HASHES) {
-    hashes.clear()
+function aliasHash(rendererContext: RendererContext, entrypoints: string[], requestIds: Iterable<string> | undefined): number {
+  let hashes = rendererContext._aliasIdHashes
+  if (rendererContext._aliasIdHashCount > MAX_ALIAS_ID_HASHES) {
+    hashes = rendererContext._aliasIdHashes = Object.create(null)
+    rendererContext._aliasIdHashCount = 0
     rendererContext._dependencySetAliases.clear()
   }
   let sum = 0
   let mixed = 1
   let count = 0
   for (const id of entrypoints) {
-    let hash = hashes.get(id)
+    let hash = hashes[id]
     if (hash === undefined) {
-      hash = (hashes.size * 2654435761) | 0
-      hashes.set(id, hash)
+      hash = (rendererContext._aliasIdHashCount++ * 2654435761) | 0
+      hashes[id] = hash
     }
     sum = (sum + hash) | 0
     mixed = (mixed ^ (hash + count)) | 0
@@ -315,20 +318,20 @@ function aliasHash(rendererContext: RendererContext, entrypoints: string[], requ
   }
   if (requestIds) {
     for (const id of requestIds) {
-      let hash = hashes.get(id)
+      let hash = hashes[id]
       if (hash === undefined) {
-        hash = (hashes.size * 2654435761) | 0
-        hashes.set(id, hash)
+        hash = (rendererContext._aliasIdHashCount++ * 2654435761) | 0
+        hashes[id] = hash
       }
       sum = (sum + hash) | 0
       mixed = (mixed ^ (hash + count)) | 0
       count++
     }
   }
-  return `${count}:${sum}:${mixed}`
+  return (Math.imul(sum, 2654435761) ^ Math.imul(mixed, 40503) ^ count) | 0
 }
 
-function readAlias(rendererContext: RendererContext, aliasKey: string, moduleIds: string[] | undefined, entrypoints: string[], requestIds: Iterable<string> | undefined): ModuleDependencies | undefined {
+function readAlias(rendererContext: RendererContext, aliasKey: number, moduleIds: string[] | undefined, entrypoints: string[], requestIds: Iterable<string> | undefined): ModuleDependencies | undefined {
   const entry = rendererContext._dependencySetAliases.get(aliasKey)
   if (entry === undefined) {
     return undefined
@@ -361,7 +364,7 @@ function readAlias(rendererContext: RendererContext, aliasKey: string, moduleIds
   return i === ids.length ? entry.deps : undefined
 }
 
-function setAlias(rendererContext: RendererContext, aliasKey: string, ids: string[], deps: ModuleDependencies, cacheSize: number) {
+function setAlias(rendererContext: RendererContext, aliasKey: number, ids: string[], deps: ModuleDependencies, cacheSize: number) {
   const aliases = rendererContext._dependencySetAliases
   aliases.set(aliasKey, { ids: [...ids], deps })
   if (aliases.size > cacheSize) {
@@ -379,7 +382,7 @@ function collectInto(source: Record<string, ResourceMeta>, slots: number[], merg
 }
 
 function getFlatDependencies(id: string, rendererContext: RendererContext): FlatDependencies {
-  const cached = rendererContext._flatDependencies.get(id)
+  const cached = rendererContext._flatDependencies[id]
   if (cached !== undefined) {
     return cached
   }
@@ -407,7 +410,7 @@ function getFlatDependencies(id: string, rendererContext: RendererContext): Flat
     }
   }
 
-  rendererContext._flatDependencies.set(id, flat)
+  rendererContext._flatDependencies[id] = flat
   return flat
 }
 
@@ -420,20 +423,22 @@ export function getAllDependencies(ids: Set<string>, rendererContext: RendererCo
   moduleIds.length = 0
   for (const id of ids) moduleIds.push(id)
 
-  let aliasKey = ''
+  let aliasKey = 0
+  let hasAlias = false
   if (cacheSize > 0 && ids.size > 1) {
     aliasKey = aliasHash(rendererContext, moduleIds, undefined)
+    hasAlias = true
     const aliased = readAlias(rendererContext, aliasKey, moduleIds, moduleIds, undefined)
     if (aliased !== undefined) {
       return aliased
     }
   }
 
-  return resolveDependencies(moduleIds, rendererContext, aliasKey)
+  return resolveDependencies(moduleIds, rendererContext, aliasKey, hasAlias)
 }
 
 /** The id list may contain duplicates: merging deduplicates at resource level. */
-function resolveDependencies(moduleIds: string[], rendererContext: RendererContext, aliasKey: string): ModuleDependencies {
+function resolveDependencies(moduleIds: string[], rendererContext: RendererContext, aliasKey: number, hasAlias: boolean): ModuleDependencies {
   const cacheSize = rendererContext._dependencySetsCacheSize
   const useCache = cacheSize > 0
 
@@ -456,7 +461,7 @@ function resolveDependencies(moduleIds: string[], rendererContext: RendererConte
         rendererContext._dependencySets.delete(cacheKey)
         rendererContext._dependencySets.set(cacheKey, cached)
       }
-      if (aliasKey) {
+      if (hasAlias) {
         setAlias(rendererContext, aliasKey, moduleIds, cached, cacheSize)
       }
       return cached
@@ -465,8 +470,7 @@ function resolveDependencies(moduleIds: string[], rendererContext: RendererConte
 
   const styleSlots: number[] = []
   const scriptSlots: number[] = []
-  // Deduplicated in first-seen order; filtered into records once `styles` is
-  // fully known.
+  // Style exclusions can only be applied once every module has contributed.
   const preloadSlots: number[] = []
   const prefetchSlots: number[] = []
 
@@ -489,7 +493,7 @@ function resolveDependencies(moduleIds: string[], rendererContext: RendererConte
   for (let m = 0; m < moduleIds.length; m++) {
     const flat = getFlatDependencies(moduleIds[m]!, rendererContext)
     if (mergeSlots.scripts !== scriptSeen) {
-      // Flattening a new module can allocate new slot arrays.
+      // Interning a new resource can grow the stamp lanes.
       scriptSeen = mergeSlots.scripts
       styleSeen = mergeSlots.styles
       preloadSeen = mergeSlots.preload
@@ -550,13 +554,11 @@ function resolveDependencies(moduleIds: string[], rendererContext: RendererConte
     scriptSlots,
     preloadSlots,
     prefetchSlots,
+    mergeSlots,
   }
 
-  const allDeps = {} as ModuleDependencies
-  defineLazyRecord(allDeps, 'scripts', mergeSlots, scriptSlots)
-  defineLazyRecord(allDeps, 'styles', mergeSlots, styleSlots)
-  defineLazyRecord(allDeps, 'preload', mergeSlots, preloadSlots)
-  defineLazyRecord(allDeps, 'prefetch', mergeSlots, prefetchSlots)
+  const target: LazyTarget = { [SLOT_SOURCE]: order }
+  const allDeps = new Proxy(target, LAZY_DEPENDENCIES) as ModuleDependencies
   rendererContext._renderedCache.set(allDeps, { order })
 
   if (useCache) {
@@ -568,7 +570,7 @@ function resolveDependencies(moduleIds: string[], rendererContext: RendererConte
         rendererContext._dependencySets.delete(oldest)
       }
     }
-    if (aliasKey) {
+    if (hasAlias) {
       setAlias(rendererContext, aliasKey, moduleIds, allDeps, cacheSize)
     }
   }
@@ -595,9 +597,11 @@ export function getRequestDependencies(ssrContext: SSRContext, rendererContext: 
   const requestIds = ssrContext.modules /* vite */ || ssrContext._registeredComponents /* webpack */
 
   // Probe the alias map before building the id list.
-  let aliasKey = ''
+  let aliasKey = 0
+  let hasAlias = false
   if (!hasExcluded && rendererContext._dependencySetsCacheSize > 0) {
     aliasKey = aliasHash(rendererContext, rendererContext._entrypoints, requestIds)
+    hasAlias = true
     const aliased = readAlias(rendererContext, aliasKey, undefined, rendererContext._entrypoints, requestIds)
     if (aliased !== undefined) {
       ssrContext._requestDependencies = aliased
@@ -626,7 +630,7 @@ export function getRequestDependencies(ssrContext: SSRContext, rendererContext: 
       for (const id of requestIds) moduleIds.push(id)
     }
   }
-  const deps = resolveDependencies(moduleIds, rendererContext, aliasKey)
+  const deps = resolveDependencies(moduleIds, rendererContext, aliasKey, hasAlias)
   if (!hasExcluded) {
     ssrContext._requestDependencies = deps
   }
@@ -642,25 +646,74 @@ function getRenderedOutputs(rendererContext: RendererContext, deps: ModuleDepend
   return entry
 }
 
-/** Materialise `key` on first access and replace the accessor with a data property. */
-function defineLazyRecord(target: ModuleDependencies, key: keyof ModuleDependencies, mergeSlots: MergeSlots, slots: number[]) {
-  Object.defineProperty(target, key, {
-    configurable: true,
-    enumerable: true,
-    get() {
-      const { idOf, metaOf } = mergeSlots
-      const record: Record<string, ResourceMeta> = {}
-      for (let i = 0; i < slots.length; i++) {
-        const slot = slots[i]!
-        record[idOf[slot]!] = metaOf[slot]!
-      }
-      Object.defineProperty(target, key, { value: record, writable: true, enumerable: true, configurable: true })
-      return record
-    },
-    set(value: Record<string, ResourceMeta>) {
-      Object.defineProperty(target, key, { value, writable: true, enumerable: true, configurable: true })
-    },
-  })
+const SLOT_SOURCE = Symbol('slots')
+
+type LazyTarget = Partial<ModuleDependencies> & { [SLOT_SOURCE]: MergedOrder }
+
+const SLOTS_FOR: Record<keyof ModuleDependencies, keyof MergedOrder> = {
+  scripts: 'scriptSlots',
+  styles: 'styleSlots',
+  preload: 'preloadSlots',
+  prefetch: 'prefetchSlots',
+}
+
+/** Records are built on first access; rendering reads the slot arrays directly. */
+const LAZY_DEPENDENCIES: ProxyHandler<LazyTarget> = {
+  get(target, key) {
+    const value = target[key as keyof ModuleDependencies]
+    if (value !== undefined || !isRecordKey(key)) {
+      return value
+    }
+    return materialiseRecord(target, key)
+  },
+  has(target, key) {
+    return isRecordKey(key) || key in target
+  },
+  ownKeys(target) {
+    const extra = Reflect.ownKeys(target).filter(key => key !== SLOT_SOURCE && !isRecordKey(key))
+    return extra.length > 0 ? [...RECORD_KEYS, ...extra] : RECORD_KEYS.slice()
+  },
+  getOwnPropertyDescriptor(target, key) {
+    if (!isRecordKey(key)) {
+      return key === SLOT_SOURCE ? undefined : Reflect.getOwnPropertyDescriptor(target, key)
+    }
+    return {
+      value: target[key] ?? materialiseRecord(target, key),
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    }
+  },
+  set(target, key, value) {
+    target[key as keyof ModuleDependencies] = value
+    return true
+  },
+  deleteProperty(target, key) {
+    return Reflect.deleteProperty(target, key)
+  },
+}
+
+const RECORD_KEYS: (keyof ModuleDependencies)[] = ['scripts', 'styles', 'preload', 'prefetch']
+
+function isRecordKey(key: string | symbol): key is keyof ModuleDependencies {
+  return key === 'scripts' || key === 'styles' || key === 'preload' || key === 'prefetch'
+}
+
+function materialiseRecord(target: LazyTarget, key: keyof ModuleDependencies): Record<string, ResourceMeta> {
+  const order = target[SLOT_SOURCE]
+  const record = buildRecord(order.mergeSlots, order[SLOTS_FOR[key]] as number[])
+  target[key] = record
+  return record
+}
+
+function buildRecord(mergeSlots: MergeSlots, slots: number[]): Record<string, ResourceMeta> {
+  const { idOf, metaOf } = mergeSlots
+  const record: Record<string, ResourceMeta> = {}
+  for (let i = 0; i < slots.length; i++) {
+    const slot = slots[i]!
+    record[idOf[slot]!] = metaOf[slot]!
+  }
+  return record
 }
 
 function collectOrder(source: Record<string, ResourceMeta>, slots: number[], mergeSlots: MergeSlots) {
@@ -680,6 +733,7 @@ function getOrder(rendererContext: RendererContext, deps: ModuleDependencies, re
     scriptSlots: [],
     preloadSlots: [],
     prefetchSlots: [],
+    mergeSlots,
   }
   collectOrder(deps.styles, order.styleSlots, mergeSlots)
   collectOrder(deps.scripts, order.scriptSlots, mergeSlots)
