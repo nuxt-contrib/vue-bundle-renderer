@@ -10,6 +10,8 @@ export interface PrecomputedData {
   modules: Record<string, Pick<ResourceMeta, 'file' | 'resourceType' | 'mimeType' | 'module' | 'dynamicImports'>>
 }
 
+const EMPTY: readonly string[] = []
+
 /**
  * Build-time utility to precompute all module dependencies from a manifest.
  * This eliminates recursive dependency resolution at runtime.
@@ -49,85 +51,75 @@ export function precomputeDependencies(manifest: Manifest): PrecomputedData {
 
     // Add to scripts + preload
     if (meta.file) {
-      deps.preload[id] = meta
+      if (meta.preload) {
+        deps.preload[id] = meta
+      }
       if (meta.isEntry || meta.sideEffects) {
         deps.scripts[id] = meta
       }
     }
 
     // Add styles + preload
-    for (const css of meta.css || []) {
+    for (const css of meta.css || EMPTY) {
       const cssResource = manifest[css]
       if (cssResource) {
         deps.styles[css] = cssResource
-        deps.preload[css] = cssResource
+        if (cssResource.preload) {
+          deps.preload[css] = cssResource
+        }
         deps.prefetch[css] = cssResource
       }
     }
 
     // Add assets as preload
-    for (const asset of meta.assets || []) {
+    for (const asset of meta.assets || EMPTY) {
       const assetResource = manifest[asset]
       if (assetResource) {
-        deps.preload[asset] = assetResource
+        if (assetResource.preload) {
+          deps.preload[asset] = assetResource
+        }
         deps.prefetch[asset] = assetResource
       }
     }
 
     // Resolve nested dependencies and merge
-    for (const depId of meta.imports || []) {
+    for (const depId of meta.imports || EMPTY) {
       const depDeps = computeDependencies(depId)
       Object.assign(deps.styles, depDeps.styles)
       Object.assign(deps.preload, depDeps.preload)
       Object.assign(deps.prefetch, depDeps.prefetch)
     }
 
-    // Filter preload based on preload flag
-    const filteredPreload: ModuleDependencies['preload'] = {}
-    for (const depId in deps.preload) {
-      const dep = deps.preload[depId]
-      if (dep.preload) {
-        filteredPreload[depId] = dep
-      }
-    }
-    deps.preload = filteredPreload
-
     dependencies[id] = deps
     computing.delete(id)
     return deps
   }
 
-  // Pre-compute dependencies for all modules in manifest
-  for (const moduleId of Object.keys(manifest)) {
-    computeDependencies(moduleId)
-  }
-
-  // Extract entry points
-  const entrypoints = new Set<string>()
-  for (const key in manifest) {
-    const meta = manifest[key]
-    if (meta?.isEntry) {
-      entrypoints.add(key)
-    }
-  }
-
-  // Extract minimal module metadata needed at runtime
+  // Pre-compute dependencies, entry points, and the minimal module metadata
+  // the runtime needs
+  const entrypoints: string[] = []
   const modules: PrecomputedData['modules'] = {}
-  for (const [moduleId, meta] of Object.entries(manifest)) {
-    modules[moduleId] = {
+  for (const moduleId in manifest) {
+    computeDependencies(moduleId)
+    const meta = manifest[moduleId]!
+    if (meta.isEntry) {
+      entrypoints.push(moduleId)
+    }
+    const module: PrecomputedData['modules'][string] = {
       file: meta.file,
       resourceType: meta.resourceType,
       mimeType: meta.mimeType,
       module: meta.module,
     }
     if (meta.dynamicImports?.length) {
-      modules[moduleId].dynamicImports = meta.dynamicImports
+      module.dynamicImports = meta.dynamicImports
     }
+    modules[moduleId] = module
   }
 
   return {
     dependencies,
-    entrypoints: [...entrypoints],
+    entrypoints,
     modules,
   }
 }
