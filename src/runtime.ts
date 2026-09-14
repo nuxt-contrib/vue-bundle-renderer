@@ -62,7 +62,38 @@ export interface RendererContext {
   _dependencySetsCacheSize: number
   _entrypoints: string[]
   _renderedCache: WeakMap<ModuleDependencies, RenderedOutputs>
+  _fragments: Record<FragmentKind, Map<string, string>>
+  _flatDependencies: Map<string, FlatDependencies>
   updateManifest: (manifest: Manifest) => void
+}
+
+/**
+ * A module's dependency contribution as parallel id/meta arrays, including the
+ * prefetch entries pulled in through its dynamic imports. Merging requests is
+ * then an indexed array walk rather than a `for..in` over dictionary objects.
+ */
+interface FlatDependencies {
+  scriptIds: string[]
+  scriptMetas: ResourceMeta[]
+  styleIds: string[]
+  styleMetas: ResourceMeta[]
+  preloadIds: string[]
+  preloadMetas: ResourceMeta[]
+  prefetchIds: string[]
+  prefetchMetas: ResourceMeta[]
+}
+
+type FragmentKind = 'style' | 'script' | 'preloadHint' | 'prefetchHint' | 'preloadHeader' | 'prefetchHeader'
+
+function createFragmentCaches(): Record<FragmentKind, Map<string, string>> {
+  return {
+    style: new Map(),
+    script: new Map(),
+    preloadHint: new Map(),
+    prefetchHint: new Map(),
+    preloadHeader: new Map(),
+    prefetchHeader: new Map(),
+  }
 }
 
 interface LinkAttributes {
@@ -96,13 +127,11 @@ export function createRendererContext({ manifest, precomputed, buildAssetsURL, d
     _dependencySetsCacheSize: cacheSize,
     _entrypoints: [],
     _renderedCache: new WeakMap(),
+    _fragments: createFragmentCaches(),
+    _flatDependencies: new Map(),
   }
 
-  function updateManifest(manifest: Manifest) {
-    ctx.manifest = manifest
-    ctx._dependencies = {}
-    ctx._dependencySets.clear()
-    ctx._renderedCache = new WeakMap()
+  function collectEntrypoints(manifest: Manifest) {
     const entrypoints: string[] = []
     for (const id in manifest) {
       if (manifest[id].isEntry) {
@@ -112,12 +141,22 @@ export function createRendererContext({ manifest, precomputed, buildAssetsURL, d
     ctx._entrypoints = entrypoints
   }
 
+  function updateManifest(manifest: Manifest) {
+    ctx.manifest = manifest
+    ctx._dependencies = {}
+    ctx._dependencySets.clear()
+    ctx._renderedCache = new WeakMap()
+    ctx._fragments = createFragmentCaches()
+    ctx._flatDependencies.clear()
+    collectEntrypoints(manifest)
+  }
+
   if (precomputed) {
     ctx._dependencies = precomputed.dependencies
     ctx._entrypoints = precomputed.entrypoints
   }
   else if (manifest) {
-    updateManifest(manifest)
+    collectEntrypoints(manifest)
   }
 
   return ctx
@@ -182,6 +221,49 @@ export function getModuleDependencies(id: string, rendererContext: RendererConte
   return dependencies
 }
 
+function collectInto(source: Record<string, ResourceMeta>, ids: string[], metas: ResourceMeta[]) {
+  for (const id in source) {
+    ids.push(id)
+    metas.push(source[id]!)
+  }
+}
+
+function getFlatDependencies(id: string, rendererContext: RendererContext): FlatDependencies {
+  const cached = rendererContext._flatDependencies.get(id)
+  if (cached !== undefined) {
+    return cached
+  }
+
+  const deps = getModuleDependencies(id, rendererContext)
+  const flat: FlatDependencies = {
+    scriptIds: [],
+    scriptMetas: [],
+    styleIds: [],
+    styleMetas: [],
+    preloadIds: [],
+    preloadMetas: [],
+    prefetchIds: [],
+    prefetchMetas: [],
+  }
+  collectInto(deps.scripts, flat.scriptIds, flat.scriptMetas)
+  collectInto(deps.styles, flat.styleIds, flat.styleMetas)
+  collectInto(deps.preload, flat.preloadIds, flat.preloadMetas)
+  collectInto(deps.prefetch, flat.prefetchIds, flat.prefetchMetas)
+
+  const dynamicImports = rendererContext.manifest?.[id]?.dynamicImports || rendererContext.precomputed?.modules[id]?.dynamicImports
+  if (dynamicImports) {
+    for (const dynamicDepId of dynamicImports) {
+      const dynamicDeps = getModuleDependencies(dynamicDepId, rendererContext)
+      collectInto(dynamicDeps.scripts, flat.prefetchIds, flat.prefetchMetas)
+      collectInto(dynamicDeps.styles, flat.prefetchIds, flat.prefetchMetas)
+      collectInto(dynamicDeps.preload, flat.prefetchIds, flat.prefetchMetas)
+    }
+  }
+
+  rendererContext._flatDependencies.set(id, flat)
+  return flat
+}
+
 export function getAllDependencies(ids: Set<string>, rendererContext: RendererContext): ModuleDependencies {
   const cacheSize = rendererContext._dependencySetsCacheSize
   const useCache = cacheSize > 0
@@ -189,9 +271,7 @@ export function getAllDependencies(ids: Set<string>, rendererContext: RendererCo
   let cacheKey = ''
   if (useCache) {
     if (ids.size <= 1) {
-      // Fast path for the common single-entrypoint request: skip the
-      // [...ids].sort() allocation entirely. A one-element set is already
-      // sorted, so the only entry is the cache key.
+      // A one-element set is already sorted.
       for (const id of ids) cacheKey = id
     }
     else {
@@ -211,52 +291,49 @@ export function getAllDependencies(ids: Set<string>, rendererContext: RendererCo
     }
   }
 
-  const allDeps: ModuleDependencies = {
-    scripts: {},
-    styles: {},
-    preload: {},
-    prefetch: {},
-  }
+  const scripts: ModuleDependencies['scripts'] = {}
+  const styles: ModuleDependencies['styles'] = {}
+  // Collected in insertion order with duplicates; deduplicated when the
+  // filtered records are built below, once `styles` is fully known.
+  const preloadIds: string[] = []
+  const preloadMetas: ResourceMeta[] = []
+  const prefetchIds: string[] = []
+  const prefetchMetas: ResourceMeta[] = []
 
   for (const id of ids) {
-    const deps = getModuleDependencies(id, rendererContext)
-    Object.assign(allDeps.scripts, deps.scripts)
-    Object.assign(allDeps.styles, deps.styles)
-    Object.assign(allDeps.preload, deps.preload)
-    Object.assign(allDeps.prefetch, deps.prefetch)
-
-    const dynamicImports = rendererContext.manifest?.[id]?.dynamicImports || rendererContext.precomputed?.modules[id]?.dynamicImports
-    if (dynamicImports) {
-      for (const dynamicDepId of dynamicImports) {
-        const dynamicDeps = getModuleDependencies(dynamicDepId, rendererContext)
-        Object.assign(allDeps.prefetch, dynamicDeps.scripts)
-        Object.assign(allDeps.prefetch, dynamicDeps.styles)
-        Object.assign(allDeps.prefetch, dynamicDeps.preload)
-      }
+    const flat = getFlatDependencies(id, rendererContext)
+    for (let i = 0; i < flat.scriptIds.length; i++) scripts[flat.scriptIds[i]!] = flat.scriptMetas[i]!
+    for (let i = 0; i < flat.styleIds.length; i++) styles[flat.styleIds[i]!] = flat.styleMetas[i]!
+    for (let i = 0; i < flat.preloadIds.length; i++) {
+      preloadIds.push(flat.preloadIds[i]!)
+      preloadMetas.push(flat.preloadMetas[i]!)
+    }
+    for (let i = 0; i < flat.prefetchIds.length; i++) {
+      prefetchIds.push(flat.prefetchIds[i]!)
+      prefetchMetas.push(flat.prefetchMetas[i]!)
     }
   }
 
   // Don't prefetch resources that are preloaded or synchronously loaded as
   // styles, and don't preload styles that are synchronously loaded.
-  const mergedPreload = allDeps.preload
-  const styles = allDeps.styles
-
-  const filteredPrefetch: ModuleDependencies['prefetch'] = {}
-  for (const id in allDeps.prefetch) {
-    const dep = allDeps.prefetch[id]
-    if (dep.prefetch && !(id in mergedPreload) && !(id in styles)) {
-      filteredPrefetch[id] = dep
-    }
-  }
-  allDeps.prefetch = filteredPrefetch
-
-  const filteredPreload: ModuleDependencies['preload'] = {}
-  for (const id in mergedPreload) {
+  const preload: ModuleDependencies['preload'] = {}
+  for (let i = 0; i < preloadIds.length; i++) {
+    const id = preloadIds[i]!
     if (!(id in styles)) {
-      filteredPreload[id] = mergedPreload[id]
+      preload[id] = preloadMetas[i]!
     }
   }
-  allDeps.preload = filteredPreload
+
+  const prefetch: ModuleDependencies['prefetch'] = {}
+  for (let i = 0; i < prefetchIds.length; i++) {
+    const id = prefetchIds[i]!
+    const dep = prefetchMetas[i]!
+    if (dep.prefetch && !(id in preload) && !(id in styles)) {
+      prefetch[id] = dep
+    }
+  }
+
+  const allDeps: ModuleDependencies = { scripts, styles, preload, prefetch }
 
   if (useCache) {
     rendererContext._dependencySets.set(cacheKey, allDeps)
@@ -335,9 +412,14 @@ export function renderStyles(ssrContext: SSRContext, rendererContext: RendererCo
   }
   const { styles } = deps
   let result = ''
+  const cache = rendererContext._fragments.style
   for (const key in styles) {
-    const resource = styles[key]!
-    result += `<link rel="stylesheet" href="${rendererContext.buildAssetsURL(resource.file)}" crossorigin>`
+    let fragment = cache.get(key)
+    if (fragment === undefined) {
+      fragment = `<link rel="stylesheet" href="${rendererContext.buildAssetsURL(styles[key]!.file)}" crossorigin>`
+      cache.set(key, fragment)
+    }
+    result += fragment
   }
   rendered.styles = result
   return result
@@ -373,43 +455,47 @@ export function renderResourceHints(ssrContext: SSRContext, rendererContext: Ren
   let result = ''
 
   // Render preload links
+  const preloadCache = rendererContext._fragments.preloadHint
   for (const key in preload) {
     const resource = preload[key]!
     if (!withScripts && isScriptResource(resource)) {
       continue
     }
-    const href = rendererContext.buildAssetsURL(resource.file)
-    const rel = resource.module ? 'modulepreload' : 'preload'
-    const crossorigin = (resource.resourceType === 'style' || resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module) ? ' crossorigin' : ''
+    let fragment = preloadCache.get(key)
+    if (fragment === undefined) {
+      const href = rendererContext.buildAssetsURL(resource.file)
+      const rel = resource.module ? 'modulepreload' : 'preload'
+      const crossorigin = (resource.resourceType === 'style' || resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module) ? ' crossorigin' : ''
 
-    if (resource.resourceType && resource.mimeType) {
-      result += `<link rel="${rel}" as="${resource.resourceType}" type="${resource.mimeType}"${crossorigin} href="${href}">`
+      fragment = resource.resourceType && resource.mimeType
+        ? `<link rel="${rel}" as="${resource.resourceType}" type="${resource.mimeType}"${crossorigin} href="${href}">`
+        : resource.resourceType
+          ? `<link rel="${rel}" as="${resource.resourceType}"${crossorigin} href="${href}">`
+          : `<link rel="${rel}"${crossorigin} href="${href}">`
+      preloadCache.set(key, fragment)
     }
-    else if (resource.resourceType) {
-      result += `<link rel="${rel}" as="${resource.resourceType}"${crossorigin} href="${href}">`
-    }
-    else {
-      result += `<link rel="${rel}"${crossorigin} href="${href}">`
-    }
+    result += fragment
   }
   // Render prefetch links
+  const prefetchCache = rendererContext._fragments.prefetchHint
   for (const key in prefetch) {
     const resource = prefetch[key]!
     if (!withScripts && isScriptResource(resource)) {
       continue
     }
-    const href = rendererContext.buildAssetsURL(resource.file)
-    const crossorigin = (resource.resourceType === 'style' || resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module) ? ' crossorigin' : ''
+    let fragment = prefetchCache.get(key)
+    if (fragment === undefined) {
+      const href = rendererContext.buildAssetsURL(resource.file)
+      const crossorigin = (resource.resourceType === 'style' || resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module) ? ' crossorigin' : ''
 
-    if (resource.resourceType && resource.mimeType) {
-      result += `<link rel="prefetch" as="${resource.resourceType}" type="${resource.mimeType}"${crossorigin} href="${href}">`
+      fragment = resource.resourceType && resource.mimeType
+        ? `<link rel="prefetch" as="${resource.resourceType}" type="${resource.mimeType}"${crossorigin} href="${href}">`
+        : resource.resourceType
+          ? `<link rel="prefetch" as="${resource.resourceType}"${crossorigin} href="${href}">`
+          : `<link rel="prefetch"${crossorigin} href="${href}">`
+      prefetchCache.set(key, fragment)
     }
-    else if (resource.resourceType) {
-      result += `<link rel="prefetch" as="${resource.resourceType}"${crossorigin} href="${href}">`
-    }
-    else {
-      result += `<link rel="prefetch"${crossorigin} href="${href}">`
-    }
+    result += fragment
   }
 
   if (withScripts) {
@@ -435,45 +521,55 @@ export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: R
   const links: string[] = []
 
   // Render preload headers
+  const preloadCache = rendererContext._fragments.preloadHeader
   for (const key in preload) {
     const resource = preload[key]!
     if (!withScripts && isScriptResource(resource)) {
       continue
     }
-    const href = rendererContext.buildAssetsURL(resource.file).replace(NON_ASCII_RE, encodeURIComponent)
-    const rel = resource.module ? 'modulepreload' : 'preload'
-    let header = `<${href}>; rel="${rel}"`
+    let header = preloadCache.get(key)
+    if (header === undefined) {
+      const href = rendererContext.buildAssetsURL(resource.file).replace(NON_ASCII_RE, encodeURIComponent)
+      const rel = resource.module ? 'modulepreload' : 'preload'
+      header = `<${href}>; rel="${rel}"`
 
-    if (resource.resourceType) {
-      header += `; as="${resource.resourceType}"`
-    }
-    if (resource.mimeType) {
-      header += `; type="${resource.mimeType}"`
-    }
-    if (resource.resourceType === 'style' || resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module) {
-      header += '; crossorigin'
+      if (resource.resourceType) {
+        header += `; as="${resource.resourceType}"`
+      }
+      if (resource.mimeType) {
+        header += `; type="${resource.mimeType}"`
+      }
+      if (resource.resourceType === 'style' || resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module) {
+        header += '; crossorigin'
+      }
+      preloadCache.set(key, header)
     }
 
     links.push(header)
   }
 
   // Render prefetch headers
+  const prefetchCache = rendererContext._fragments.prefetchHeader
   for (const key in prefetch) {
     const resource = prefetch[key]!
     if (!withScripts && isScriptResource(resource)) {
       continue
     }
-    const href = rendererContext.buildAssetsURL(resource.file).replace(NON_ASCII_RE, encodeURIComponent)
-    let header = `<${href}>; rel="prefetch"`
+    let header = prefetchCache.get(key)
+    if (header === undefined) {
+      const href = rendererContext.buildAssetsURL(resource.file).replace(NON_ASCII_RE, encodeURIComponent)
+      header = `<${href}>; rel="prefetch"`
 
-    if (resource.resourceType) {
-      header += `; as="${resource.resourceType}"`
-    }
-    if (resource.mimeType) {
-      header += `; type="${resource.mimeType}"`
-    }
-    if (resource.resourceType === 'style' || resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module) {
-      header += '; crossorigin'
+      if (resource.resourceType) {
+        header += `; as="${resource.resourceType}"`
+      }
+      if (resource.mimeType) {
+        header += `; type="${resource.mimeType}"`
+      }
+      if (resource.resourceType === 'style' || resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module) {
+        header += '; crossorigin'
+      }
+      prefetchCache.set(key, header)
     }
 
     links.push(header)
@@ -537,14 +633,17 @@ export function renderScripts(ssrContext: SSRContext, rendererContext: RendererC
   }
   const { scripts } = deps
   let result = ''
+  const cache = rendererContext._fragments.script
   for (const key in scripts) {
-    const resource = scripts[key]!
-    if (resource.module) {
-      result += `<script type="module" src="${rendererContext.buildAssetsURL(resource.file)}" crossorigin></script>`
+    let fragment = cache.get(key)
+    if (fragment === undefined) {
+      const resource = scripts[key]!
+      fragment = resource.module
+        ? `<script type="module" src="${rendererContext.buildAssetsURL(resource.file)}" crossorigin></script>`
+        : `<script src="${rendererContext.buildAssetsURL(resource.file)}" defer crossorigin></script>`
+      cache.set(key, fragment)
     }
-    else {
-      result += `<script src="${rendererContext.buildAssetsURL(resource.file)}" defer crossorigin></script>`
-    }
+    result += fragment
   }
   rendered.scripts = result
   return result
