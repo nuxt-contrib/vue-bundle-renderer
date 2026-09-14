@@ -105,6 +105,8 @@ interface MergeSlots {
   epoch: number
 }
 
+const MAX_INITIAL_SLOTS = 8192
+
 function createMergeSlots(capacity = 16): MergeSlots {
   return {
     slotOf: Object.create(null),
@@ -171,6 +173,21 @@ export function createRendererContext({ manifest, precomputed, buildAssetsURL, d
       ? 1000
       : 0
 
+  // Precomputed data from an older version carries no count, so it grows on demand.
+  const entrypoints: string[] = []
+  let slotCapacity = 16
+  if (precomputed) {
+    slotCapacity = precomputed.resourceCount ?? 16
+  }
+  else if (manifest) {
+    for (const id in manifest) {
+      slotCapacity++
+      if (manifest[id].isEntry) {
+        entrypoints.push(id)
+      }
+    }
+  }
+
   const ctx: RendererContext = {
     // Options
     buildAssetsURL: buildAssetsURL || withLeadingSlash,
@@ -188,18 +205,8 @@ export function createRendererContext({ manifest, precomputed, buildAssetsURL, d
     _renderedCache: new WeakMap(),
     _fragments: createFragmentCaches(),
     _flatDependencies: Object.create(null),
-    _mergeSlots: createMergeSlots(),
+    _mergeSlots: createMergeSlots(Math.min(slotCapacity, MAX_INITIAL_SLOTS)),
     _idScratch: [],
-  }
-
-  function collectEntrypoints(manifest: Manifest) {
-    const entrypoints: string[] = []
-    for (const id in manifest) {
-      if (manifest[id].isEntry) {
-        entrypoints.push(id)
-      }
-    }
-    ctx._entrypoints = entrypoints
   }
 
   function updateManifest(manifest: Manifest) {
@@ -212,8 +219,16 @@ export function createRendererContext({ manifest, precomputed, buildAssetsURL, d
     ctx._renderedCache = new WeakMap()
     ctx._fragments = createFragmentCaches()
     ctx._flatDependencies = Object.create(null)
-    ctx._mergeSlots = createMergeSlots()
-    collectEntrypoints(manifest)
+    let capacity = 16
+    const entrypoints: string[] = []
+    for (const id in manifest) {
+      capacity++
+      if (manifest[id].isEntry) {
+        entrypoints.push(id)
+      }
+    }
+    ctx._mergeSlots = createMergeSlots(Math.min(capacity, MAX_INITIAL_SLOTS))
+    ctx._entrypoints = entrypoints
   }
 
   if (precomputed) {
@@ -221,7 +236,7 @@ export function createRendererContext({ manifest, precomputed, buildAssetsURL, d
     ctx._entrypoints = precomputed.entrypoints
   }
   else if (manifest) {
-    collectEntrypoints(manifest)
+    ctx._entrypoints = entrypoints
   }
 
   return ctx

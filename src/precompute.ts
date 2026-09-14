@@ -8,6 +8,8 @@ export interface PrecomputedData {
   entrypoints: string[]
   /** Module metadata needed at runtime (file paths, etc.) */
   modules: Record<string, Pick<ResourceMeta, 'file' | 'resourceType' | 'mimeType' | 'module' | 'dynamicImports'>>
+  /** Number of manifest entries, used to size runtime lookup tables. */
+  resourceCount: number
 }
 
 const EMPTY: readonly string[] = []
@@ -99,7 +101,9 @@ export function precomputeDependencies(manifest: Manifest): PrecomputedData {
   // the runtime needs
   const entrypoints: string[] = []
   const modules: PrecomputedData['modules'] = {}
+  let resourceCount = 0
   for (const moduleId in manifest) {
+    resourceCount++
     computeDependencies(moduleId)
     const meta = manifest[moduleId]!
     if (meta.isEntry) {
@@ -121,5 +125,6 @@ export function precomputeDependencies(manifest: Manifest): PrecomputedData {
     dependencies,
     entrypoints,
     modules,
+    resourceCount,
   }
 }
