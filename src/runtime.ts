@@ -59,11 +59,13 @@ export interface RendererContext {
   precomputed?: PrecomputedData
   _dependencies: Record<string, ModuleDependencies>
   _dependencySets: Map<string, ModuleDependencies>
+  _dependencySetAliases: Map<string, ModuleDependencies>
   _dependencySetsCacheSize: number
   _entrypoints: string[]
   _renderedCache: WeakMap<ModuleDependencies, RenderedOutputs>
   _fragments: Record<FragmentKind, Map<string, string>>
   _flatDependencies: Map<string, FlatDependencies>
+  _mergeSlots: MergeSlots
   updateManifest: (manifest: Manifest) => void
 }
 
@@ -75,12 +77,54 @@ export interface RendererContext {
 interface FlatDependencies {
   scriptIds: string[]
   scriptMetas: ResourceMeta[]
+  scriptSlots: number[]
   styleIds: string[]
   styleMetas: ResourceMeta[]
+  styleSlots: number[]
   preloadIds: string[]
   preloadMetas: ResourceMeta[]
+  preloadSlots: number[]
   prefetchIds: string[]
   prefetchMetas: ResourceMeta[]
+  prefetchSlots: number[]
+}
+
+/** Interned resource slots, plus the stamp lanes a merge marks to deduplicate. */
+interface MergeSlots {
+  slotOf: Map<string, number>
+  scripts: Int32Array
+  styles: Int32Array
+  preload: Int32Array
+  prefetch: Int32Array
+  epoch: number
+}
+
+function createMergeSlots(capacity = 16): MergeSlots {
+  return {
+    slotOf: new Map(),
+    scripts: new Int32Array(capacity),
+    styles: new Int32Array(capacity),
+    preload: new Int32Array(capacity),
+    prefetch: new Int32Array(capacity),
+    epoch: 0,
+  }
+}
+
+function slotFor(slots: MergeSlots, id: string): number {
+  let slot = slots.slotOf.get(id)
+  if (slot === undefined) {
+    slot = slots.slotOf.size
+    slots.slotOf.set(id, slot)
+    if (slot >= slots.scripts.length) {
+      const capacity = slots.scripts.length * 2
+      for (const kind of ['scripts', 'styles', 'preload', 'prefetch'] as const) {
+        const grown = new Int32Array(capacity)
+        grown.set(slots[kind])
+        slots[kind] = grown
+      }
+    }
+  }
+  return slot
 }
 
 type FragmentKind = 'style' | 'script' | 'preloadHint' | 'prefetchHint' | 'preloadHeader' | 'prefetchHeader'
@@ -124,11 +168,13 @@ export function createRendererContext({ manifest, precomputed, buildAssetsURL, d
     // Internal cache
     _dependencies: {},
     _dependencySets: new Map(),
+    _dependencySetAliases: new Map(),
     _dependencySetsCacheSize: cacheSize,
     _entrypoints: [],
     _renderedCache: new WeakMap(),
     _fragments: createFragmentCaches(),
     _flatDependencies: new Map(),
+    _mergeSlots: createMergeSlots(),
   }
 
   function collectEntrypoints(manifest: Manifest) {
@@ -145,9 +191,11 @@ export function createRendererContext({ manifest, precomputed, buildAssetsURL, d
     ctx.manifest = manifest
     ctx._dependencies = {}
     ctx._dependencySets.clear()
+    ctx._dependencySetAliases.clear()
     ctx._renderedCache = new WeakMap()
     ctx._fragments = createFragmentCaches()
     ctx._flatDependencies.clear()
+    ctx._mergeSlots = createMergeSlots()
     collectEntrypoints(manifest)
   }
 
@@ -221,10 +269,22 @@ export function getModuleDependencies(id: string, rendererContext: RendererConte
   return dependencies
 }
 
-function collectInto(source: Record<string, ResourceMeta>, ids: string[], metas: ResourceMeta[]) {
+function setAlias(rendererContext: RendererContext, aliasKey: string, deps: ModuleDependencies, cacheSize: number) {
+  const aliases = rendererContext._dependencySetAliases
+  aliases.set(aliasKey, deps)
+  if (aliases.size > cacheSize) {
+    const oldest = aliases.keys().next().value
+    if (oldest !== undefined) {
+      aliases.delete(oldest)
+    }
+  }
+}
+
+function collectInto(source: Record<string, ResourceMeta>, ids: string[], metas: ResourceMeta[], slots: number[], mergeSlots: MergeSlots) {
   for (const id in source) {
     ids.push(id)
     metas.push(source[id]!)
+    slots.push(slotFor(mergeSlots, id))
   }
 }
 
@@ -235,28 +295,33 @@ function getFlatDependencies(id: string, rendererContext: RendererContext): Flat
   }
 
   const deps = getModuleDependencies(id, rendererContext)
+  const mergeSlots = rendererContext._mergeSlots
   const flat: FlatDependencies = {
     scriptIds: [],
     scriptMetas: [],
+    scriptSlots: [],
     styleIds: [],
     styleMetas: [],
+    styleSlots: [],
     preloadIds: [],
     preloadMetas: [],
+    preloadSlots: [],
     prefetchIds: [],
     prefetchMetas: [],
+    prefetchSlots: [],
   }
-  collectInto(deps.scripts, flat.scriptIds, flat.scriptMetas)
-  collectInto(deps.styles, flat.styleIds, flat.styleMetas)
-  collectInto(deps.preload, flat.preloadIds, flat.preloadMetas)
-  collectInto(deps.prefetch, flat.prefetchIds, flat.prefetchMetas)
+  collectInto(deps.scripts, flat.scriptIds, flat.scriptMetas, flat.scriptSlots, mergeSlots)
+  collectInto(deps.styles, flat.styleIds, flat.styleMetas, flat.styleSlots, mergeSlots)
+  collectInto(deps.preload, flat.preloadIds, flat.preloadMetas, flat.preloadSlots, mergeSlots)
+  collectInto(deps.prefetch, flat.prefetchIds, flat.prefetchMetas, flat.prefetchSlots, mergeSlots)
 
   const dynamicImports = rendererContext.manifest?.[id]?.dynamicImports || rendererContext.precomputed?.modules[id]?.dynamicImports
   if (dynamicImports) {
     for (const dynamicDepId of dynamicImports) {
       const dynamicDeps = getModuleDependencies(dynamicDepId, rendererContext)
-      collectInto(dynamicDeps.scripts, flat.prefetchIds, flat.prefetchMetas)
-      collectInto(dynamicDeps.styles, flat.prefetchIds, flat.prefetchMetas)
-      collectInto(dynamicDeps.preload, flat.prefetchIds, flat.prefetchMetas)
+      collectInto(dynamicDeps.scripts, flat.prefetchIds, flat.prefetchMetas, flat.prefetchSlots, mergeSlots)
+      collectInto(dynamicDeps.styles, flat.prefetchIds, flat.prefetchMetas, flat.prefetchSlots, mergeSlots)
+      collectInto(dynamicDeps.preload, flat.prefetchIds, flat.prefetchMetas, flat.prefetchSlots, mergeSlots)
     }
   }
 
@@ -267,6 +332,17 @@ function getFlatDependencies(id: string, rendererContext: RendererContext): Flat
 export function getAllDependencies(ids: Set<string>, rendererContext: RendererContext): ModuleDependencies {
   const cacheSize = rendererContext._dependencySetsCacheSize
   const useCache = cacheSize > 0
+
+  // The canonical key is sorted so that requests differing only in order share
+  // an entry; the alias key is not, and is verified on hit.
+  let aliasKey = ''
+  if (useCache && ids.size > 1) {
+    for (const id of ids) aliasKey += `${id},`
+    const aliased = rendererContext._dependencySetAliases.get(aliasKey)
+    if (aliased !== undefined) {
+      return aliased
+    }
+  }
 
   let cacheKey = ''
   if (useCache) {
@@ -287,30 +363,67 @@ export function getAllDependencies(ids: Set<string>, rendererContext: RendererCo
         rendererContext._dependencySets.delete(cacheKey)
         rendererContext._dependencySets.set(cacheKey, cached)
       }
+      if (aliasKey) {
+        setAlias(rendererContext, aliasKey, cached, cacheSize)
+      }
       return cached
     }
   }
 
   const scripts: ModuleDependencies['scripts'] = {}
   const styles: ModuleDependencies['styles'] = {}
-  // Collected in insertion order with duplicates; deduplicated when the
-  // filtered records are built below, once `styles` is fully known.
+  // Deduplicated in first-seen order; filtered into records once `styles` is
+  // fully known.
   const preloadIds: string[] = []
   const preloadMetas: ResourceMeta[] = []
+  const preloadSlots: number[] = []
   const prefetchIds: string[] = []
   const prefetchMetas: ResourceMeta[] = []
+  const prefetchSlots: number[] = []
+
+  const mergeSlots = rendererContext._mergeSlots
+  const epoch = ++mergeSlots.epoch
+  let scriptSeen = mergeSlots.scripts
+  let styleSeen = mergeSlots.styles
+  let preloadSeen = mergeSlots.preload
+  let prefetchSeen = mergeSlots.prefetch
 
   for (const id of ids) {
     const flat = getFlatDependencies(id, rendererContext)
-    for (let i = 0; i < flat.scriptIds.length; i++) scripts[flat.scriptIds[i]!] = flat.scriptMetas[i]!
-    for (let i = 0; i < flat.styleIds.length; i++) styles[flat.styleIds[i]!] = flat.styleMetas[i]!
+    if (mergeSlots.scripts !== scriptSeen) {
+      // Flattening a new module can allocate new slot arrays.
+      scriptSeen = mergeSlots.scripts
+      styleSeen = mergeSlots.styles
+      preloadSeen = mergeSlots.preload
+      prefetchSeen = mergeSlots.prefetch
+    }
+    for (let i = 0; i < flat.scriptIds.length; i++) {
+      const slot = flat.scriptSlots[i]!
+      if (scriptSeen[slot] === epoch) continue
+      scriptSeen[slot] = epoch
+      scripts[flat.scriptIds[i]!] = flat.scriptMetas[i]!
+    }
+    for (let i = 0; i < flat.styleIds.length; i++) {
+      const slot = flat.styleSlots[i]!
+      if (styleSeen[slot] === epoch) continue
+      styleSeen[slot] = epoch
+      styles[flat.styleIds[i]!] = flat.styleMetas[i]!
+    }
     for (let i = 0; i < flat.preloadIds.length; i++) {
+      const slot = flat.preloadSlots[i]!
+      if (preloadSeen[slot] === epoch) continue
+      preloadSeen[slot] = epoch
       preloadIds.push(flat.preloadIds[i]!)
       preloadMetas.push(flat.preloadMetas[i]!)
+      preloadSlots.push(slot)
     }
     for (let i = 0; i < flat.prefetchIds.length; i++) {
+      const slot = flat.prefetchSlots[i]!
+      if (prefetchSeen[slot] === epoch) continue
+      prefetchSeen[slot] = epoch
       prefetchIds.push(flat.prefetchIds[i]!)
       prefetchMetas.push(flat.prefetchMetas[i]!)
+      prefetchSlots.push(slot)
     }
   }
 
@@ -318,18 +431,17 @@ export function getAllDependencies(ids: Set<string>, rendererContext: RendererCo
   // styles, and don't preload styles that are synchronously loaded.
   const preload: ModuleDependencies['preload'] = {}
   for (let i = 0; i < preloadIds.length; i++) {
-    const id = preloadIds[i]!
-    if (!(id in styles)) {
-      preload[id] = preloadMetas[i]!
+    if (styleSeen[preloadSlots[i]!] !== epoch) {
+      preload[preloadIds[i]!] = preloadMetas[i]!
     }
   }
 
   const prefetch: ModuleDependencies['prefetch'] = {}
   for (let i = 0; i < prefetchIds.length; i++) {
-    const id = prefetchIds[i]!
     const dep = prefetchMetas[i]!
-    if (dep.prefetch && !(id in preload) && !(id in styles)) {
-      prefetch[id] = dep
+    const slot = prefetchSlots[i]!
+    if (dep.prefetch && preloadSeen[slot] !== epoch && styleSeen[slot] !== epoch) {
+      prefetch[prefetchIds[i]!] = dep
     }
   }
 
@@ -343,6 +455,9 @@ export function getAllDependencies(ids: Set<string>, rendererContext: RendererCo
       if (oldest !== undefined) {
         rendererContext._dependencySets.delete(oldest)
       }
+    }
+    if (aliasKey) {
+      setAlias(rendererContext, aliasKey, allDeps, cacheSize)
     }
   }
   return allDeps
