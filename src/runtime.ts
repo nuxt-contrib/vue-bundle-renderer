@@ -44,7 +44,28 @@ export interface RenderOptions {
   dependencySetsCacheSize?: number
 }
 
+/**
+ * The merged dependency records as parallel arrays, carried alongside the
+ * rendered output so render loops can walk arrays and index fragment caches by
+ * slot instead of walking dictionary objects and hashing ids.
+ */
+interface MergedOrder {
+  styleIds: string[]
+  styleSlots: number[]
+  styleMetas: ResourceMeta[]
+  scriptIds: string[]
+  scriptSlots: number[]
+  scriptMetas: ResourceMeta[]
+  preloadIds: string[]
+  preloadSlots: number[]
+  preloadMetas: ResourceMeta[]
+  prefetchIds: string[]
+  prefetchSlots: number[]
+  prefetchMetas: ResourceMeta[]
+}
+
 interface RenderedOutputs {
+  order?: MergedOrder
   styles?: string
   scripts?: string
   hints?: string
@@ -63,7 +84,7 @@ export interface RendererContext {
   _dependencySetsCacheSize: number
   _entrypoints: string[]
   _renderedCache: WeakMap<ModuleDependencies, RenderedOutputs>
-  _fragments: Record<FragmentKind, Map<string, string>>
+  _fragments: Record<FragmentKind, string[]>
   _flatDependencies: Map<string, FlatDependencies>
   _mergeSlots: MergeSlots
   updateManifest: (manifest: Manifest) => void
@@ -129,14 +150,14 @@ function slotFor(slots: MergeSlots, id: string): number {
 
 type FragmentKind = 'style' | 'script' | 'preloadHint' | 'prefetchHint' | 'preloadHeader' | 'prefetchHeader'
 
-function createFragmentCaches(): Record<FragmentKind, Map<string, string>> {
+function createFragmentCaches(): Record<FragmentKind, string[]> {
   return {
-    style: new Map(),
-    script: new Map(),
-    preloadHint: new Map(),
-    prefetchHint: new Map(),
-    preloadHeader: new Map(),
-    prefetchHeader: new Map(),
+    style: [],
+    script: [],
+    preloadHint: [],
+    prefetchHint: [],
+    preloadHeader: [],
+    prefetchHeader: [],
   }
 }
 
@@ -331,18 +352,24 @@ function getFlatDependencies(id: string, rendererContext: RendererContext): Flat
 
 export function getAllDependencies(ids: Set<string>, rendererContext: RendererContext): ModuleDependencies {
   const cacheSize = rendererContext._dependencySetsCacheSize
-  const useCache = cacheSize > 0
 
   // The canonical key is sorted so that requests differing only in order share
   // an entry; the alias key is not, and is verified on hit.
   let aliasKey = ''
-  if (useCache && ids.size > 1) {
+  if (cacheSize > 0 && ids.size > 1) {
     for (const id of ids) aliasKey += `${id},`
     const aliased = rendererContext._dependencySetAliases.get(aliasKey)
     if (aliased !== undefined) {
       return aliased
     }
   }
+
+  return resolveDependencies(ids, rendererContext, aliasKey)
+}
+
+function resolveDependencies(ids: Set<string>, rendererContext: RendererContext, aliasKey: string): ModuleDependencies {
+  const cacheSize = rendererContext._dependencySetsCacheSize
+  const useCache = cacheSize > 0
 
   let cacheKey = ''
   if (useCache) {
@@ -370,8 +397,12 @@ export function getAllDependencies(ids: Set<string>, rendererContext: RendererCo
     }
   }
 
-  const scripts: ModuleDependencies['scripts'] = {}
-  const styles: ModuleDependencies['styles'] = {}
+  const styleIds: string[] = []
+  const styleMetas: ResourceMeta[] = []
+  const styleSlots: number[] = []
+  const scriptIds: string[] = []
+  const scriptMetas: ResourceMeta[] = []
+  const scriptSlots: number[] = []
   // Deduplicated in first-seen order; filtered into records once `styles` is
   // fully known.
   const preloadIds: string[] = []
@@ -401,13 +432,17 @@ export function getAllDependencies(ids: Set<string>, rendererContext: RendererCo
       const slot = flat.scriptSlots[i]!
       if (scriptSeen[slot] === epoch) continue
       scriptSeen[slot] = epoch
-      scripts[flat.scriptIds[i]!] = flat.scriptMetas[i]!
+      scriptIds.push(flat.scriptIds[i]!)
+      scriptMetas.push(flat.scriptMetas[i]!)
+      scriptSlots.push(slot)
     }
     for (let i = 0; i < flat.styleIds.length; i++) {
       const slot = flat.styleSlots[i]!
       if (styleSeen[slot] === epoch) continue
       styleSeen[slot] = epoch
-      styles[flat.styleIds[i]!] = flat.styleMetas[i]!
+      styleIds.push(flat.styleIds[i]!)
+      styleMetas.push(flat.styleMetas[i]!)
+      styleSlots.push(slot)
     }
     for (let i = 0; i < flat.preloadIds.length; i++) {
       const slot = flat.preloadSlots[i]!
@@ -429,23 +464,56 @@ export function getAllDependencies(ids: Set<string>, rendererContext: RendererCo
 
   // Don't prefetch resources that are preloaded or synchronously loaded as
   // styles, and don't preload styles that are synchronously loaded.
-  const preload: ModuleDependencies['preload'] = {}
+  let kept = 0
   for (let i = 0; i < preloadIds.length; i++) {
-    if (styleSeen[preloadSlots[i]!] !== epoch) {
-      preload[preloadIds[i]!] = preloadMetas[i]!
+    const slot = preloadSlots[i]!
+    if (styleSeen[slot] !== epoch) {
+      preloadIds[kept] = preloadIds[i]!
+      preloadMetas[kept] = preloadMetas[i]!
+      preloadSlots[kept] = slot
+      kept++
     }
   }
+  preloadIds.length = kept
+  preloadMetas.length = kept
+  preloadSlots.length = kept
 
-  const prefetch: ModuleDependencies['prefetch'] = {}
+  kept = 0
   for (let i = 0; i < prefetchIds.length; i++) {
     const dep = prefetchMetas[i]!
     const slot = prefetchSlots[i]!
     if (dep.prefetch && preloadSeen[slot] !== epoch && styleSeen[slot] !== epoch) {
-      prefetch[prefetchIds[i]!] = dep
+      prefetchIds[kept] = prefetchIds[i]!
+      prefetchMetas[kept] = dep
+      prefetchSlots[kept] = slot
+      kept++
     }
   }
+  prefetchIds.length = kept
+  prefetchMetas.length = kept
+  prefetchSlots.length = kept
 
-  const allDeps: ModuleDependencies = { scripts, styles, preload, prefetch }
+  const order: MergedOrder = {
+    styleIds,
+    styleMetas,
+    styleSlots,
+    scriptIds,
+    scriptMetas,
+    scriptSlots,
+    preloadIds,
+    preloadMetas,
+    preloadSlots,
+    prefetchIds,
+    prefetchMetas,
+    prefetchSlots,
+  }
+
+  const allDeps = {} as ModuleDependencies
+  defineLazyRecord(allDeps, 'scripts', scriptIds, scriptMetas)
+  defineLazyRecord(allDeps, 'styles', styleIds, styleMetas)
+  defineLazyRecord(allDeps, 'preload', preloadIds, preloadMetas)
+  defineLazyRecord(allDeps, 'prefetch', prefetchIds, prefetchMetas)
+  rendererContext._renderedCache.set(allDeps, { order })
 
   if (useCache) {
     rendererContext._dependencySets.set(cacheKey, allDeps)
@@ -482,6 +550,21 @@ export function getRequestDependencies(ssrContext: SSRContext, rendererContext: 
   }
   let ids: Set<string>
   const requestIds = ssrContext.modules /* vite */ || ssrContext._registeredComponents /* webpack */
+
+  // On a cache hit the merged id set is never needed, so probe the alias map
+  // before paying for the set.
+  let aliasKey = ''
+  if (!hasExcluded && rendererContext._dependencySetsCacheSize > 0) {
+    for (const id of rendererContext._entrypoints) aliasKey += `${id},`
+    if (requestIds) {
+      for (const id of requestIds) aliasKey += `${id},`
+    }
+    const aliased = rendererContext._dependencySetAliases.get(aliasKey)
+    if (aliased !== undefined) {
+      ssrContext._requestDependencies = aliased
+      return aliased
+    }
+  }
   if (hasExcluded) {
     ids = new Set<string>()
     for (const id of rendererContext._entrypoints) {
@@ -503,7 +586,7 @@ export function getRequestDependencies(ssrContext: SSRContext, rendererContext: 
       for (const id of requestIds) ids.add(id)
     }
   }
-  const deps = getAllDependencies(ids, rendererContext)
+  const deps = resolveDependencies(ids, rendererContext, aliasKey)
   if (!hasExcluded) {
     ssrContext._requestDependencies = deps
   }
@@ -519,20 +602,75 @@ function getRenderedOutputs(rendererContext: RendererContext, deps: ModuleDepend
   return entry
 }
 
+/** Materialise `key` on first access and replace the accessor with a data property. */
+function defineLazyRecord(target: ModuleDependencies, key: keyof ModuleDependencies, ids: string[], metas: ResourceMeta[]) {
+  Object.defineProperty(target, key, {
+    configurable: true,
+    enumerable: true,
+    get() {
+      const record: Record<string, ResourceMeta> = {}
+      for (let i = 0; i < ids.length; i++) {
+        record[ids[i]!] = metas[i]!
+      }
+      Object.defineProperty(target, key, { value: record, writable: true, enumerable: true, configurable: true })
+      return record
+    },
+    set(value: Record<string, ResourceMeta>) {
+      Object.defineProperty(target, key, { value, writable: true, enumerable: true, configurable: true })
+    },
+  })
+}
+
+function collectOrder(source: Record<string, ResourceMeta>, ids: string[], metas: ResourceMeta[], slots: number[], mergeSlots: MergeSlots) {
+  for (const id in source) {
+    ids.push(id)
+    metas.push(source[id]!)
+    slots.push(slotFor(mergeSlots, id))
+  }
+}
+
+/** Records supplied by a caller carry no order, so derive and memoize one. */
+function getOrder(rendererContext: RendererContext, deps: ModuleDependencies, rendered: RenderedOutputs): MergedOrder {
+  if (rendered.order) {
+    return rendered.order
+  }
+  const mergeSlots = rendererContext._mergeSlots
+  const order: MergedOrder = {
+    styleIds: [],
+    styleMetas: [],
+    styleSlots: [],
+    scriptIds: [],
+    scriptMetas: [],
+    scriptSlots: [],
+    preloadIds: [],
+    preloadMetas: [],
+    preloadSlots: [],
+    prefetchIds: [],
+    prefetchMetas: [],
+    prefetchSlots: [],
+  }
+  collectOrder(deps.styles, order.styleIds, order.styleMetas, order.styleSlots, mergeSlots)
+  collectOrder(deps.scripts, order.scriptIds, order.scriptMetas, order.scriptSlots, mergeSlots)
+  collectOrder(deps.preload, order.preloadIds, order.preloadMetas, order.preloadSlots, mergeSlots)
+  collectOrder(deps.prefetch, order.prefetchIds, order.prefetchMetas, order.prefetchSlots, mergeSlots)
+  rendered.order = order
+  return order
+}
+
 export function renderStyles(ssrContext: SSRContext, rendererContext: RendererContext): string {
   const deps = getRequestDependencies(ssrContext, rendererContext)
   const rendered = getRenderedOutputs(rendererContext, deps)
   if (rendered.styles !== undefined) {
     return rendered.styles
   }
-  const { styles } = deps
+  const order = getOrder(rendererContext, deps, rendered)
   let result = ''
   const cache = rendererContext._fragments.style
-  for (const key in styles) {
-    let fragment = cache.get(key)
+  for (let i = 0; i < order.styleSlots.length; i++) {
+    const slot = order.styleSlots[i]!
+    let fragment = cache[slot]
     if (fragment === undefined) {
-      fragment = `<link rel="stylesheet" href="${rendererContext.buildAssetsURL(styles[key]!.file)}" crossorigin>`
-      cache.set(key, fragment)
+      fragment = cache[slot] = `<link rel="stylesheet" href="${rendererContext.buildAssetsURL(order.styleMetas[i]!.file)}" crossorigin>`
     }
     result += fragment
   }
@@ -566,17 +704,18 @@ export function renderResourceHints(ssrContext: SSRContext, rendererContext: Ren
   if (cached !== undefined) {
     return cached
   }
-  const { preload, prefetch } = deps
+  const order = getOrder(rendererContext, deps, rendered)
   let result = ''
 
   // Render preload links
   const preloadCache = rendererContext._fragments.preloadHint
-  for (const key in preload) {
-    const resource = preload[key]!
+  for (let i = 0; i < order.preloadSlots.length; i++) {
+    const resource = order.preloadMetas[i]!
     if (!withScripts && isScriptResource(resource)) {
       continue
     }
-    let fragment = preloadCache.get(key)
+    const slot = order.preloadSlots[i]!
+    let fragment = preloadCache[slot]
     if (fragment === undefined) {
       const href = rendererContext.buildAssetsURL(resource.file)
       const rel = resource.module ? 'modulepreload' : 'preload'
@@ -587,18 +726,19 @@ export function renderResourceHints(ssrContext: SSRContext, rendererContext: Ren
         : resource.resourceType
           ? `<link rel="${rel}" as="${resource.resourceType}"${crossorigin} href="${href}">`
           : `<link rel="${rel}"${crossorigin} href="${href}">`
-      preloadCache.set(key, fragment)
+      preloadCache[slot] = fragment
     }
     result += fragment
   }
   // Render prefetch links
   const prefetchCache = rendererContext._fragments.prefetchHint
-  for (const key in prefetch) {
-    const resource = prefetch[key]!
+  for (let i = 0; i < order.prefetchSlots.length; i++) {
+    const resource = order.prefetchMetas[i]!
     if (!withScripts && isScriptResource(resource)) {
       continue
     }
-    let fragment = prefetchCache.get(key)
+    const slot = order.prefetchSlots[i]!
+    let fragment = prefetchCache[slot]
     if (fragment === undefined) {
       const href = rendererContext.buildAssetsURL(resource.file)
       const crossorigin = (resource.resourceType === 'style' || resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module) ? ' crossorigin' : ''
@@ -608,7 +748,7 @@ export function renderResourceHints(ssrContext: SSRContext, rendererContext: Ren
         : resource.resourceType
           ? `<link rel="prefetch" as="${resource.resourceType}"${crossorigin} href="${href}">`
           : `<link rel="prefetch"${crossorigin} href="${href}">`
-      prefetchCache.set(key, fragment)
+      prefetchCache[slot] = fragment
     }
     result += fragment
   }
@@ -632,17 +772,18 @@ export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: R
   if (cached !== undefined) {
     return { link: cached }
   }
-  const { preload, prefetch } = deps
-  const links: string[] = []
+  const order = getOrder(rendererContext, deps, rendered)
+  let link = ''
 
   // Render preload headers
   const preloadCache = rendererContext._fragments.preloadHeader
-  for (const key in preload) {
-    const resource = preload[key]!
+  for (let i = 0; i < order.preloadSlots.length; i++) {
+    const resource = order.preloadMetas[i]!
     if (!withScripts && isScriptResource(resource)) {
       continue
     }
-    let header = preloadCache.get(key)
+    const slot = order.preloadSlots[i]!
+    let header = preloadCache[slot]
     if (header === undefined) {
       const href = rendererContext.buildAssetsURL(resource.file).replace(NON_ASCII_RE, encodeURIComponent)
       const rel = resource.module ? 'modulepreload' : 'preload'
@@ -657,20 +798,21 @@ export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: R
       if (resource.resourceType === 'style' || resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module) {
         header += '; crossorigin'
       }
-      preloadCache.set(key, header)
+      preloadCache[slot] = header
     }
 
-    links.push(header)
+    link = link ? `${link}, ${header}` : header
   }
 
   // Render prefetch headers
   const prefetchCache = rendererContext._fragments.prefetchHeader
-  for (const key in prefetch) {
-    const resource = prefetch[key]!
+  for (let i = 0; i < order.prefetchSlots.length; i++) {
+    const resource = order.prefetchMetas[i]!
     if (!withScripts && isScriptResource(resource)) {
       continue
     }
-    let header = prefetchCache.get(key)
+    const slot = order.prefetchSlots[i]!
+    let header = prefetchCache[slot]
     if (header === undefined) {
       const href = rendererContext.buildAssetsURL(resource.file).replace(NON_ASCII_RE, encodeURIComponent)
       header = `<${href}>; rel="prefetch"`
@@ -684,13 +826,11 @@ export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: R
       if (resource.resourceType === 'style' || resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module) {
         header += '; crossorigin'
       }
-      prefetchCache.set(key, header)
+      prefetchCache[slot] = header
     }
 
-    links.push(header)
+    link = link ? `${link}, ${header}` : header
   }
-
-  const link = links.join(', ')
   if (withScripts) {
     rendered.headerLink = link
   }
@@ -701,11 +841,12 @@ export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: R
 }
 
 export function getPreloadLinks(ssrContext: SSRContext, rendererContext: RendererContext, options?: ResourceHintOptions): LinkAttributes[] {
-  const { preload } = getRequestDependencies(ssrContext, rendererContext, options)
+  const deps = getRequestDependencies(ssrContext, rendererContext, options)
+  const order = getOrder(rendererContext, deps, getRenderedOutputs(rendererContext, deps))
   const withScripts = options?.scripts !== false
   const result: LinkAttributes[] = []
-  for (const key in preload) {
-    const resource = preload[key]!
+  for (let i = 0; i < order.preloadMetas.length; i++) {
+    const resource = order.preloadMetas[i]!
     if (!withScripts && isScriptResource(resource)) {
       continue
     }
@@ -721,11 +862,12 @@ export function getPreloadLinks(ssrContext: SSRContext, rendererContext: Rendere
 }
 
 export function getPrefetchLinks(ssrContext: SSRContext, rendererContext: RendererContext, options?: ResourceHintOptions): LinkAttributes[] {
-  const { prefetch } = getRequestDependencies(ssrContext, rendererContext, options)
+  const deps = getRequestDependencies(ssrContext, rendererContext, options)
+  const order = getOrder(rendererContext, deps, getRenderedOutputs(rendererContext, deps))
   const withScripts = options?.scripts !== false
   const result: LinkAttributes[] = []
-  for (const key in prefetch) {
-    const resource = prefetch[key]!
+  for (let i = 0; i < order.prefetchMetas.length; i++) {
+    const resource = order.prefetchMetas[i]!
     if (!withScripts && isScriptResource(resource)) {
       continue
     }
@@ -746,17 +888,17 @@ export function renderScripts(ssrContext: SSRContext, rendererContext: RendererC
   if (rendered.scripts !== undefined) {
     return rendered.scripts
   }
-  const { scripts } = deps
+  const order = getOrder(rendererContext, deps, rendered)
   let result = ''
   const cache = rendererContext._fragments.script
-  for (const key in scripts) {
-    let fragment = cache.get(key)
+  for (let i = 0; i < order.scriptSlots.length; i++) {
+    const slot = order.scriptSlots[i]!
+    let fragment = cache[slot]
     if (fragment === undefined) {
-      const resource = scripts[key]!
-      fragment = resource.module
+      const resource = order.scriptMetas[i]!
+      fragment = cache[slot] = resource.module
         ? `<script type="module" src="${rendererContext.buildAssetsURL(resource.file)}" crossorigin></script>`
         : `<script src="${rendererContext.buildAssetsURL(resource.file)}" defer crossorigin></script>`
-      cache.set(key, fragment)
     }
     result += fragment
   }
