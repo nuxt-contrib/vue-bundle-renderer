@@ -138,7 +138,7 @@ function slotFor(slots: MergeSlots, id: string, meta: ResourceMeta): number {
   return slot
 }
 
-type FragmentKind = 'style' | 'script' | 'preloadHint' | 'prefetchHint' | 'preloadHeader' | 'prefetchHeader'
+type FragmentKind = 'style' | 'script' | 'preloadHint' | 'prefetchHint' | 'preloadHeader' | 'prefetchHeader' | 'href'
 
 function createFragmentCaches(): Record<FragmentKind, string[]> {
   return {
@@ -148,6 +148,7 @@ function createFragmentCaches(): Record<FragmentKind, string[]> {
     prefetchHint: [],
     preloadHeader: [],
     prefetchHeader: [],
+    href: [],
   }
 }
 
@@ -381,6 +382,35 @@ function collectInto(source: Record<string, ResourceMeta>, slots: number[], merg
   }
 }
 
+/** A module's own styles are never preloaded; cross-module overlap is filtered per request. */
+function collectPreload(deps: ModuleDependencies, slots: number[], mergeSlots: MergeSlots) {
+  const { styles, preload } = deps
+  for (const id in preload) {
+    if (id in styles) {
+      continue
+    }
+    slots.push(slotFor(mergeSlots, id, preload[id]!))
+  }
+}
+
+/** Opt-out and a module's own preload and styles are fixed; cross-module overlap is not. */
+function collectPrefetch(deps: ModuleDependencies, source: Record<string, ResourceMeta>, slots: number[], seen: Set<number>, mergeSlots: MergeSlots) {
+  const { styles, preload } = deps
+  for (const id in source) {
+    const meta = source[id]!
+    if (!meta.prefetch || id in preload || id in styles) {
+      continue
+    }
+    const slot = slotFor(mergeSlots, id, meta)
+    // Gathered from several records, so unlike the other lanes it can repeat.
+    if (seen.has(slot)) {
+      continue
+    }
+    seen.add(slot)
+    slots.push(slot)
+  }
+}
+
 function getFlatDependencies(id: string, rendererContext: RendererContext): FlatDependencies {
   const cached = rendererContext._flatDependencies[id]
   if (cached !== undefined) {
@@ -397,16 +427,17 @@ function getFlatDependencies(id: string, rendererContext: RendererContext): Flat
   }
   collectInto(deps.scripts, flat.scriptSlots, mergeSlots)
   collectInto(deps.styles, flat.styleSlots, mergeSlots)
-  collectInto(deps.preload, flat.preloadSlots, mergeSlots)
-  collectInto(deps.prefetch, flat.prefetchSlots, mergeSlots)
+  collectPreload(deps, flat.preloadSlots, mergeSlots)
+  const prefetchSeen = new Set<number>()
+  collectPrefetch(deps, deps.prefetch, flat.prefetchSlots, prefetchSeen, mergeSlots)
 
   const dynamicImports = rendererContext.manifest?.[id]?.dynamicImports || rendererContext.precomputed?.modules[id]?.dynamicImports
   if (dynamicImports) {
     for (const dynamicDepId of dynamicImports) {
       const dynamicDeps = getModuleDependencies(dynamicDepId, rendererContext)
-      collectInto(dynamicDeps.scripts, flat.prefetchSlots, mergeSlots)
-      collectInto(dynamicDeps.styles, flat.prefetchSlots, mergeSlots)
-      collectInto(dynamicDeps.preload, flat.prefetchSlots, mergeSlots)
+      collectPrefetch(deps, dynamicDeps.scripts, flat.prefetchSlots, prefetchSeen, mergeSlots)
+      collectPrefetch(deps, dynamicDeps.styles, flat.prefetchSlots, prefetchSeen, mergeSlots)
+      collectPrefetch(deps, dynamicDeps.preload, flat.prefetchSlots, prefetchSeen, mergeSlots)
     }
   }
 
@@ -929,6 +960,16 @@ export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: R
   return { link }
 }
 
+/** `buildAssetsURL` is a pure function of the id, so each result is built once. */
+function hrefFor(rendererContext: RendererContext, slot: number, resource: ResourceMeta): string {
+  const cache = rendererContext._fragments.href
+  let href = cache[slot]
+  if (href === undefined) {
+    href = cache[slot] = rendererContext.buildAssetsURL(resource.file)
+  }
+  return href
+}
+
 export function getPreloadLinks(ssrContext: SSRContext, rendererContext: RendererContext, options?: ResourceHintOptions): LinkAttributes[] {
   const deps = getRequestDependencies(ssrContext, rendererContext, options)
   const order = getOrder(rendererContext, deps, getRenderedOutputs(rendererContext, deps))
@@ -936,7 +977,8 @@ export function getPreloadLinks(ssrContext: SSRContext, rendererContext: Rendere
   const withScripts = options?.scripts !== false
   const result: LinkAttributes[] = []
   for (let i = 0; i < order.preloadSlots.length; i++) {
-    const resource = metaOf[order.preloadSlots[i]!]!
+    const slot = order.preloadSlots[i]!
+    const resource = metaOf[slot]!
     if (!withScripts && isScriptResource(resource)) {
       continue
     }
@@ -945,7 +987,7 @@ export function getPreloadLinks(ssrContext: SSRContext, rendererContext: Rendere
       as: resource.resourceType,
       type: resource.mimeType ?? null,
       crossorigin: resource.resourceType === 'style' || resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module ? '' : null,
-      href: rendererContext.buildAssetsURL(resource.file),
+      href: hrefFor(rendererContext, slot, resource),
     })
   }
   return result
@@ -958,7 +1000,8 @@ export function getPrefetchLinks(ssrContext: SSRContext, rendererContext: Render
   const withScripts = options?.scripts !== false
   const result: LinkAttributes[] = []
   for (let i = 0; i < order.prefetchSlots.length; i++) {
-    const resource = metaOf[order.prefetchSlots[i]!]!
+    const slot = order.prefetchSlots[i]!
+    const resource = metaOf[slot]!
     if (!withScripts && isScriptResource(resource)) {
       continue
     }
@@ -967,7 +1010,7 @@ export function getPrefetchLinks(ssrContext: SSRContext, rendererContext: Render
       as: resource.resourceType,
       type: resource.mimeType ?? null,
       crossorigin: resource.resourceType === 'style' || resource.resourceType === 'font' || resource.resourceType === 'script' || resource.module ? '' : null,
-      href: rendererContext.buildAssetsURL(resource.file),
+      href: hrefFor(rendererContext, slot, resource),
     })
   }
   return result
