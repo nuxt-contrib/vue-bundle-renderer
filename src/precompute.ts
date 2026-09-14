@@ -10,6 +10,8 @@ export interface PrecomputedData {
   modules: Record<string, Pick<ResourceMeta, 'file' | 'resourceType' | 'mimeType' | 'module' | 'dynamicImports'>>
 }
 
+const EMPTY: readonly string[] = []
+
 /**
  * Build-time utility to precompute all module dependencies from a manifest.
  * This eliminates recursive dependency resolution at runtime.
@@ -17,8 +19,6 @@ export interface PrecomputedData {
  * @param manifest The build manifest
  * @returns Serializable precomputed data for runtime use
  */
-const EMPTY: readonly string[] = []
-
 export function precomputeDependencies(manifest: Manifest): PrecomputedData {
   const dependencies: Record<string, ModuleDependencies> = {}
   const computing = new Set<string>()
