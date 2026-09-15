@@ -28,7 +28,7 @@ jobs:
       - run: pnpm vitest --coverage
       - run: pnpm tsc --noEmit
       - name: Run benchmarks
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-latest' && github.event_name != 'merge_group'
         uses: CodSpeedHQ/action@373d6868929f444bc08d901fd0eb0ad52a8875ea # v5
         with:
           mode: simulation
