@@ -98,9 +98,10 @@ interface MergeSlots {
   count: number
   idOf: string[]
   metaOf: ResourceMeta[]
-  /** Four contiguous lanes of `laneSize` bytes: scripts, styles, preload, prefetch. */
-  seen: Uint8Array
-  laneSize: number
+  scripts: Uint8Array
+  styles: Uint8Array
+  preload: Uint8Array
+  prefetch: Uint8Array
   epoch: number
 }
 
@@ -112,8 +113,10 @@ function createMergeSlots(capacity = 16): MergeSlots {
     count: 0,
     idOf: [],
     metaOf: [],
-    seen: new Uint8Array(capacity * 4),
-    laneSize: capacity,
+    scripts: new Uint8Array(capacity),
+    styles: new Uint8Array(capacity),
+    preload: new Uint8Array(capacity),
+    prefetch: new Uint8Array(capacity),
     epoch: 0,
   }
 }
@@ -125,14 +128,13 @@ function slotFor(slots: MergeSlots, id: string, meta: ResourceMeta): number {
     slots.slotOf[id] = slot
     slots.idOf.push(id)
     slots.metaOf.push(meta)
-    if (slot >= slots.laneSize) {
-      const laneSize = slots.laneSize * 2
-      const grown = new Uint8Array(laneSize * 4)
-      for (let lane = 3; lane >= 0; lane--) {
-        grown.set(slots.seen.subarray(lane * slots.laneSize, (lane + 1) * slots.laneSize), lane * laneSize)
+    if (slot >= slots.scripts.length) {
+      const capacity = slots.scripts.length * 2
+      for (const kind of ['scripts', 'styles', 'preload', 'prefetch'] as const) {
+        const grown = new Uint8Array(capacity)
+        grown.set(slots[kind])
+        slots[kind] = grown
       }
-      slots.seen = grown
-      slots.laneSize = laneSize
     }
   }
   return slot
@@ -441,16 +443,16 @@ function getFlatDependencies(id: string, rendererContext: RendererContext): Flat
   collectInto(deps.scripts, flat.scriptSlots, mergeSlots)
   collectInto(deps.styles, flat.styleSlots, mergeSlots)
   collectPreload(deps, flat.preloadSlots, mergeSlots)
-  const collected = new Set<number>()
-  collectPrefetch(deps, deps.prefetch, flat.prefetchSlots, collected, mergeSlots)
+  const prefetchSeen = new Set<number>()
+  collectPrefetch(deps, deps.prefetch, flat.prefetchSlots, prefetchSeen, mergeSlots)
 
   const dynamicImports = rendererContext.manifest?.[id]?.dynamicImports || rendererContext.precomputed?.modules[id]?.dynamicImports
   if (dynamicImports) {
     for (const dynamicDepId of dynamicImports) {
       const dynamicDeps = getModuleDependencies(dynamicDepId, rendererContext)
-      collectPrefetch(deps, dynamicDeps.scripts, flat.prefetchSlots, collected, mergeSlots)
-      collectPrefetch(deps, dynamicDeps.styles, flat.prefetchSlots, collected, mergeSlots)
-      collectPrefetch(deps, dynamicDeps.preload, flat.prefetchSlots, collected, mergeSlots)
+      collectPrefetch(deps, dynamicDeps.scripts, flat.prefetchSlots, prefetchSeen, mergeSlots)
+      collectPrefetch(deps, dynamicDeps.styles, flat.prefetchSlots, prefetchSeen, mergeSlots)
+      collectPrefetch(deps, dynamicDeps.preload, flat.prefetchSlots, prefetchSeen, mergeSlots)
     }
   }
 
@@ -523,47 +525,48 @@ function resolveDependencies(moduleIds: string[], rendererContext: RendererConte
   let epoch = mergeSlots.epoch + 1
   if (epoch > 255) {
     epoch = 1
-    mergeSlots.seen.fill(0)
+    mergeSlots.scripts.fill(0)
+    mergeSlots.styles.fill(0)
+    mergeSlots.preload.fill(0)
+    mergeSlots.prefetch.fill(0)
   }
   mergeSlots.epoch = epoch
-  let seen = mergeSlots.seen
-  let laneSize = mergeSlots.laneSize
-  let styleLane = laneSize
-  let preloadLane = laneSize * 2
-  let prefetchLane = laneSize * 3
+  let scriptSeen = mergeSlots.scripts
+  let styleSeen = mergeSlots.styles
+  let preloadSeen = mergeSlots.preload
+  let prefetchSeen = mergeSlots.prefetch
 
   for (let m = 0; m < moduleIds.length; m++) {
     const flat = getFlatDependencies(moduleIds[m]!, rendererContext)
-    if (mergeSlots.seen !== seen) {
+    if (mergeSlots.scripts !== scriptSeen) {
       // Interning a new resource can grow the stamp lanes.
-      seen = mergeSlots.seen
-      laneSize = mergeSlots.laneSize
-      styleLane = laneSize
-      preloadLane = laneSize * 2
-      prefetchLane = laneSize * 3
+      scriptSeen = mergeSlots.scripts
+      styleSeen = mergeSlots.styles
+      preloadSeen = mergeSlots.preload
+      prefetchSeen = mergeSlots.prefetch
     }
     for (let i = 0; i < flat.scriptSlots.length; i++) {
       const slot = flat.scriptSlots[i]!
-      if (seen[slot] === epoch) continue
-      seen[slot] = epoch
+      if (scriptSeen[slot] === epoch) continue
+      scriptSeen[slot] = epoch
       scriptSlots.push(slot)
     }
     for (let i = 0; i < flat.styleSlots.length; i++) {
       const slot = flat.styleSlots[i]!
-      if (seen[styleLane + slot] === epoch) continue
-      seen[styleLane + slot] = epoch
+      if (styleSeen[slot] === epoch) continue
+      styleSeen[slot] = epoch
       styleSlots.push(slot)
     }
     for (let i = 0; i < flat.preloadSlots.length; i++) {
       const slot = flat.preloadSlots[i]!
-      if (seen[preloadLane + slot] === epoch) continue
-      seen[preloadLane + slot] = epoch
+      if (preloadSeen[slot] === epoch) continue
+      preloadSeen[slot] = epoch
       preloadSlots.push(slot)
     }
     for (let i = 0; i < flat.prefetchSlots.length; i++) {
       const slot = flat.prefetchSlots[i]!
-      if (seen[prefetchLane + slot] === epoch) continue
-      seen[prefetchLane + slot] = epoch
+      if (prefetchSeen[slot] === epoch) continue
+      prefetchSeen[slot] = epoch
       prefetchSlots.push(slot)
     }
   }
@@ -573,7 +576,7 @@ function resolveDependencies(moduleIds: string[], rendererContext: RendererConte
   let kept = 0
   for (let i = 0; i < preloadSlots.length; i++) {
     const slot = preloadSlots[i]!
-    if (seen[styleLane + slot] !== epoch) {
+    if (styleSeen[slot] !== epoch) {
       preloadSlots[kept] = slot
       kept++
     }
@@ -585,7 +588,7 @@ function resolveDependencies(moduleIds: string[], rendererContext: RendererConte
   for (let i = 0; i < prefetchSlots.length; i++) {
     const slot = prefetchSlots[i]!
     const dep = metaOf[slot]!
-    if (dep.prefetch && seen[preloadLane + slot] !== epoch && seen[styleLane + slot] !== epoch) {
+    if (dep.prefetch && preloadSeen[slot] !== epoch && styleSeen[slot] !== epoch) {
       prefetchSlots[kept] = slot
       kept++
     }
