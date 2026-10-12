@@ -38,26 +38,26 @@
   "devDependencies": {
     "@codspeed/vitest-plugin": "^5.7.1",
     "@nuxt/eslint-config": "^1.17.0",
-    "@types/node": "^24.19.1",
+    "@types/node": "^24.19.2",
     "@vitest/coverage-v8": "^4.1.11",
     "eslint": "^10.12.0",
-    "pkg-pr-new": "^0.0.88",
+    "pkg-pr-new": "^0.0.91",
     "std-env": "^4.3.0",
-    "tsdown": "0.23.0",
+    "tsdown": "0.23.1",
     "typescript": "^6.0.3",
-    "vite": "^8.3.2",
+    "vite": "^8.3.4",
     "vitest": "4.1.11",
     "vue": "3.5.43"
   },
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": "^24.0.0",
+      "version": "^24.21.0",
       "onFail": "download"
     },
     "packageManager": {
       "name": "pnpm",
-      "version": "12.3.4",
+      "version": "12.11.2",
       "onFail": "download"
     }
   }
