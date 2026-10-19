@@ -39,25 +39,25 @@
     "@codspeed/vitest-plugin": "^5.7.1",
     "@nuxt/eslint-config": "^1.17.0",
     "@types/node": "^24.19.2",
-    "@vitest/coverage-v8": "^4.1.11",
-    "eslint": "^10.12.0",
+    "@vitest/coverage-v8": "^4.1.12",
+    "eslint": "^10.13.0",
     "pkg-pr-new": "^0.0.91",
     "std-env": "^4.3.0",
     "tsdown": "0.23.1",
     "typescript": "^6.0.3",
     "vite": "^8.3.4",
-    "vitest": "4.1.11",
-    "vue": "3.5.43"
+    "vitest": "4.1.12",
+    "vue": "3.5.44"
   },
   "devEngines": {
     "runtime": {
       "name": "node",
-      "version": "^24.21.0",
+      "version": "^24.22.0",
       "onFail": "download"
     },
     "packageManager": {
       "name": "pnpm",
-      "version": "12.11.2",
+      "version": "12.14.0",
       "onFail": "download"
     }
   }
