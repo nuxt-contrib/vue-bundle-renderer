@@ -59,10 +59,10 @@ interface RenderedOutputs {
   order?: MergedOrder
   styles?: string
   scripts?: string
-  hints?: string
-  hintsWithoutScripts?: string
-  headerLink?: string
-  headerLinkWithoutScripts?: string
+  /** Indexed by `hintVariant`. */
+  hints?: string[]
+  /** Indexed by `hintVariant`. */
+  headerLink?: string[]
 }
 
 export interface RendererContext {
@@ -823,6 +823,18 @@ export interface ResourceHintOptions extends RequestDependenciesOptions {
    * @default true
    */
   scripts?: boolean
+  /**
+   * Whether to include `rel="prefetch"` hints.
+   *
+   * @default true
+   */
+  prefetch?: boolean
+}
+
+const NO_SLOTS: readonly number[] = []
+
+function hintVariant(options?: ResourceHintOptions): number {
+  return (options?.scripts === false ? 1 : 0) | (options?.prefetch === false ? 2 : 0)
 }
 
 function isScriptResource(resource: ResourceMeta): boolean {
@@ -833,7 +845,9 @@ export function renderResourceHints(ssrContext: SSRContext, rendererContext: Ren
   const deps = getRequestDependencies(ssrContext, rendererContext, options)
   const rendered = getRenderedOutputs(rendererContext, deps)
   const withScripts = options?.scripts !== false
-  const cached = withScripts ? rendered.hints : rendered.hintsWithoutScripts
+  const variant = hintVariant(options)
+  const variants = rendered.hints ||= []
+  const cached = variants[variant]
   if (cached !== undefined) {
     return cached
   }
@@ -866,8 +880,9 @@ export function renderResourceHints(ssrContext: SSRContext, rendererContext: Ren
   }
   // Render prefetch links
   const prefetchCache = rendererContext._fragments.prefetchHint
-  for (let i = 0; i < order.prefetchSlots.length; i++) {
-    const slot = order.prefetchSlots[i]!
+  const prefetchSlots = options?.prefetch === false ? NO_SLOTS : order.prefetchSlots
+  for (let i = 0; i < prefetchSlots.length; i++) {
+    const slot = prefetchSlots[i]!
     if (!withScripts && isScriptResource(metaOf[slot]!)) {
       continue
     }
@@ -887,12 +902,7 @@ export function renderResourceHints(ssrContext: SSRContext, rendererContext: Ren
     result += fragment
   }
 
-  if (withScripts) {
-    rendered.hints = result
-  }
-  else {
-    rendered.hintsWithoutScripts = result
-  }
+  variants[variant] = result
   return result
 }
 
@@ -902,7 +912,9 @@ export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: R
   const deps = getRequestDependencies(ssrContext, rendererContext, options)
   const rendered = getRenderedOutputs(rendererContext, deps)
   const withScripts = options?.scripts !== false
-  const cached = withScripts ? rendered.headerLink : rendered.headerLinkWithoutScripts
+  const variant = hintVariant(options)
+  const variants = rendered.headerLink ||= []
+  const cached = variants[variant]
   if (cached !== undefined) {
     return { link: cached }
   }
@@ -941,8 +953,9 @@ export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: R
 
   // Render prefetch headers
   const prefetchCache = rendererContext._fragments.prefetchHeader
-  for (let i = 0; i < order.prefetchSlots.length; i++) {
-    const slot = order.prefetchSlots[i]!
+  const prefetchSlots = options?.prefetch === false ? NO_SLOTS : order.prefetchSlots
+  for (let i = 0; i < prefetchSlots.length; i++) {
+    const slot = prefetchSlots[i]!
     if (!withScripts && isScriptResource(metaOf[slot]!)) {
       continue
     }
@@ -966,12 +979,7 @@ export function renderResourceHeaders(ssrContext: SSRContext, rendererContext: R
 
     link = link ? `${link}, ${header}` : header
   }
-  if (withScripts) {
-    rendered.headerLink = link
-  }
-  else {
-    rendered.headerLinkWithoutScripts = link
-  }
+  variants[variant] = link
   return { link }
 }
 
@@ -1009,6 +1017,9 @@ export function getPreloadLinks(ssrContext: SSRContext, rendererContext: Rendere
 }
 
 export function getPrefetchLinks(ssrContext: SSRContext, rendererContext: RendererContext, options?: ResourceHintOptions): LinkAttributes[] {
+  if (options?.prefetch === false) {
+    return []
+  }
   const deps = getRequestDependencies(ssrContext, rendererContext, options)
   const order = getOrder(rendererContext, deps, getRenderedOutputs(rendererContext, deps))
   const metaOf = rendererContext._mergeSlots.metaOf

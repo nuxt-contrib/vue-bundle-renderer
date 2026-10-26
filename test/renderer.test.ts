@@ -246,4 +246,79 @@ describe('renderer', () => {
       `)
     })
   })
+
+  describe('prefetch option', () => {
+    const getContext = () => createRendererContext({
+      manifest: {
+        'entry.mjs': {
+          file: 'entry.mjs',
+          isEntry: true,
+          module: true,
+          preload: true,
+          resourceType: 'script',
+          assets: ['font.woff2'],
+          dynamicImports: ['lazy.mjs'],
+        },
+        'font.woff2': {
+          file: 'font.woff2',
+          preload: true,
+          prefetch: true,
+          resourceType: 'font',
+          mimeType: 'font/woff2',
+        },
+        'lazy.mjs': {
+          file: 'lazy.mjs',
+          module: true,
+          preload: true,
+          prefetch: true,
+          resourceType: 'script',
+          css: ['lazy.css'],
+        },
+        'lazy.css': {
+          file: 'lazy.css',
+          prefetch: true,
+          resourceType: 'style',
+        },
+      },
+      buildAssetsURL: id => joinURL('/assets', id),
+    })
+
+    it('drops prefetch hints and keeps preload hints', () => {
+      const context = getContext()
+      expect(renderResourceHints({}, context, { prefetch: false })).toMatchInlineSnapshot(`"<link rel="modulepreload" as="script" crossorigin href="/assets/entry.mjs"><link rel="preload" as="font" type="font/woff2" crossorigin href="/assets/font.woff2">"`)
+      expect(renderResourceHeaders({}, context, { prefetch: false })).toMatchInlineSnapshot(`
+        {
+          "link": "</assets/entry.mjs>; rel="modulepreload"; as="script"; crossorigin, </assets/font.woff2>; rel="preload"; as="font"; type="font/woff2"; crossorigin",
+        }
+      `)
+      expect(getPrefetchLinks({}, context, { prefetch: false })).toEqual([])
+    })
+
+    it('combines with the scripts option across interleaved calls', () => {
+      const context = getContext()
+      const variants = [{}, { prefetch: false }, { scripts: false }, { scripts: false, prefetch: false }]
+      const hints = variants.map(options => renderResourceHints({}, context, options))
+      const headers = variants.map(options => renderResourceHeaders({}, context, options).link)
+      expect(hints).toMatchInlineSnapshot(`
+        [
+          "<link rel="modulepreload" as="script" crossorigin href="/assets/entry.mjs"><link rel="preload" as="font" type="font/woff2" crossorigin href="/assets/font.woff2"><link rel="prefetch" as="style" crossorigin href="/assets/lazy.css"><link rel="prefetch" as="script" crossorigin href="/assets/lazy.mjs">",
+          "<link rel="modulepreload" as="script" crossorigin href="/assets/entry.mjs"><link rel="preload" as="font" type="font/woff2" crossorigin href="/assets/font.woff2">",
+          "<link rel="preload" as="font" type="font/woff2" crossorigin href="/assets/font.woff2"><link rel="prefetch" as="style" crossorigin href="/assets/lazy.css">",
+          "<link rel="preload" as="font" type="font/woff2" crossorigin href="/assets/font.woff2">",
+        ]
+      `)
+      expect(headers).toMatchInlineSnapshot(`
+        [
+          "</assets/entry.mjs>; rel="modulepreload"; as="script"; crossorigin, </assets/font.woff2>; rel="preload"; as="font"; type="font/woff2"; crossorigin, </assets/lazy.css>; rel="prefetch"; as="style"; crossorigin, </assets/lazy.mjs>; rel="prefetch"; as="script"; crossorigin",
+          "</assets/entry.mjs>; rel="modulepreload"; as="script"; crossorigin, </assets/font.woff2>; rel="preload"; as="font"; type="font/woff2"; crossorigin",
+          "</assets/font.woff2>; rel="preload"; as="font"; type="font/woff2"; crossorigin, </assets/lazy.css>; rel="prefetch"; as="style"; crossorigin",
+          "</assets/font.woff2>; rel="preload"; as="font"; type="font/woff2"; crossorigin",
+        ]
+      `)
+      for (let i = variants.length - 1; i >= 0; i--) {
+        expect(renderResourceHints({}, context, variants[i])).toBe(hints[i])
+        expect(renderResourceHeaders({}, context, variants[i]).link).toBe(headers[i])
+      }
+    })
+  })
 })
