@@ -39,14 +39,14 @@
     "@codspeed/vitest-plugin": "^5.7.1",
     "@nuxt/eslint-config": "^1.17.0",
     "@types/node": "^24.19.2",
-    "@vitest/coverage-v8": "^4.1.12",
+    "@vitest/coverage-v8": "^5.0.5",
     "eslint": "^10.13.0",
     "pkg-pr-new": "^0.0.92",
     "std-env": "^4.3.0",
     "tsdown": "0.23.2",
     "typescript": "^6.0.3",
     "vite": "^8.3.5",
-    "vitest": "4.1.12",
+    "vitest": "5.0.5",
     "vue": "3.5.44"
   },
   "devEngines": {
