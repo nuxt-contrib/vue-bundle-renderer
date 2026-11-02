@@ -29,7 +29,7 @@ jobs:
       - run: pnpm tsc --noEmit
       - name: Run benchmarks
         if: matrix.os == 'ubuntu-latest' && github.event_name != 'merge_group'
-        uses: CodSpeedHQ/action@78102a468f96d8e0ccb92d0ec49425753fc42062 # v5
+        uses: CodSpeedHQ/action@61efe07e57e55bedeab750c434504de272a56e8c # v5
         with:
           mode: simulation
           run: pnpm bench
