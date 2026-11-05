@@ -1,5 +1,12 @@
-import { bench as vitestBench } from 'vitest'
-import type { BenchOptions } from 'vitest'
+import { test } from 'vitest'
+
+interface BenchOptions {
+  time?: number
+  warmupTime?: number
+  warmupIterations?: number
+  iterations?: number
+  heavy?: boolean
+}
 
 // tinybench times each call individually, so bodies must do tens of
 // microseconds of work or they measure `performance.now()` instead.
@@ -15,9 +22,11 @@ const HEAVY_OPTIONS: BenchOptions = {
   warmupIterations: 5,
 }
 
-export function bench(name: string, fn: () => void, options?: BenchOptions & { heavy?: boolean }) {
-  const { heavy, ...rest } = options || {}
-  vitestBench(name, fn, { ...(heavy ? HEAVY_OPTIONS : DEFAULT_OPTIONS), ...rest })
+export function bench(name: string, fn: () => void, options?: BenchOptions): void {
+  const { heavy, ...rest } = options ?? {}
+  test(name, async ({ bench }) => {
+    await bench(name, fn).run({ ...(heavy ? HEAVY_OPTIONS : DEFAULT_OPTIONS), ...rest })
+  })
 }
 
 const sinkBox = { value: 0 }
