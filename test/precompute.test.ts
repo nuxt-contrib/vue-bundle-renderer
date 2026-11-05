@@ -189,6 +189,46 @@ describe('precomputed dependencies', () => {
     }
   })
 
+  it('should include resources imported from outside a cycle and from nested cycles', () => {
+    const entries: Manifest = {
+      'entry.js': { file: 'entry.js', resourceType: 'script', isEntry: true, css: ['entry.css'], imports: ['a.js'] },
+      'a.js': { file: 'a.js', resourceType: 'script', sideEffects: true, css: ['a.css'], imports: ['b.js', 'leaf.js'] },
+      'b.js': { file: 'b.js', resourceType: 'script', sideEffects: true, css: ['b.css'], imports: ['a.js', 'c.js'] },
+      'c.js': { file: 'c.js', resourceType: 'script', css: ['c.css'], imports: ['d.js'] },
+      'd.js': { file: 'd.js', resourceType: 'script', css: ['d.css'], imports: ['c.js', 'leaf.js'] },
+      'leaf.js': { file: 'leaf.js', resourceType: 'script', css: ['leaf.css'] },
+      'entry.css': { file: 'entry.css', resourceType: 'style' },
+      'a.css': { file: 'a.css', resourceType: 'style' },
+      'b.css': { file: 'b.css', resourceType: 'style' },
+      'c.css': { file: 'c.css', resourceType: 'style' },
+      'd.css': { file: 'd.css', resourceType: 'style' },
+      'leaf.css': { file: 'leaf.css', resourceType: 'style' },
+    }
+    const orders = [
+      Object.keys(entries),
+      ['d.js', 'b.js', 'leaf.js', 'entry.js', 'c.js', 'a.js', 'leaf.css', 'a.css', 'b.css', 'c.css', 'd.css', 'entry.css'],
+    ]
+
+    for (const order of orders) {
+      const manifest: Manifest = Object.fromEntries(order.map(id => [id, entries[id]!]))
+      const precomputed = precomputeDependencies(manifest).dependencies
+      const context = createRendererContext({ manifest })
+      for (const get of [(id: string) => precomputed[id]!, (id: string) => getModuleDependencies(id, context)]) {
+        expect(Object.keys(get('entry.js').styles).sort()).toEqual(['a.css', 'b.css', 'c.css', 'd.css', 'entry.css', 'leaf.css'])
+        expect(Object.keys(get('entry.js').scripts)).toEqual(['entry.js'])
+        for (const id of ['a.js', 'b.js']) {
+          expect(Object.keys(get(id).styles).sort()).toEqual(['a.css', 'b.css', 'c.css', 'd.css', 'leaf.css'])
+          expect(Object.keys(get(id).scripts)).toEqual([id])
+        }
+        for (const id of ['c.js', 'd.js']) {
+          expect(Object.keys(get(id).styles).sort()).toEqual(['c.css', 'd.css', 'leaf.css'])
+          expect(Object.keys(get(id).scripts)).toEqual([])
+        }
+        expect(Object.keys(get('leaf.js').styles)).toEqual(['leaf.css'])
+      }
+    }
+  })
+
   it('should throw error when neither manifest nor precomputed provided', () => {
     expect(() => {
       createRenderer(() => ({}), {
