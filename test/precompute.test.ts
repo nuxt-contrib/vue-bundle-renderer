@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createRenderer } from '../src/runtime'
+import { createRenderer, createRendererContext, getModuleDependencies } from '../src/runtime'
 import { precomputeDependencies } from '../src/precompute'
 import { normalizeViteManifest } from '../src/vite'
 import type { Manifest } from '../src/types'
@@ -168,6 +168,25 @@ describe('precomputed dependencies', () => {
 
     expect(manifestResult.renderResourceHints()).not.toContain('step.js')
     expect(precomputedResult.renderResourceHints()).toBe(manifestResult.renderResourceHints())
+  })
+
+  it('should resolve styles for every module in an import cycle regardless of manifest order', () => {
+    const entries: Manifest = {
+      'a.js': { file: 'a.js', resourceType: 'script', imports: ['_shared.js'] },
+      '_shared.js': { file: 'shared.js', resourceType: 'script', css: ['shared.css'], imports: ['b.js'] },
+      'b.js': { file: 'b.js', resourceType: 'script', imports: ['a.js'] },
+      'shared.css': { file: 'shared.css', resourceType: 'style' },
+    }
+
+    for (const order of [['a.js', '_shared.js', 'b.js', 'shared.css'], ['b.js', 'a.js', '_shared.js', 'shared.css']]) {
+      const manifest: Manifest = Object.fromEntries(order.map(id => [id, entries[id]!]))
+      const precomputed = precomputeDependencies(manifest)
+      const context = createRendererContext({ manifest })
+      for (const id of ['a.js', '_shared.js', 'b.js']) {
+        expect(Object.keys(precomputed.dependencies[id]!.styles)).toEqual(['shared.css'])
+        expect(Object.keys(getModuleDependencies(id, context).styles)).toEqual(['shared.css'])
+      }
+    }
   })
 
   it('should throw error when neither manifest nor precomputed provided', () => {
