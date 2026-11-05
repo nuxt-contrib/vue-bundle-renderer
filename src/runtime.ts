@@ -1,6 +1,7 @@
 import { withLeadingSlash } from 'ufo'
 import type { Manifest, ResourceMeta } from './types'
 import type { PrecomputedData } from './precompute'
+import { resolveModuleDependencies } from './dependencies'
 
 export interface ModuleDependencies {
   scripts: Record<string, ResourceMeta>
@@ -247,60 +248,11 @@ export function getModuleDependencies(id: string, rendererContext: RendererConte
     return rendererContext._dependencies[id]
   }
 
-  const dependencies: ModuleDependencies = rendererContext._dependencies[id] = {
-    scripts: {},
-    styles: {},
-    preload: {},
-    prefetch: {},
-  }
-
   if (!rendererContext.manifest) {
-    return dependencies
+    return rendererContext._dependencies[id] = { scripts: {}, styles: {}, preload: {}, prefetch: {} }
   }
 
-  const meta = rendererContext.manifest[id]
-
-  if (!meta) {
-    return dependencies
-  }
-
-  // Add to scripts + preload. Imports arrive already filtered.
-  if (meta.file) {
-    if (meta.preload) {
-      dependencies.preload[id] = meta
-    }
-    if (meta.isEntry || meta.sideEffects) {
-      dependencies.scripts[id] = meta
-    }
-  }
-
-  // Add styles + preload
-  for (const css of meta.css || []) {
-    const cssResource = rendererContext.manifest[css]!
-    dependencies.styles[css] = dependencies.prefetch[css] = cssResource
-    if (cssResource.preload) {
-      dependencies.preload[css] = cssResource
-    }
-  }
-  // Add assets as preload
-  for (const asset of meta.assets || []) {
-    const assetResource = rendererContext.manifest[asset]!
-    dependencies.prefetch[asset] = assetResource
-    if (assetResource.preload) {
-      dependencies.preload[asset] = assetResource
-    }
-  }
-  // Resolve nested dependencies and merge
-  if (meta.imports) {
-    for (const depId of meta.imports) {
-      const depDeps = getModuleDependencies(depId, rendererContext)
-      Object.assign(dependencies.styles, depDeps.styles)
-      Object.assign(dependencies.preload, depDeps.preload)
-      Object.assign(dependencies.prefetch, depDeps.prefetch)
-    }
-  }
-
-  return dependencies
+  return resolveModuleDependencies(rendererContext.manifest, id, rendererContext._dependencies)
 }
 
 /** Keyed by a hash of the request's ids, so every lookup verifies them. */
